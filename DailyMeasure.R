@@ -4,7 +4,7 @@
 library(shiny)
 library(shinyjs)
 library(shinydashboard)
-library(shinydashboardPlus)
+library(shinydashboardPlus) # version 0.6.0+ preferred (development version as of Feb/2019)
 library(shinyWidgets)
 
 library(tidyverse)
@@ -145,12 +145,14 @@ semantic_popupJS <- c("window.onload = function() {$('.ui.button') .popup({on: '
 # (2) provide padding for export/print buttons
 
 datatable_styled <- function(data, fillContainer = TRUE,
-                             extensions = c('Buttons', 'Scroller'),
-                             options=list(dom = 'frltiBp',
-                                          buttons = c('copyHtml5', 'csvHtml5', 'excel', 'pdf', 'print'),
-                                          initComplete = JS(semantic_popupJS),
-                                          paging = FALSE),
+                             extensions = c('Buttons', 'Scroller', 'Responsive'),
+                             dom = 'frltiBp',
+                             buttons = c('copyHtml5', 'csvHtml5', 'excel', 'pdf', 'print'),
+                             initComplete = JS(semantic_popupJS),
+                             paging = FALSE,
+                             scrollY = "60vh", # 60% of window height, otherwise will just a few rows in size
                              ...) {
+  options <- list(dom = dom, buttons = buttons, initComplete = initComplete, paging = paging, scrollY = scrollY)
   datatable(data, fillContainer = fillContainer, extensions = extensions, options = options, ... )
 }
 # by default, have export/print buttons, only render what is visible
@@ -189,7 +191,7 @@ ui <- dashboardPagePlus(
     title = "Daily Measure"
   ),
   
-  dashboardSidebar(
+  sidebar = dashboardSidebar(
     sidebarMenu(
       menuItem("Zostavax", tabName = "zostavax"),
       menuItem("Bowel Cancer Screening", tabName = "fobt"),
@@ -200,61 +202,13 @@ ui <- dashboardPagePlus(
     )
   ),
   
-  dashboardBody(
-    tags$head(
-      # stylesheets from fomantic.ui (a fork of semantic.ui)
-      # Note that this is a specially edited version of semantic.css that is provided with fomantic
-      # The 'popup' component does not work without some code provided in the initial header of semantic.css
-      # However, I have removed a lot of margin/padding/font re-definition that is included in the header,
-      # which disturbs the layout of shiny/flexdashboard
-      tags$link(rel = "stylesheet", type = "text/css", href = "./fomantic_components.css"),
-      # defining additional fomantic JS popup initialization in the header does not work.
-      # Popup initialization does work inside DataTables
-      tags$script(src = "./fomantic.js"),
-      # Pushes the export/save buttons for datatables to the right
-      # and provide padding on the top
-      tags$style(HTML(".dataTables_wrapper .dt-buttons { float:none;  
-                      text-align:right;
-                      padding-top:7px;
-                      }"))
-    ),
-    
-    tabItems(
-      tabItem(tabName = "zostavax",
-              h2("Zostavax"),
-              fluidRow(DTOutput("zostavax_dt"))
-              ),
-      tabItem(tabName = "fobt",
-              h2("Bowel cancer screening"),
-              DTOutput("fobt_dt")
-      ),
-      tabItem(tabName = "billings",
-              h2("Billings"),
-              DTOutput("billings_dt")
-      ),
-      tabItem(tabName = "cdm",
-              h2("Chronic Disease Management items"),
-              DTOutput("cdm_dt")
-      ),
-      tabItem(tabName = "appointments",
-              h2("Appointments"),
-              DTOutput("appointments_dt")
-      ),
-      tabItem(tabName = "test",
-              DTOutput("test_dt")
-      )
-    )
-  ),
-  
-  # Application title
-
   # Sidebar with a slider input for number of bins 
   rightsidebar = rightSidebar(
     background = "dark",
     rightSidebarTabContent(
-      id=1,
+      id = 1,
       title = "Appointment Details",
-      icon = "calendar-alt",
+      icon = "desktop",
       active = TRUE,
       
       # appointment date range
@@ -284,6 +238,58 @@ ui <- dashboardPagePlus(
                  actionButton('toggle_clinician_list', 'Select All/None', icon('check-square'), class = 'btn btn-primary'))
       )
       
+    )
+  ),
+  
+  dashboardBody(
+    tags$head(
+      # stylesheets from fomantic.ui (a fork of semantic.ui)
+      # Note that this is a specially edited version of semantic.css that is provided with fomantic
+      # The 'popup' component does not work without some code provided in the initial header of semantic.css
+      # However, I have removed a lot of margin/padding/font re-definition that is included in the header,
+      # which disturbs the layout of shiny/flexdashboard
+      tags$link(rel = "stylesheet", type = "text/css", href = "./fomantic_components.css"),
+      # defining additional fomantic JS popup initialization in the header does not work.
+      # Popup initialization does work inside DataTables
+      tags$script(src = "./fomantic.js"),
+      # Pushes the export/save buttons for datatables to the right
+      # and provide padding on the top
+      tags$style(HTML(".dataTables_wrapper .dt-buttons { float:none;  
+                      text-align:right;
+                      padding-top:7px;
+                      }"))
+    ),
+    
+    tabItems(
+      tabItem(tabName = "zostavax",
+              fluidRow(column(width = 12, align = "center", h2("Zostavax"))),
+              fluidRow(column(width = 12, DTOutput("zostavax_dt")))
+              ),
+      tabItem(tabName = "fobt",
+              column(width=12, align="center",
+                     h2("Bowel cancer screening")
+                     ),
+              fluidRow(box(DTOutput("fobt_dt", height = "100%"), width = 12))
+      ),
+      tabItem(tabName = "billings",
+              fluidRow(
+                box(height="100%", width=12,
+                  h2("Billings"),
+                  DTOutput("billings_dt", height = "100%")))
+      ),
+      tabItem(tabName = "cdm",
+              fluidRow(column(width=12,
+                              box(DTOutput("cdm_dt"), width = NULL)))
+      ),
+      tabItem(tabName = "appointments",
+              br(),
+              column(width = 12, h2("Appointments")),
+              br(),
+              fluidRow(column(width = 12, DTOutput("appointments_dt")))
+      ),
+      tabItem(tabName = "test",
+              DTOutput("test_dt")
+      )
     )
   )
 )

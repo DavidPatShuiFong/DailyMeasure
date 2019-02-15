@@ -1,6 +1,5 @@
 # DailyMeasure
-# (C) David Fong, 2019
-
+# (C) David Fong
 
 library(shiny)
 library(shinyjs)
@@ -9,61 +8,19 @@ library(shinydashboardPlus) # version 0.6.0+ preferred (development version as o
 library(shinyWidgets)
 
 library(tidyverse)
-library(dbplyr)  # database interaction for dplyr
-library(DBI)     # R database interface
-library(odbc)    # the database backend handler for Microsoft SQL Server
-library(RSQLite) # the database backend handler for SQLite
-library(pool)    # database pool
+library(dbplyr) # database interaction for dplyr
+library(DBI)    # R database interface
+library(odbc)   # the database backend handler for Microsoft SQL Server
+library(pool)   # database pool
 
 library(configr)    # config file read/write
 library(base64enc)  # simple obfuscation for passwords
 library(DT)         # pretty-print tables/tibbles
 library(lubridate)  # time handling library
-
 library(DTedit)     # datatable edit wrapper. install with devtools::install_github('jbryer/DTedit')
 
+
 # read config files
-
-local_config <- NULL
-config_pool <- NULL
-
-if (is.yaml.file('./DailyMeasure_cg.yaml')) {
-  # if config file exists and is a YAML-type file
-  local_config <- read.config("./DailyMeasure_cfg.yaml") #  config in local location
-} else {
-  # local config file does not exist. possibly first-run
-  local_config <- list()
-  local_config$config_file <- c("./DailyMeasure_cfg.sqlite") # main configuration file, could be set to 'common location'
-  # write the (minimalist) local config file
-  write.config(local_config, file.path = "./DailyMeasure_cfg.yaml", write.type = "yaml")
-}
-
-if (file.exists(local_config$config_file)) {
-  config_pool <- tryCatch(dbPool(RSQLite::SQLite(), dbname = local_config$config_file),
-                          error = function(e) {NULL})
-} else {
-  # if the config database doesn't exist, then create it (note create = TRUE option)
-  config_pool <- tryCatch(dbPool(RSQLite::SQLite(), dbname = local_config$config_file, create = TRUE),
-                          error = function(e) {NULL})
-  # create table 'Server' to hold Server settings (this table will hold only one row)
-  dbWriteTable(config_pool, "Server",
-               data.frame(Address=character(), Database=character(),
-                          UserID=character(), dbPassword=character()))
-  # create table 'Location' to hold Location settings
-  dbWriteTable(config_pool, "Location",
-               data.frame(Name = character(), Description = character(), stringsAsFactors = FALSE))
-  # create table 'Users' to hold user settings
-  dbWriteTable(config_pool, "Users",
-               data.frame(Fullname = character(), AuthIdentity = character(), Location = character(),
-                          Globalview = logical(), Expert = logical(), Admin = logical(),
-                          stringsAsFactors = FALSE))
-}
-
-BPdatabase <- config_pool %>% tbl("Server")
-PracticeLocations <- config_pool %>% tbl("Location")
-UserConfig <- config_pool %>% tbl("Users")
-
-poolClose(config_pool)
 
 if (is.yaml.file('./DailyDash_cfg.yaml')) {
   # if config file exists and is a YAML-type file
@@ -83,9 +40,6 @@ if (is.yaml.file('./DailyDash_cfg.yaml')) {
   # config$dbpassword <-  character()   # password for the database user
   config$practice_locations <-  data.frame(Name = character(), Description = character(),
                                            stringsAsFactors = FALSE) 
-  
-  #config$practice_locations <-  data.frame(Name = character(), Description = character(),
-  #                                         stringsAsFactors = FALSE) 
   # list of practice locations, or practitioner groups
   config$users <- data.frame(Fullname = character(),
                              AuthIdentity = character(),  # authentication identity
@@ -104,8 +58,37 @@ pool <- tryCatch(dbPool(odbc::odbc(), driver = "SQL Server",
                  error = function(e) {NULL}
 )
 
+# database table setup
+# initially set to NULL
+
+users <- NULL
+locations <- NULL
+patients <- NULL
+investigations <- NULL
+appointments <- NULL
+immunizations <- NULL
+preventive_health <- NULL
+correspondenceIn <- NULL
+reportValues <- NULL
+invoices <- NULL
+services <- NULL
+history <- NULL
+locations <- NULL
+
 
 # function setup
+
+# list of locations available in appointment picker
+# returns all locations in configuration, and add 'All'
+location_list <- function() {
+  locations <- data.frame(Name = c('All'))
+  # add 'All' to (unique) locations list
+  if (!is.null(config$practice_locations)) {
+    locations <- rbind(locations, config$practice_locations %>% select(c('Name')) %>% unique())
+  }
+  return(locations$Name)
+}
+
 
 # fomantic (semantic.ui) string functions
 
@@ -158,9 +141,9 @@ semantic_button <- function(button, colour="", popuptext = NA, popuphtml = NA) {
 semantic_popupJS <- c("window.onload = function() {$('.ui.button') .popup({on: 'hover'});
                       $('.ui.tag.label') .popup({on: 'hover'})
                       }")
-
 # (1) necessary for semantic/fomantic JS popups. included directly in datatables options
 # (2) provide padding for export/print buttons
+
 datatable_styled <- function(data, fillContainer = TRUE,
                              extensions = c('Buttons', 'Scroller', 'Responsive'),
                              dom = 'frltiBp',
@@ -198,9 +181,10 @@ hrmin <- function(t) {
   sprintf('%02d:%02d', td@hour, td@minute)
 }
 
+
 # Define UI for application that draws a histogram
 ui <- dashboardPagePlus(
-
+  
   header = dashboardHeaderPlus(
     enable_rightsidebar = TRUE,
     rightSidebarIcon = "bars",
@@ -214,7 +198,6 @@ ui <- dashboardPagePlus(
       menuItem("Billings", tabName = "billings"),
       menuItem("CDM items", tabName = "cdm"),
       menuItem("Appointments", tabName = "appointments"),
-      menuItem("Configuration", tabName = "configuration"),
       menuItem("Test", tabName = "test")
     )
   ),
@@ -230,6 +213,8 @@ ui <- dashboardPagePlus(
       
       # appointment date range
       wellPanel(
+        useShinyjs(rmd = TRUE),
+        
         dateInput('date1', label = 'From:', format='D dd/M/yyyy', min = Sys.Date()-4000, max = Sys.Date()+180),
         dateInput('date2', label = 'To:', format='D dd/M/yyyy', min = Sys.Date()-4000, max = Sys.Date()+180),
         # range of dates, by default will be 'today'
@@ -244,7 +229,7 @@ ui <- dashboardPagePlus(
       
       # clinician list
       wellPanel(
-        uiOutput('locationList'),
+        selectInput(inputId = 'location', label = 'Practice location', choices = location_list(), selected = 'All'),
         # list of practice sites
         uiOutput('clinicianList'),
         # list of clinicians at the currently chosen practice site
@@ -266,10 +251,7 @@ ui <- dashboardPagePlus(
       tags$link(rel = "stylesheet", type = "text/css", href = "./fomantic_components.css"),
       # defining additional fomantic JS popup initialization in the header does not work.
       # Popup initialization does work inside DataTables
-      # use of 'full' fomantic.js interferes with the popups from DTedit
-      # minimum JS required for JS popups is popup.js and transition.js
-      tags$script(src = "./popup.js"),
-      tags$script(src = "./transition.js"),
+      tags$script(src = "./fomantic.js"),
       # Pushes the export/save buttons for datatables to the right
       # and provide padding on the top
       tags$style(HTML(".dataTables_wrapper .dt-buttons { float:none;  
@@ -284,65 +266,36 @@ ui <- dashboardPagePlus(
               fluidRow(column(width = 12, DTOutput("zostavax_dt")))
               ),
       tabItem(tabName = "fobt",
-              fluidRow(column(width = 12, align = "center", h2("Bowel cancer screening"))),
-              fluidRow(column(width = 12, DTOutput("fobt_dt")))
+              column(width=12, align="center",
+                     h2("Bowel cancer screening")
+                     ),
+              fluidRow(box(DTOutput("fobt_dt", height = "100%"), width = 12))
       ),
       tabItem(tabName = "billings",
-              fluidRow(column(width = 12, align = "center", h2("Billings"))),
-              fluidRow(column(width = 12, DTOutput("billings_dt")))
+              fluidRow(
+                box(height="100%", width=12,
+                  h2("Billings"),
+                  DTOutput("billings_dt", height = "100%")))
       ),
       tabItem(tabName = "cdm",
-              fluidRow(column(width = 12, align = "center", h2("Chronic Disease Management items"))),
-              fluidRow(column(width = 12, DTOutput("cdm_dt")))
+              fluidRow(column(width=12,
+                              box(DTOutput("cdm_dt"), width = NULL)))
       ),
       tabItem(tabName = "appointments",
-              fluidRow(column(width = 12, align = "center", h2("Appointments"))),
+              br(),
+              column(width = 12, h2("Appointments")),
+              br(),
               fluidRow(column(width = 12, DTOutput("appointments_dt")))
       ),
-      tabItem(tabName = "configuration",
-              fluidRow(
-                tabBox(
-                  id = "tab_config",
-                  title = "Configuration",
-                  width = 12,
-                  height = "85vh",
-                  tabPanel(
-                    # Microsoft SQL server details
-                    title = "Microsoft SQL Server details",
-                    column(width=12,
-                           wellPanel(
-                             uiOutput('server_details'),
-                             actionButton('update_database', 'Update', icon('refresh'), class = 'btn btn-primary'),
-                             # Database details not changed until the 'Update' button is clicked
-                             helpText("After adjusting datebase details, click the 'Update' button")
-                           ))),
-                  tabPanel(
-                    # Practice locations or groups
-                    title = "Practice locations/groups",
-                    column(width=12,
-                           uiOutput("locations_dt")
-                           )),
-                  tabPanel(
-                    # User settings and permissions
-                    title = "User settings and permissions",
-                    column(width=12, DTOutput("users_dt")),
-                    column(width=12, actionButton("add_user","Add"),
-                           actionButton("edit_user","Edit"),
-                           actionButton("delete_user","Delete"))
-                  )
-                )
-              )),
       tabItem(tabName = "test",
-              fluidRow(column(width = 12, align = "center", h2("Test frame"))),
-              fluidRow(column(width = 12, DTOutput("test_dt")))
+              DTOutput("test_dt")
       )
     )
   )
 )
 
 # Define server logic required to draw a histogram
-server <- function(input, output, session) {
-  
+server <- function(session, input, output) {
   db <- reactiveValues()
   db$version <- 0
   
@@ -434,23 +387,6 @@ server <- function(input, output, session) {
     # change date range to today
     click('update_date')
     # and click the 'update' button
-  })
-  
-  # list of locations available in appointment picker
-  # returns all locations in configuration, and add 'All'
-  location_list <- function() {
-    locations <- data.frame(Name = c('All'))
-    # add 'All' to (unique) locations list
-    if (!is.null(config$practice_locations)) {
-      locations <- rbind(locations, config$practice_locations %>% select(c('Name')) %>% unique())
-    }
-    cat(file = stderr(), "location_list")
-    cat(file = stderr(), locations$Name)
-    return(locations$Name)
-  }
-  
-  output$locationList <- renderUI({
-    selectInput(inputId = 'location', label = 'Practice location', choices = location_list(), selected = 'All')
   })
   
   # list of clinicians shown depends on 'practice location' chosen
@@ -764,111 +700,6 @@ server <- function(input, output, session) {
                                         options = list(initComplete = JS(semantic_popupJS)),
                                         escape = FALSE,
                                         fillContainer = FALSE)})
-  
-  # database configuration tab
-  
-  output$server_details <- renderUI({
-    tagList(
-      textInput('server_address', 'Server address', config$server),
-      textInput('database_name', 'Database name', config$database),
-      textInput('database_user', 'Database user', config$userid),
-      textInput('database_password', 'Database password', config$dbpassword)
-      )
-  })
-
-  
-  update_database_details <- observeEvent(input$update_database, {
-    tmp_pool <- tryCatch(dbPool(odbc::odbc(), driver = "SQL Server",
-                                server = isolate(input$server_address), database = isolate(input$database_name),
-                                uid = isolate(input$database_user), pwd = isolate(input$database_password)),
-                         error = function(e) {NULL})
-    if (is.environment(tmp_pool)) {
-      config$server <- isolate(input$server_address)
-      config$database <- isolate(input$database_name)
-      config$userid <- isolate(input$database_user)
-      config$dbpassword <- isolate(input$database_password)
-      if (is.environment(pool)) {
-        poolClose(pool) # close database link if previously successfully initialized
-      }
-      pool <- tmp_pool
-      initialize_databases(pool)
-    }
-    
-  })
-  
-  # Practice locations/groups 
-  
-  
-  # callback functions for DTEdit
-  ## locations
-  
-  ### callback definitions for DTedit location
-  locations.insert.callback <- function(data, row) {
-    config$practice_locations <- data
-    updateSelectInput(session, inputId = 'location', choices = location_list())
-    return(config$practice_locations)
-  }
-  
-  locations.update.callback <- function(data, olddata, row) {
-    config$practice_locations <- data
-    updateSelectInput(session, inputId = 'location', choices = location_list())
-    return(config$practice_locations)
-  }
-  
-  locations.delete.callback <- function(data, row) {
-    config$practice_locations <- data[-c(row),]
-    updateSelectInput(session, inputId = 'location', choices = location_list())
-    return(config$practice_locations)
-  }
-  
-  # depends on package DTedit
-  dtedit(input, output,
-         name = 'locations_dt',
-         thedata = config$practice_locations,
-         edit.label.cols = c('Practice Locations', 'Description'),
-         show.copy = FALSE,
-         input.types = c(Name = 'textInput', Description = 'textInput'),
-         callback.update = locations.update.callback,
-         callback.insert = locations.insert.callback,
-         callback.delete = locations.delete.callback
-  )
-  
-  output$users_dt <- renderDT({config$users})
-  
-  add_userModal <- function(location_list, failed = FALSE) {
-    modalDialog(
-      selectInput("new_user_Fullname","User name", db$users$Fullname),
-      textInput("new_user_AuthIdentity", "Authentication Identity", placeholder = "Used for identity authentication"),
-      selectizeInput("new_user_Location", "User location", choices = location_list),
-      checkboxInput("new_user_Expert","Expert", FALSE),
-      checkboxInput("new_user_Global","Global", FALSE),
-      checkboxInput("new_user_Admin","Admin", FALSE),
-      footer = tagList(
-        modalButton("Cancel"),
-        actionButton("new_user_ok","Add")
-      )
-    )
-  }
-  
-  observeEvent(input$add_user, {
-    showModal(add_userModal(isolate(c("a", "b", "c"))))
-  })
-  
-#  dtedit(input, output,
-#         name = 'users_dt',
-#         thedata = config$users,
-#         edit.cols = c('Fullname', 'AuthIdentity', 'Location', 'Expert', 'Globalview', 'Admin'),
-#         show.copy = FALSE,
-#         input.types = c(AuthIdentity = 'textInput'),
-#         input.choices = list(Fullname = unlist(db$users$Fullname),
-#                              Location = unlist(config$practice_locations$name),
-#
-#         input.choices = list(Expert = unlist(c("No", "Yes")),
-#                              GlobalView = unlist(c("No", "Yes")),
-#                              Admin = unlist(c("No", "Yes"))),
-#         callback.update = users.update.callback,
-#         callback.insert = users.insert.callback,
-#         callback.delete = users.delete.callback
   
 }
 

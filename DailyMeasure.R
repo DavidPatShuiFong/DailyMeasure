@@ -250,7 +250,8 @@ ui <- dashboardPagePlus(
                     column(width=12,
                            wellPanel(
                              uiOutput('server_details'),
-                             actionButton('update_database', 'Update', icon('refresh'), class = 'btn btn-primary'),
+                             actionButton('update_database', 'Update', icon('refresh'),
+                                          class = 'btn btn-primary'),
                              # Database details not changed until the 'Update' button is clicked
                              helpText("After adjusting database details, click the 'Update' button")
                            ))),
@@ -296,7 +297,8 @@ server <- function(input, output, session) {
   } else {
     # local config file does not exist. possibly first-run
     # local_config <- list()
-    local_config$config_file <- c("./DailyMeasure_cfg.sqlite") # main configuration file, could be set to 'common location'
+    local_config$config_file <- c("./DailyMeasure_cfg.sqlite") 
+    # main configuration file, could be set to 'common location'
     # write the (minimalist) local config file
     write.config(local_config, file.path = "./DailyMeasure_cfg.yaml", write.type = "yaml")
   }
@@ -305,11 +307,14 @@ server <- function(input, output, session) {
   
   observeEvent(configuration_file_path(), ignoreNULL = TRUE, {
     if (file.exists(isolate(configuration_file_path()))) {
-      config_pool(tryCatch(dbPool(RSQLite::SQLite(), dbname = isolate(configuration_file_path())),
+      config_pool(tryCatch(dbPool(RSQLite::SQLite(),
+                                  dbname = isolate(configuration_file_path())),
                                error = function(e) {NULL}))
     } else {
       # if the config database doesn't exist, then create it (note create = TRUE option)
-      config_pool(tryCatch(dbPool(RSQLite::SQLite(), dbname = isolate(configuration_file_path()), create = TRUE),
+      config_pool(tryCatch(dbPool(RSQLite::SQLite(), 
+                                  dbname = isolate(configuration_file_path()),
+                                  create = TRUE),
                                error = function(e) {NULL}))
       # create table 'Server' to hold Server settings (this table will hold only one row)
       dbWriteTable(config_pool(), "Server",
@@ -317,10 +322,12 @@ server <- function(input, output, session) {
                               UserID=character(), dbPassword=character()))
       # create table 'Location' to hold Location settings
       dbWriteTable(config_pool(), "Location",
-                   data.frame(Name = character(), Description = character(), stringsAsFactors = FALSE))
+                   data.frame(Name = character(), Description = character(),
+                              stringsAsFactors = FALSE))
       # create table 'Users' to hold user settings
       dbWriteTable(config_pool(), "Users",
-                   data.frame(Fullname = character(), AuthIdentity = character(), Location = character(),
+                   data.frame(Fullname = character(), AuthIdentity = character(),
+                              Location = character(),
                               Globalview = logical(), Expert = logical(), Admin = logical(),
                               stringsAsFactors = FALSE))
     }
@@ -472,13 +479,15 @@ server <- function(input, output, session) {
     locations <- data.frame(Name = c('All'))
     # add 'All' to (unique) locations list
     if (!is.null(config$practice_locations)) {
-      locations <- rbind(locations, config$practice_locations %>% select(c('Name')) %>% unique())
+      locations <- rbind(locations, 
+                         config$practice_locations %>% select(c('Name')) %>% unique())
     }
     return(locations$Name)
   }
   
   output$locationList <- renderUI({
-    selectInput(inputId = 'location', label = 'Practice location', choices = location_list(), selected = 'All')
+    selectInput(inputId = 'location', label = 'Practice location',
+                choices = location_list(), selected = 'All')
   })
   
   # list of clinicians shown depends on 'practice location' chosen
@@ -499,7 +508,8 @@ server <- function(input, output, session) {
   output$clinicianList <- renderUI({
     choice_list <- clinician_choice_list()
     chosen_list <- input$clinicians # retain previous selections
-    checkboxGroupInput('clinicians', label = 'Clinician', choices = choice_list, selected = chosen_list)
+    checkboxGroupInput('clinicians', label = 'Clinician',
+                       choices = choice_list, selected = chosen_list)
   })
   
   toggle_clinicians <- observeEvent(input$toggle_clinician_list, {
@@ -519,59 +529,72 @@ server <- function(input, output, session) {
       filter(Age >= 70 & Age <= 80) %>% # from age 70 to 80 years inclusive
       left_join(db$immunizations %>%
                   # those who have had the zostavax vaccine
-                  filter((VaccineName %LIKE% "%zostavax%") | (VaccineID == 103)), copy = TRUE) %>%
+                  filter((VaccineName %LIKE% "%zostavax%") | (VaccineID == 103)),
+                copy = TRUE) %>%
       left_join(db$preventive_health %>%
                   # those who have been removed from the reminder system for Zostavax
-                  filter(ITEMID == 15), by = c('InternalID' = 'INTERNALID'), copy = TRUE) %>%
+                  filter(ITEMID == 15), by = c('InternalID' = 'INTERNALID'),
+                copy = TRUE) %>%
       collect() %>%
       mutate(GivenDate = as.Date(substr(GivenDate, 1, 10))) %>%
       mutate(GivenDate = if_else(GivenDate <= AppointmentDate, GivenDate, as.Date(NA))) %>%
-      # only include immunizations given up to date of appointment, if there are any immunizations at all
-      # note that 'if_else' is vectorize, demanding same datataype for TRUE/FALSE alternatives
+      # only include immunizations given up to date of appointment,
+      # if there are any immunizations at all
+      # note that 'if_else' is vectorize,
+      # demanding same datatype for TRUE/FALSE alternatives
       # 'ifelse' does not preserve date type in this circumstance
-      mutate(zostavaxtag = semantic_tag(paste0(' Zostavax '),
-                                        colour = if_else(is.na(GivenDate),
-                                                         if_else(is.na(ITEMID), c('red'), c('purple')),
-                                                         c('green')),
-                                        # red if not given, purple if removed from herpes zoster vax reminders
-                                        # and green if has had the vax
-                                        popuphtml = paste0("<h4>",
-                                                           if_else(is.na(ITEMID),
-                                                                   paste0('Date : ', format(GivenDate)),
-                                                                   'Removed from herpes zoster immunization reminders'),
-                                                           "</h4>")))
+      mutate(zostavaxtag = 
+               semantic_tag(paste0(' Zostavax '),
+                            colour = 
+                              if_else(is.na(GivenDate),
+                                      if_else(is.na(ITEMID), c('red'), c('purple')),
+                                      c('green')),
+                            # red if not given, purple if removed from herpes zoster vax reminders
+                            # and green if has had the vax
+                            popuphtml = 
+                              paste0("<h4>",
+                                     if_else(is.na(ITEMID),
+                                             paste0('Date : ', format(GivenDate)),
+                                             'Removed from herpes zoster immunization reminders'),
+                                     "</h4>")))
   })
   
-  output$zostavax_dt <- renderDT({datatable_styled(zostavax_vax_list() %>%
-                                                     select(c('Patient', 'AppointmentDate', 'AppointmentTime',
-                                                              'Provider', 'DOB', 'Age', 'zostavaxtag')),
-                                                   escape = c(7),
-                                                   colnames = c('Zostavax' = 'zostavaxtag'))
+  output$zostavax_dt <- renderDT({
+    datatable_styled(zostavax_vax_list() %>%
+                       select(c('Patient', 'AppointmentDate', 'AppointmentTime',
+                                'Provider', 'DOB', 'Age', 'zostavaxtag')),
+                     escape = c(7),
+                     colnames = c('Zostavax' = 'zostavaxtag'))
   })
   
   # Bowel cancer screening
-  bowel_cancer_screen_terms <- c("(VALUES('%FOB%'), ('%OCCULT%'), ('%FAECAL HUMAN HAEMOGLOBIN%'),
-                               ('%OCB NATIONAL SCREENING%'), ('%FHB%'), ('%FAECAL BLOOD%'),
-                                 ('%FAECAL IMMUNOCHEMICAL TEST%'), ('%FAECAL HAEMOGLOBIN%'),
-                                 ('%COLONOSCOPY%'), ('%COLONOSCOPE%')) AS tests(fobtnames)")
+  bowel_cancer_screen_terms <- 
+    c("(VALUES('%FOB%'), ('%OCCULT%'), ('%FAECAL HUMAN HAEMOGLOBIN%'),
+       ('%OCB NATIONAL SCREENING%'), ('%FHB%'), ('%FAECAL BLOOD%'),
+       ('%FAECAL IMMUNOCHEMICAL TEST%'), ('%FAECAL HAEMOGLOBIN%'),
+       ('%COLONOSCOPY%'), ('%COLONOSCOPE%')) AS tests(fobtnames)")
   
-  fobt_investigation_query <- paste('SELECT InternalID, Collected, TestName FROM dbo.BPS_Investigations
-                                    INNER JOIN', bowel_cancer_screen_terms,
-                                    'ON TestName LIKE tests.fobtnames')
+  fobt_investigation_query <- 
+    paste('SELECT InternalID, Collected, TestName FROM dbo.BPS_Investigations
+           INNER JOIN', bowel_cancer_screen_terms,
+          'ON TestName LIKE tests.fobtnames')
   # SQL code to find investigations which could be bowel cancer screening items
   
-  fobt_letter_subject_query <- paste('SELECT InternalID, CorrespondenceDate, Subject FROM dbo.BPS_CorrespondenceIn
-                                     INNER JOIN', bowel_cancer_screen_terms,
-                                     'ON Subject LIKE tests.fobtnames')
+  fobt_letter_subject_query <- 
+    paste('SELECT InternalID, CorrespondenceDate, Subject FROM dbo.BPS_CorrespondenceIn
+           INNER JOIN', bowel_cancer_screen_terms,
+          'ON Subject LIKE tests.fobtnames')
   
-  fobt_letter_detail_query <- paste('SELECT InternalID, CorrespondenceDate, Detail FROM dbo.BPS_CorrespondenceIn
-                                    INNER JOIN', bowel_cancer_screen_terms,
-                                    'ON Detail LIKE tests.fobtnames')
+  fobt_letter_detail_query <- 
+    paste('SELECT InternalID, CorrespondenceDate, Detail FROM dbo.BPS_CorrespondenceIn
+           INNER JOIN', bowel_cancer_screen_terms,
+          'ON Detail LIKE tests.fobtnames')
   
-  fobt_result_query <- paste("SELECT InternalID, ReportDate, ResultName FROM dbo.BPS_ReportValues 
-                           WHERE LoincCode IN ('2335-8','27396-1','14563-1','14564-9','14565-6',
-                         	                     '12503-9','12504-7','27401-9','27925-7','27926-5',
-	                                             '57905-2','56490-6','56491-4','29771-3')")
+  fobt_result_query <-
+    paste("SELECT InternalID, ReportDate, ResultName FROM dbo.BPS_ReportValues 
+            WHERE LoincCode IN ('2335-8','27396-1','14563-1','14564-9','14565-6',
+                         	      '12503-9','12504-7','27401-9','27925-7','27926-5',
+	                              '57905-2','56490-6','56491-4','29771-3')")
   
   screen_fobt_list <- reactive({
     appointments_list() %>%
@@ -581,15 +604,18 @@ server <- function(input, output, session) {
   screen_fobt_ix <- reactive({
     left_join(screen_fobt_list(),
               bind_rows(inner_join(screen_fobt_list(),
-                                   dbGetQuery(pool, fobt_investigation_query) %>% collect() %>%
+                                   dbGetQuery(pool, fobt_investigation_query) %>% 
+                                     collect() %>%
                                      rename(TestDate = Collected),
                                    by = 'InternalID'),
                         inner_join(screen_fobt_list(),
-                                   dbGetQuery(pool, fobt_letter_subject_query) %>% collect() %>%
+                                   dbGetQuery(pool, fobt_letter_subject_query) %>% 
+                                     collect() %>%
                                      rename(TestDate = CorrespondenceDate, TestName = Subject),
                                    by = 'InternalID'),
                         inner_join(screen_fobt_list(),
-                                   dbGetQuery(pool, fobt_letter_detail_query) %>% collect() %>%
+                                   dbGetQuery(pool, fobt_letter_detail_query) %>%
+                                     collect() %>%
                                      rename(TestDate = CorrespondenceDate, TestName = Detail),
                                    by = 'InternalID'),
                         inner_join(screen_fobt_list(),
@@ -597,9 +623,12 @@ server <- function(input, output, session) {
                                      rename(TestDate = ReportDate, TestName = ResultName),
                                    by = 'InternalID')
               ) %>%
-                mutate(TestDate = as.Date(substr(TestDate, 1, 10))) %>%  # remove time from date
-                group_by(InternalID) %>% # group by patient ID (need most recent investigation for each patient)
-                filter(TestDate == max(TestDate, na.rm = TRUE))  # only keep the latest(/recent) dated investigation
+                mutate(TestDate = as.Date(substr(TestDate, 1, 10))) %>%  
+                # remove time from date
+                group_by(InternalID) %>% 
+                # group by patient ID (need most recent investigation for each patient)
+                filter(TestDate == max(TestDate, na.rm = TRUE))  
+              # only keep the latest(/recent) dated investigation
     )
   })
   
@@ -613,9 +642,10 @@ server <- function(input, output, session) {
                                           TRUE ~ 3)) %>%   # if up-to-date
                        replace_na(list(TestName = 'FOBT')) %>%
                        mutate(fobttag =
-                                semantic_tag(TestName,
-                                             colour = c('red', 'yellow', 'green')[OutOfDateTest],
-                                             popuphtml = paste0("<h4>Date : ", TestDate, "</h4>"))) %>%
+                                semantic_tag(
+                                  TestName,
+                                  colour = c('red', 'yellow', 'green')[OutOfDateTest],
+                                  popuphtml = paste0("<h4>Date : ", TestDate, "</h4>"))) %>%
                        select(c('Patient', 'AppointmentDate', 'AppointmentTime',
                                 'Provider', 'DOB', 'Age', 'fobttag')),
                      escape = c(7),
@@ -634,15 +664,19 @@ server <- function(input, output, session) {
   # filter to billings which are done on the same day as displayed appointments
   appointments_billings_sameday <- reactive({
     appointments_billings() %>%
-      filter(SERVICEDATE == AppointmentDate) %>%    # billings done on the same day as displayed appointments
-      select(c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider', 'MBSITEM', 'DESCRIPTION')) %>%
-      # need to preserve ApppointmentTime and Provider in the case where there are multiple apppointments
+      filter(SERVICEDATE == AppointmentDate) %>%    
+      # billings done on the same day as displayed appointments
+      select(c('InternalID', 'AppointmentDate', 'AppointmentTime',
+               'Provider', 'MBSITEM', 'DESCRIPTION')) %>%
+      # need to preserve ApppointmentTime and Provider
+      # in the case where there are multiple apppointments
       # for the patient in the same time period/day and providers
-      mutate(MBSITEM = semantic_button(MBSITEM,
-                                       colour = 'green',
-                                       popuphtml = paste0('<h4>', AppointmentDate,
-                                                          "</h3><p><font size=\'+0\'>",
-                                                          DESCRIPTION, '</p>'))) %>%
+      mutate(MBSITEM =
+               semantic_button(MBSITEM,
+                               colour = 'green',
+                               popuphtml = paste0('<h4>', AppointmentDate,
+                                                  "</h3><p><font size=\'+0\'>",
+                                                  DESCRIPTION, '</p>'))) %>%
       # change MBSITEMS into fomantic/semantic tags
       group_by(InternalID, AppointmentDate, AppointmentTime, Provider) %>%     
       # gathers item numbers on the same day into a single row
@@ -653,8 +687,10 @@ server <- function(input, output, session) {
   output$billings_dt <- renderDT({
     datatable_styled(appointments_filtered_time() %>%
                        left_join(appointments_billings_sameday(),
-                                 by = c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider')) %>%
-                       select(c('Patient', 'AppointmentDate', 'AppointmentTime', 'Provider', 'Status', 'Billings')),
+                                 by = c('InternalID', 'AppointmentDate',
+                                        'AppointmentTime', 'Provider')) %>%
+                       select(c('Patient', 'AppointmentDate', 'AppointmentTime',
+                                'Provider', 'Status', 'Billings')),
                      escape = c(6) # only interpret HTML for last column
     )
   }, server = TRUE)
@@ -682,16 +718,19 @@ server <- function(input, output, session) {
       # group by patient, apppointment and CDM type (name)
       filter(SERVICEDATE == max(SERVICEDATE, na.rm = TRUE)) %>% # only keep most recent service
       ungroup() %>%
-      mutate(mbstag = semantic_tag(MBSNAME,
-                                   colour = if_else(SERVICEDATE == -Inf,
-                                                    'red', # invalid date is '-Inf', means item not claimed yet
-                                                    if_else(interval(SERVICEDATE, AppointmentDate)<=years(1),
-                                                            'green',
-                                                            'yellow')),
-                                   popuphtml = paste0("<h4>Date : ", SERVICEDATE,
-                                                      "</h4><h6>Item : ", MBSITEM,
-                                                      "</h6><p><font size=\'+0\'>", DESCRIPTION, "</p>")
-      )) %>%
+      mutate(mbstag = 
+               semantic_tag(MBSNAME,
+                            colour =
+                              if_else(SERVICEDATE == -Inf,
+                                      'red', # invalid date is '-Inf', means item not claimed yet
+                                      if_else(interval(SERVICEDATE, AppointmentDate)<=years(1),
+                                              'green',
+                                              'yellow')),
+                            popuphtml =
+                              paste0("<h4>Date : ", SERVICEDATE,
+                                     "</h4><h6>Item : ", MBSITEM,
+                                     "</h6><p><font size=\'+0\'>", DESCRIPTION, "</p>")
+               )) %>%
       group_by(InternalID, AppointmentDate, AppointmentTime, Provider) %>%     
       # gathers item numbers on the same day into a single row
       summarise(cdm = paste(mbstag, collapse = "")) %>%
@@ -758,15 +797,18 @@ server <- function(input, output, session) {
     # changes times to more R (and visually) friendly formats
     appointments_filtered() %>%
       collect() %>% # force read of database required before mutations
-      mutate(AppointmentTime = hrmin(AppointmentTime), AppointmentDate = as.Date(substr(AppointmentDate,1,10))) %>%
+      mutate(AppointmentTime = hrmin(AppointmentTime), 
+             AppointmentDate = as.Date(substr(AppointmentDate,1,10))) %>%
       arrange(AppointmentDate, AppointmentTime)
   })
   
   appointments_list <- reactive({
     # add date of birth to appointment list
     appointments_filtered_time() %>%
-      left_join(db$patients, by = 'InternalID', copy = TRUE) %>%   # need patients database to access date-of-birth
-      select(c('Patient', 'InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider', 'DOB')) %>% 
+      left_join(db$patients, by = 'InternalID', copy = TRUE) %>%   
+      # need patients database to access date-of-birth
+      select(c('Patient', 'InternalID', 'AppointmentDate',
+               'AppointmentTime', 'Provider', 'DOB')) %>% 
       mutate(DOB = as.Date(substr(DOB, 1, 10))) %>%
       mutate(Age = calc_age(DOB, AppointmentDate))
   })
@@ -777,20 +819,21 @@ server <- function(input, output, session) {
   },
   server = FALSE)
   
-  output$test_dt <- renderDT({datatable(data.frame(a=c(2,3,68),
-                                                   b=c('<span class="huge green positive ui tag label"><span data-tooltip="check me" data-variation="huge">
+  output$test_dt <- 
+    renderDT({datatable(data.frame(a=c(2,3,68),
+                                   b=c('<span class="huge green positive ui tag label"><span data-tooltip="check me" data-variation="huge">
                                                  721
                                                  </span></span>
                                                  <span class="huge green positive ui tag label">723</span><span class="ui tag label">10990</span>',
-                                                       '<div class="huge ui negative button" data-tooltip="waiting ... "><i class="wheelchair loading icon"></i>
+                                       '<div class="huge ui negative button" data-tooltip="waiting ... "><i class="wheelchair loading icon"></i>
                                                  2715</div>',
-                                                       '<div class="huge ui button positive" data-variation="wide" data-html="<h1>
+                                       '<div class="huge ui button positive" data-variation="wide" data-html="<h1>
                                                  Cheese factory
                                                  </h1><font size=\'+0\'><b>Lots and lots</b> of information. make sure everything is <ins>complete</ins> on year after ... 12/Jan/2019</font>">GPMP</div>'
-                                                   )),
-                                        options = list(initComplete = JS(semantic_popupJS)),
-                                        escape = FALSE,
-                                        fillContainer = FALSE)})
+                                   )),
+                        options = list(initComplete = JS(semantic_popupJS)),
+                        escape = FALSE,
+                        fillContainer = FALSE)})
   
 
   # configuration file location tab
@@ -809,7 +852,8 @@ server <- function(input, output, session) {
   
   observeEvent(ignoreNULL = TRUE,input$choose_configuration_file, {
     if (!is.integer(input$choose_configuration_file)) {
-      # if input$choose_configuration_file is an integer, it is just the 'click' event on the filechoose button
+      # if input$choose_configuration_file is an integer,
+      # it is just the 'click' event on the filechoose button
       inFile <- parseFilePaths(volumes, input$choose_configuration_file)
       file_name <- paste(inFile$datapath)
       configuration_file_path(file_name)
@@ -834,8 +878,10 @@ server <- function(input, output, session) {
   
   update_database_details <- observeEvent(input$update_database, {
     tmp_pool <- tryCatch(dbPool(odbc::odbc(), driver = "SQL Server",
-                                server = isolate(input$server_address), database = isolate(input$database_name),
-                                uid = isolate(input$database_user), pwd = isolate(input$database_password)),
+                                server = isolate(input$server_address),
+                                database = isolate(input$database_name),
+                                uid = isolate(input$database_user),
+                                pwd = isolate(input$database_password)),
                          error = function(e) {NULL})
     if (is.environment(tmp_pool)) {
       config$server <- isolate(input$server_address)
@@ -893,7 +939,8 @@ server <- function(input, output, session) {
   add_userModal <- function(location_list, failed = FALSE) {
     modalDialog(
       selectInput("new_user_Fullname","User name", db$users$Fullname),
-      textInput("new_user_AuthIdentity", "Authentication Identity", placeholder = "Used for identity authentication"),
+      textInput("new_user_AuthIdentity", "Authentication Identity", 
+                placeholder = "Used for identity authentication"),
       selectizeInput("new_user_Location", "User location", choices = location_list),
       checkboxInput("new_user_Expert","Expert", FALSE),
       checkboxInput("new_user_Global","Global", FALSE),

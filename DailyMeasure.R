@@ -50,7 +50,8 @@ semantic_tag <- function(tag, colour="", popuptext = NA, popuphtml = NA) {
 }
 
 semantic_button <- function(button, colour="", popuptext = NA, popuphtml = NA) {
-  # returns a vector of buttons. user-defined colour and popuptext (tooltip) or popuphtml (HTML tooltip)
+  # returns a vector of buttons.
+  # user-defined colour and popuptext (tooltip) or popuphtml (HTML tooltip)
   # note that 'data-variation' is only available in the fomantic version of semantic.ui
   # as of writing, semantic.ui does not allow variation in text-size of javascript-free tags
   paste0('<span class="huge ', colour, ' ui button"',
@@ -85,9 +86,11 @@ datatable_styled <- function(data, fillContainer = TRUE,
                              buttons = c('copyHtml5', 'csvHtml5', 'excel', 'pdf', 'print'),
                              initComplete = JS(semantic_popupJS),
                              paging = FALSE,
-                             scrollY = "60vh", # 60% of window height, otherwise will just a few rows in size
+                             scrollY = "60vh", 
+                             # 60% of window height, otherwise will just a few rows in size
                              ...) {
-  options <- list(dom = dom, buttons = buttons, initComplete = initComplete, paging = paging, scrollY = scrollY)
+  options <- list(dom = dom, buttons = buttons, initComplete = initComplete,
+                  paging = paging, scrollY = scrollY)
   datatable(data, fillContainer = fillContainer, extensions = extensions, options = options, ... )
 }
 # by default, have export/print buttons, only render what is visible
@@ -148,8 +151,10 @@ ui <- dashboardPagePlus(
       
       # appointment date range
       wellPanel(
-        dateInput('date1', label = 'From:', format='D dd/M/yyyy', min = Sys.Date()-4000, max = Sys.Date()+180),
-        dateInput('date2', label = 'To:', format='D dd/M/yyyy', min = Sys.Date()-4000, max = Sys.Date()+180),
+        dateInput('date1', label = 'From:', format='D dd/M/yyyy',
+                  min = Sys.Date()-4000, max = Sys.Date()+180),
+        dateInput('date2', label = 'To:', format='D dd/M/yyyy',
+                  min = Sys.Date()-4000, max = Sys.Date()+180),
         # range of dates, by default will be 'today'
         actionButton('update_date', 'Update', icon('refresh'), class = 'btn btn-primary'),
         # date range not activated until the 'Update' button is clicked
@@ -178,8 +183,10 @@ ui <- dashboardPagePlus(
     tags$head(
       # stylesheets from fomantic.ui (a fork of semantic.ui)
       # Note that this is a specially edited version of semantic.css that is provided with fomantic
-      # The 'popup' component does not work without some code provided in the initial header of semantic.css
-      # However, I have removed a lot of margin/padding/font re-definition that is included in the header,
+      # The 'popup' component does not work without some code
+      # provided in the initial header of semantic.css
+      # However, I have removed a lot of margin/padding/font re-definition
+      # that is included in the header,
       # which disturbs the layout of shiny/flexdashboard
       tags$link(rel = "stylesheet", type = "text/css", href = "./fomantic_components.css"),
       # defining additional fomantic JS popup initialization in the header does not work.
@@ -234,14 +241,18 @@ ui <- dashboardPagePlus(
                              textOutput('configuration_file_details') # location of sqlite configuration file
                            ),
                            wellPanel(
-                             shinyFilesButton('choose_configuration_file', label = 'Choose configuration file',
-                                              title = "Choose configuration file (must end in '.sqlite')",
-                                              multiple = FALSE),
-                             #actionButton('choose_configuration_file', 'Choose configuration file', icon('refresh'),
-                            #              class = 'btn btn-primary'),
+                             shinyFilesButton(
+                               'choose_configuration_file',
+                               label = 'Choose configuration file',
+                               title = "Choose configuration file (must end in '.sqlite')",
+                               multiple = FALSE),
+                             # actionButton('choose_configuration_file',
+                             # 'Choose configuration file', icon('refresh'),
+                             #              class = 'btn btn-primary'),
                              actionButton('create_configuration_file', 'Create configuration file',
                                           class = 'btn btn-primary'),
-                             helpText("Choose location of an existing configuration file, or create a new configuration file")
+                             helpText("Choose location of an existing configuration file,
+                                      or create a new configuration file")
                            ))
                   ),
                   tabPanel(

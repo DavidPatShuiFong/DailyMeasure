@@ -299,8 +299,17 @@ server <- function(input, output, session) {
   config_pool <- reactiveVal()
   configuration_file_path <- reactiveVal()
   BPdatabase <- reactiveVal()
-  PracticeLocations <- reactiveVal()
+  PracticeLocations <- reactiveVal(value = data.frame(id = integer(),
+                                                      Name = character(),
+                                                      Description = character(),
+                                                      stringsAsFactors = FALSE))
+   # id needed for editing this dataframe later
+   # need default value for practice location filter interface initialization
   UserConfig <- reactiveVal()
+  
+  locations_dt_viewcols <- c("id", "Name", "Description")
+   # columns viewed in DTedit when adding/editing/removing locations
+   # 'id' is likely not necessary for end-users
   
   if (is.yaml.file('./DailyMeasure_cfg.yaml')) {
     # if config file exists and is a YAML-type file
@@ -333,7 +342,7 @@ server <- function(input, output, session) {
                               UserID=character(), dbPassword=character()))
       # create table 'Location' to hold Location settings
       dbWriteTable(config_pool(), "Location",
-                   data.frame(Name = character(), Description = character(),
+                   data.frame(id = integer(), Name = character(), Description = character(),
                               stringsAsFactors = FALSE))
       # create table 'Users' to hold user settings
       dbWriteTable(config_pool(), "Users",
@@ -348,6 +357,15 @@ server <- function(input, output, session) {
     BPdatabase(isolate(config_pool()) %>% tbl("Server"))
     PracticeLocations(isolate(config_pool()) %>% tbl("Location"))
     UserConfig(isolate(config_pool()) %>% tbl("Users"))
+    
+    locations_dtproxy <- DT::dataTableProxy("locations_dtdt")
+     # DTedit changes the name 'locations_dt' to 'locations_dtdt'
+    #DT::replaceData(locations_dtproxy, as.data.frame(isolate(PracticeLocations()))[,locations_dt_viewcols],
+     #               rownames = FALSE)
+    print(paste0("adjust locations_dt:", as.data.frame(isolate(PracticeLocations()))))
+    
+    # depends on package DTedit
+
   })
   
   # poolClose(isolate(config_pool()))
@@ -489,9 +507,11 @@ server <- function(input, output, session) {
   location_list <- function() {
     locations <- data.frame(Name = c('All'))
     # add 'All' to (unique) locations list
-    if (!is.null(config$practice_locations)) {
+    if (!is.null(isolate(PracticeLocations()))) {
+      # if there are any practice locations defined, then add their names
       locations <- rbind(locations, 
-                         config$practice_locations %>% select(c('Name')) %>% unique())
+                         as.data.frame(isolate(PracticeLocations()) %>% select(c("Name"))))
+                         # no protection against non-unique PracticeLocation names! 
     }
     return(locations$Name)
   }
@@ -510,9 +530,13 @@ server <- function(input, output, session) {
       if (!is.null(input$location)) { # only if initialized
         clinician_choice_list(
           if (isolate(input$location) == 'All')
-          {isolate(db$users$Fullname)} else
-          {db$users[db$users$Location == input$location,]$Fullname})
-        # note that 'ifelse' only returns result in the same 'shape' as the comparison statement
+          {isolate(db$users$Fullname)} else {
+            subset(db$users, Location == input$location)$Fullname
+             # initially, $Location might include a lot of NA,
+             # so db$users[db$users$Location == input$location,] will also return NAs
+            }
+          )
+          # note that 'ifelse' only returns result in the same 'shape' as the comparison statement
       }
     })
   
@@ -916,27 +940,66 @@ server <- function(input, output, session) {
   
   ### callback definitions for DTedit location
   locations.insert.callback <- function(data, row) {
-    config$practice_locations <- data
+    # adding a new practice location
+    print(paste("data:", data))
+    print(paste("PracticeLocations:", as.data.frame(isolate(PracticeLocations()))))
+    newid <- max(c(as.data.frame(PracticeLocations())$id, 0)) + 1
+     # initially, PracticeLocations$id might be an empty set, so need to append a '0'
+    data[row, ]$id <- newid
+
+    query <- paste0("INSERT INTO Location (id, Name, Description) VALUES (",
+                    "'", newid, "', ",
+                    "'", data[row,]$Name, "', ",
+                    "'", data[row,]$Description, "')"
+                    )
+    connection <- poolCheckout(config_pool()) # can't write with the pool
+    dbSendQuery(connection, query) # update database
+    poolReturn(connection)
+    
+    PracticeLocations(data) # update the dataframe in memory
     updateSelectInput(session, inputId = 'location', choices = location_list())
-    return(config$practice_locations)
+    
+    return(PracticeLocations())
   }
   
   locations.update.callback <- function(data, olddata, row) {
-    config$practice_locations <- data
+    # change (update) a practice location
+    query <- paste0("UPDATE Location SET ",
+                    "Name = '", data[row,]$Name, "', ",
+                    "Description = '", data[row,]$Description, "' ",
+                    "WHERE id = ", data[row,]$id
+                    )
+
+    #connection <- poolCheckout(config_pool()) # can't write with the pool
+    #dbSendQuery(connection, query) # update database
+    #poolReturn(connection)
+    
+    PracticeLocations(data)
     updateSelectInput(session, inputId = 'location', choices = location_list())
-    return(config$practice_locations)
+
+    return(PracticeLocations())
   }
   
   locations.delete.callback <- function(data, row) {
-    config$practice_locations <- data[-c(row),]
+    # delete a practice location
+    
+    query <- paste0("DELETE FROM Location WHERE id = ", data[row,]$id)
+    #connection <- poolCheckout(config_pool()) # can't write with the pool
+    #dbSendQuery(connection, query) # update database
+    #poolReturn(connection)
+    
+    PracticeLocations(data[-c(row),])
     updateSelectInput(session, inputId = 'location', choices = location_list())
-    return(config$practice_locations)
+    
+    return(PracticeLocations())
   }
-  
+
   # depends on package DTedit
   dtedit(input, output,
-         name = 'locations_dt',
-         thedata = config$practice_locations,
+         name = "locations_dt", # internally, DTedit will rename this to 'locations_dtdt'
+         thedata = isolate(as.data.frame(PracticeLocations())),
+         view.cols = locations_dt_viewcols, # no need to show 'id' in future
+         edit.cols = c("Name", "Description"),
          edit.label.cols = c('Practice Locations', 'Description'),
          show.copy = FALSE,
          input.types = c(Name = 'textInput', Description = 'textInput'),

@@ -130,6 +130,7 @@ ui <- dashboardPagePlus(
   
   sidebar = dashboardSidebar(
     sidebarMenu(
+      id = "sidebartabs",
       menuItem("Zostavax", tabName = "zostavax"),
       menuItem("Bowel Cancer Screening", tabName = "fobt"),
       menuItem("Billings", tabName = "billings"),
@@ -307,10 +308,6 @@ server <- function(input, output, session) {
    # need default value for practice location filter interface initialization
   UserConfig <- reactiveVal()
   
-  locations_dt_viewcols <- c("id", "Name", "Description")
-   # columns viewed in DTedit when adding/editing/removing locations
-   # 'id' is likely not necessary for end-users
-  
   if (is.yaml.file('./DailyMeasure_cfg.yaml')) {
     # if config file exists and is a YAML-type file
     local_config <- read.config("./DailyMeasure_cfg.yaml") #  config in local location
@@ -357,14 +354,6 @@ server <- function(input, output, session) {
     BPdatabase(isolate(config_pool()) %>% tbl("Server"))
     PracticeLocations(isolate(config_pool()) %>% tbl("Location"))
     UserConfig(isolate(config_pool()) %>% tbl("Users"))
-    
-    locations_dtproxy <- DT::dataTableProxy("locations_dtdt")
-     # DTedit changes the name 'locations_dt' to 'locations_dtdt'
-    #DT::replaceData(locations_dtproxy, as.data.frame(isolate(PracticeLocations()))[,locations_dt_viewcols],
-     #               rownames = FALSE)
-    print(paste0("adjust locations_dt:", as.data.frame(isolate(PracticeLocations()))))
-    
-    # depends on package DTedit
 
   })
   
@@ -938,6 +927,10 @@ server <- function(input, output, session) {
   # callback functions for DTEdit
   ## locations
   
+  locations_dt_viewcols <- c("id", "Name", "Description")
+  # columns viewed in DTedit when adding/editing/removing locations
+  # 'id' is likely not necessary for end-users
+  
   ### callback definitions for DTedit location
   locations.insert.callback <- function(data, row) {
     # adding a new practice location
@@ -995,19 +988,43 @@ server <- function(input, output, session) {
   }
 
   # depends on package DTedit
-  dtedit(input, output,
-         name = "locations_dt", # internally, DTedit will rename this to 'locations_dtdt'
-         thedata = isolate(as.data.frame(PracticeLocations())),
-         view.cols = locations_dt_viewcols, # no need to show 'id' in future
-         edit.cols = c("Name", "Description"),
-         edit.label.cols = c('Practice Locations', 'Description'),
-         show.copy = FALSE,
-         input.types = c(Name = 'textInput', Description = 'textInput'),
-         callback.update = locations.update.callback,
-         callback.insert = locations.insert.callback,
-         callback.delete = locations.delete.callback
-  )
+  create_locations_dt <- function() {
+    dtedit(input, output,
+           name = "locations_dt", # internally, DTedit will rename this to 'locations_dtdt'
+           thedata = isolate(as.data.frame(PracticeLocations())),
+           view.cols = locations_dt_viewcols, # no need to show 'id' in future
+           edit.cols = c("Name", "Description"),
+           edit.label.cols = c('Practice Locations', 'Description'),
+           show.copy = FALSE,
+           input.types = c(Name = 'textInput', Description = 'textInput'),
+           callback.update = locations.update.callback,
+           callback.insert = locations.insert.callback,
+           callback.delete = locations.delete.callback
+    )
+  }
   
+  create_locations_dt() # create locations datatable on initialization
+
+  observeEvent(input$tab_config, {
+    if (input$tab_config == "Practice locations/groups") {
+      # Locations configuration tab has been chosen
+      # adjust the data in the datatable
+      
+      create_locations_dt()
+      # completely recreate the datatable!
+      # with updated PracticeLocations()
+
+      # for reasons not clear, the use of 'replaceData' does not work
+      # until switching away from the locations tab and back again (!)
+#      locations_dtproxy <- DT::dataTableProxy("locations_dtdt",
+#                                              deferUntilFlush = FALSE)
+      # DTedit changes the name 'locations_dt' to 'locations_dtdt'
+#      DT::replaceData(locations_dtproxy, as.data.frame(isolate(PracticeLocations()))[,locations_dt_viewcols],
+#                      rownames = FALSE, resetPaging = FALSE, clearSelection = "none")
+#      shinyjs::runjs("$('#locations_dtdt').DataTable().rows().invalidate().draw('page')")
+    }
+  })
+    
   output$users_dt <- renderDT({config$users})
   
   add_userModal <- function(location_list, failed = FALSE) {

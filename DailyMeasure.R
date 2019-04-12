@@ -923,10 +923,10 @@ server <- function(input, output, session) {
   
   # Practice locations/groups 
   
-  
   # callback functions for DTEdit
   ## locations
   
+  locations_dt_name <- "locations_dt"
   locations_dt_viewcols <- c("id", "Name", "Description")
   # columns viewed in DTedit when adding/editing/removing locations
   # 'id' is likely not necessary for end-users
@@ -934,25 +934,32 @@ server <- function(input, output, session) {
   ### callback definitions for DTedit location
   locations.insert.callback <- function(data, row) {
     # adding a new practice location
-    print(paste("data:", data))
-    print(paste("PracticeLocations:", as.data.frame(isolate(PracticeLocations()))))
-    newid <- max(c(as.data.frame(PracticeLocations())$id, 0)) + 1
-     # initially, PracticeLocations$id might be an empty set, so need to append a '0'
-    data[row, ]$id <- newid
-
-    query <- paste0("INSERT INTO Location (id, Name, Description) VALUES (",
-                    "'", newid, "', ",
-                    "'", data[row,]$Name, "', ",
-                    "'", data[row,]$Description, "')"
-                    )
-    connection <- poolCheckout(config_pool()) # can't write with the pool
-    dbSendQuery(connection, query) # update database
-    poolReturn(connection)
+    print("add")
+    if (grep(toupper(data[row, ]$Name), 
+             toupper(as.data.frame(isolate(PracticeLocations()))$Name))){
+      # if the proposed new name is the same as one that already exists
+      # (ignoring case)
+      stop("New practice location name cannot be the same as existing names")
+    } else {
+      
+      newid <- max(c(as.data.frame(PracticeLocations())$id, 0)) + 1
+      # initially, PracticeLocations$id might be an empty set, so need to append a '0'
+      data[row, ]$id <- newid
+      
+      query <- paste0("INSERT INTO Location (id, Name, Description) VALUES (",
+                      "'", newid, "', ",
+                      "'", data[row,]$Name, "', ",
+                      "'", data[row,]$Description, "')"
+      )
+      connection <- poolCheckout(config_pool()) # can't write with the pool
+      dbSendQuery(connection, query) # update database
+      poolReturn(connection)
     
-    PracticeLocations(data) # update the dataframe in memory
-    updateSelectInput(session, inputId = 'location', choices = location_list())
+      PracticeLocations(data) # update the dataframe in memory
+      updateSelectInput(session, inputId = 'location', choices = location_list())
     
-    return(PracticeLocations())
+      return(PracticeLocations())
+    }
   }
   
   locations.update.callback <- function(data, olddata, row) {
@@ -963,9 +970,9 @@ server <- function(input, output, session) {
                     "WHERE id = ", data[row,]$id
                     )
 
-    #connection <- poolCheckout(config_pool()) # can't write with the pool
-    #dbSendQuery(connection, query) # update database
-    #poolReturn(connection)
+    connection <- poolCheckout(config_pool()) # can't write with the pool
+    dbSendQuery(connection, query) # update database
+    poolReturn(connection)
     
     PracticeLocations(data)
     updateSelectInput(session, inputId = 'location', choices = location_list())
@@ -977,9 +984,9 @@ server <- function(input, output, session) {
     # delete a practice location
     
     query <- paste0("DELETE FROM Location WHERE id = ", data[row,]$id)
-    #connection <- poolCheckout(config_pool()) # can't write with the pool
-    #dbSendQuery(connection, query) # update database
-    #poolReturn(connection)
+    connection <- poolCheckout(config_pool()) # can't write with the pool
+    dbSendQuery(connection, query) # update database
+    poolReturn(connection)
     
     PracticeLocations(data[-c(row),])
     updateSelectInput(session, inputId = 'location', choices = location_list())
@@ -990,7 +997,7 @@ server <- function(input, output, session) {
   # depends on package DTedit
   create_locations_dt <- function() {
     dtedit(input, output,
-           name = "locations_dt", # internally, DTedit will rename this to 'locations_dtdt'
+           name = locations_dt_name, # internally, DTedit will rename this to 'locations_dtdt'
            thedata = isolate(as.data.frame(PracticeLocations())),
            view.cols = locations_dt_viewcols, # no need to show 'id' in future
            edit.cols = c("Name", "Description"),
@@ -1002,26 +1009,18 @@ server <- function(input, output, session) {
            callback.delete = locations.delete.callback
     )
   }
-  
   create_locations_dt() # create locations datatable on initialization
 
   observeEvent(input$tab_config, {
     if (input$tab_config == "Practice locations/groups") {
       # Locations configuration tab has been chosen
       # adjust the data in the datatable
-      
-      create_locations_dt()
-      # completely recreate the datatable!
-      # with updated PracticeLocations()
-
-      # for reasons not clear, the use of 'replaceData' does not work
-      # until switching away from the locations tab and back again (!)
-#      locations_dtproxy <- DT::dataTableProxy("locations_dtdt",
-#                                              deferUntilFlush = FALSE)
+      locations_dtproxy <- DT::dataTableProxy("locations_dtdt",
+                                              deferUntilFlush = FALSE)
       # DTedit changes the name 'locations_dt' to 'locations_dtdt'
-#      DT::replaceData(locations_dtproxy, as.data.frame(isolate(PracticeLocations()))[,locations_dt_viewcols],
-#                      rownames = FALSE, resetPaging = FALSE, clearSelection = "none")
-#      shinyjs::runjs("$('#locations_dtdt').DataTable().rows().invalidate().draw('page')")
+      DT::replaceData(locations_dtproxy, as.data.frame(isolate(PracticeLocations()))[,locations_dt_viewcols],
+                      rownames = FALSE, resetPaging = FALSE, clearSelection = "none")
+      shinyjs::runjs("$('#locations_dtdt').DataTable().rows().invalidate().draw('page')")
     }
   })
     

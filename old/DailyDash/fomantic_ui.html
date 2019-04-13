@@ -1,0 +1,22 @@
+<!-- stylesheets from fomantic.ui (a fork of semantic.ui)
+Note that this is a specially edited version of semantic.css that is provided with fomantic
+The 'popup' component does not work without some code provided in the initial header of semantic.css
+However, I have removed a lot of margin/padding/font re-definition that is included in the header,
+which disturbs the layout of shiny/flexdashboard
+--> 
+<link href="./fomantic_components.css" rel="stylesheet" type="text/css"> 
+
+<!-- defining additional fomantic JS popup initialization in the header does not work.
+Popup initialization does work inside DataTables -->
+<script src="./fomantic.js"></script>
+
+<!-- Pushes the export/save buttons for datatables to the right
+and provide padding on the top
+-->
+<style>
+.dataTables_wrapper .dt-buttons {
+  float:none;  
+  text-align:right;
+  padding-top:7px;
+}
+</style>

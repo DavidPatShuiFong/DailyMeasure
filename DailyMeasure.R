@@ -119,6 +119,120 @@ hrmin <- function(t) {
   sprintf('%02d:%02d', td@hour, td@minute)
 }
 
+
+
+# locations - editable datatable module
+
+locations_datatableUI <- function(id) {
+  ns <- NS(id)
+  
+  tagList(
+    dteditUI(ns("locations"))
+  )
+}
+
+locations_datatable <- function(input, output, session, PracticeLocations, config_pool) {
+  # Practice locations/groups server part of module
+  # input : PracticeLocations() reactiveval, list of PracticeLocations
+  # input : config_pool - reactiveval, access to configuration database
+  # returns location_list_change - increments with each GUI edit of location list
+  # change in location_list_change to prompt change in selectable filter list of locations
+  
+  # callback functions for DTEdit
+  ## locations
+  
+  locations_dt_viewcols <- c("id", "Name", "Description")
+  # columns viewed in DTedit when adding/editing/removing locations
+  # 'id' is likely not necessary for end-users
+  location_list_change <- reactiveVal(0)
+  
+  ### callback definitions for DTedit location
+  locations.insert.callback <- function(data, row) {
+    # adding a new practice location
+    if (length(grep(toupper(data[row, ]$Name), 
+                    toupper(as.data.frame(isolate(PracticeLocations()))$Name)))){
+      # if the proposed new name is the same as one that already exists
+      # (ignoring case). grep returns empty integer list if no match
+      stop("New practice location name cannot be the same as existing names")
+    } else {
+      
+      newid <- max(c(as.data.frame(PracticeLocations())$id, 0)) + 1
+      # initially, PracticeLocations$id might be an empty set, so need to append a '0'
+      data[row, ]$id <- newid
+      
+      query <- "INSERT INTO Location (id, Name, Description) VALUES (?, ?, ?)"
+      data_for_sql <- as.list.data.frame(c(newid, data[row,]$Name, data[row,]$Description))
+      
+      connection <- poolCheckout(config_pool()) # can't write with the pool
+      rs <- dbSendQuery(connection, query) # parameterized query can handle apostrophes etc.
+      dbBind(rs, data_for_sql)
+      # for statements, rather than queries, we don't need to dbFetch(rs)
+      # update database
+      dbClearResult(rs)
+      poolReturn(connection)
+      
+      PracticeLocations(data) # update the dataframe in memory
+      location_list_change(location_list_change() + 1) # this value returned by module
+      # updateSelectInput(session, inputId = 'location', choices = location_list())
+      
+      return(PracticeLocations())
+    }
+  }
+  
+  locations.update.callback <- function(data, olddata, row) {
+    # change (update) a practice location
+    query <- "UPDATE Location SET Name = ?, Description = ? WHERE id = ?"
+    data_for_sql <- as.list.data.frame(c(data[row,]$Name, data[row,]$Description, data[row,]$id))
+    
+    connection <- poolCheckout(config_pool()) # can't write with the pool
+    rs <- dbSendQuery(connection, query) # update database
+    dbBind(rs, data_for_sql)
+    dbClearResult(rs)
+    poolReturn(connection)
+    
+    PracticeLocations(data)
+    location_list_change(location_list_change() + 1) # this value returned by module
+    # updateSelectInput(session, inputId = 'location', choices = location_list())
+    
+    return(PracticeLocations())
+  }
+  
+  locations.delete.callback <- function(data, row) {
+    # delete a practice location
+    
+    query <- "DELETE FROM Location WHERE id = ?"
+    data_for_sql <- as.list.data.frame(c(data[row,]$id))
+    
+    connection <- poolCheckout(config_pool()) # can't write with the pool
+    rs <- dbSendQuery(connection, query) # update database
+    dbBind(rs, data_for_sql)
+    dbClearResult(rs)
+    poolReturn(connection)
+    
+    PracticeLocations(data[-c(row),])
+    location_list_change(location_list_change() + 1) # this value returned by module
+    # updateSelectInput(session, inputId = 'location', choices = location_list())
+    
+    return(PracticeLocations())
+  }
+  
+  # depends on modularized version of DTedit
+  locations_edited <- callModule(dtedit, "locations",
+                                 thedataframe = PracticeLocations, # pass a ReactiveVal
+                                 view.cols = locations_dt_viewcols, # no need to show 'id' in future
+                                 edit.cols = c("Name", "Description"),
+                                 edit.label.cols = c('Practice Locations', 'Description'),
+                                 show.copy = FALSE,
+                                 input.types = c(Name = 'textInput', Description = 'textInput'),
+                                 callback.update = locations.update.callback,
+                                 callback.insert = locations.insert.callback,
+                                 callback.delete = locations.delete.callback
+  )
+  
+  return(reactive({location_list_change()}))
+  # increments each time a callback changes PracticeLocations()
+}
+
 # Define UI for application that draws a histogram
 ui <- dashboardPagePlus(
 
@@ -271,7 +385,7 @@ ui <- dashboardPagePlus(
                     # Practice locations or groups
                     title = "Practice locations/groups",
                     column(width=12,
-                           dteditUI("locations")
+                           locations_datatableUI("locations_dt")
                            )),
                   tabPanel(
                     # User settings and permissions
@@ -921,94 +1035,14 @@ server <- function(input, output, session) {
     
   })
   
-  # Practice locations/groups 
+  location_list_change <- callModule(locations_datatable, "locations_dt",
+                                     PracticeLocations, config_pool)
   
-  # callback functions for DTEdit
-  ## locations
-  
-  locations_dt_viewcols <- c("id", "Name", "Description")
-  # columns viewed in DTedit when adding/editing/removing locations
-  # 'id' is likely not necessary for end-users
-  
-  ### callback definitions for DTedit location
-  locations.insert.callback <- function(data, row) {
-    # adding a new practice location
-    if (length(grep(toupper(data[row, ]$Name), 
-                    toupper(as.data.frame(isolate(PracticeLocations()))$Name)))){
-      # if the proposed new name is the same as one that already exists
-      # (ignoring case). grep returns empty integer list if no match
-      stop("New practice location name cannot be the same as existing names")
-    } else {
-      
-      newid <- max(c(as.data.frame(PracticeLocations())$id, 0)) + 1
-      # initially, PracticeLocations$id might be an empty set, so need to append a '0'
-      data[row, ]$id <- newid
-      
-      query <- "INSERT INTO Location (id, Name, Description) VALUES (?, ?, ?)"
-      data_for_sql <- as.list.data.frame(c(newid, data[row,]$Name, data[row,]$Description))
-      
-      connection <- poolCheckout(config_pool()) # can't write with the pool
-      rs <- dbSendQuery(connection, query) # parameterized query can handle apostrophes etc.
-      dbBind(rs, data_for_sql)
-      # for statements, rather than queries, we don't need to dbFetch(rs)
-      # update database
-      dbClearResult(rs)
-      poolReturn(connection)
-    
-      PracticeLocations(data) # update the dataframe in memory
-      updateSelectInput(session, inputId = 'location', choices = location_list())
-    
-      return(PracticeLocations())
-    }
-  }
-  
-  locations.update.callback <- function(data, olddata, row) {
-    # change (update) a practice location
-    query <- "UPDATE Location SET Name = ?, Description = ? WHERE id = ?"
-    data_for_sql <- as.list.data.frame(c(data[row,]$Name, data[row,]$Description, data[row,]$id))
-
-    connection <- poolCheckout(config_pool()) # can't write with the pool
-    rs <- dbSendQuery(connection, query) # update database
-    dbBind(rs, data_for_sql)
-    dbClearResult(rs)
-    poolReturn(connection)
-    
-    PracticeLocations(data)
+  observeEvent(location_list_change(), {
+    # change in location_list (by GUI editor in locations_data module) prompts
+    # change in location list filter (for providers)
     updateSelectInput(session, inputId = 'location', choices = location_list())
-
-    return(PracticeLocations())
-  }
-  
-  locations.delete.callback <- function(data, row) {
-    # delete a practice location
-    
-    query <- "DELETE FROM Location WHERE id = ?"
-    data_for_sql <- as.list.data.frame(c(data[row,]$id))
-    
-    connection <- poolCheckout(config_pool()) # can't write with the pool
-    rs <- dbSendQuery(connection, query) # update database
-    dbBind(rs, data_for_sql)
-    dbClearResult(rs)
-    poolReturn(connection)
-    
-    PracticeLocations(data[-c(row),])
-    updateSelectInput(session, inputId = 'location', choices = location_list())
-    
-    return(PracticeLocations())
-  }
-  
-  # depends on modularized version of DTedit
-  locations_edited <- callModule(dtedit, "locations",
-         thedataframe = PracticeLocations, # pass a ReactiveVal
-         view.cols = locations_dt_viewcols, # no need to show 'id' in future
-         edit.cols = c("Name", "Description"),
-         edit.label.cols = c('Practice Locations', 'Description'),
-         show.copy = FALSE,
-         input.types = c(Name = 'textInput', Description = 'textInput'),
-         callback.update = locations.update.callback,
-         callback.insert = locations.insert.callback,
-         callback.delete = locations.delete.callback
-  )
+  })
 
   output$users_dt <- renderDT({config$users})
   

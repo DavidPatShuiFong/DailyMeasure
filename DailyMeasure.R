@@ -1010,14 +1010,6 @@ server <- function(input, output, session) {
          callback.delete = locations.delete.callback
   )
 
-  observeEvent(input$tab_config, {
-    if (input$tab_config == "Practice locations/groups") {
-      # Locations configuration tab has been chosen
-      # adjust the data in the datatable
-      invalidateLater(1000, session)
-    }
-  })
-  
   output$users_dt <- renderDT({config$users})
   
   add_userModal <- function(location_list, failed = FALSE) {

@@ -21,7 +21,7 @@ library(base64enc)  # simple obfuscation for passwords
 library(DT)         # pretty-print tables/tibbles
 library(lubridate)  # time handling library
 
-library(DTedit)     # datatable edit wrapper. install with devtools::install_github('jbryer/DTedit')
+source("./modules/dtedit.R")     # datatable edit wrapper. install with devtools::install_github('jbryer/DTedit')
 
 # function setup
 
@@ -271,7 +271,7 @@ ui <- dashboardPagePlus(
                     # Practice locations or groups
                     title = "Practice locations/groups",
                     column(width=12,
-                           uiOutput("locations_dt")
+                           dteditUI("locations")
                            )),
                   tabPanel(
                     # User settings and permissions
@@ -934,11 +934,10 @@ server <- function(input, output, session) {
   ### callback definitions for DTedit location
   locations.insert.callback <- function(data, row) {
     # adding a new practice location
-    print("add")
-    if (grep(toupper(data[row, ]$Name), 
-             toupper(as.data.frame(isolate(PracticeLocations()))$Name))){
+    if (length(grep(toupper(data[row, ]$Name), 
+                    toupper(as.data.frame(isolate(PracticeLocations()))$Name)))){
       # if the proposed new name is the same as one that already exists
-      # (ignoring case)
+      # (ignoring case). grep returns empty integer list if no match
       stop("New practice location name cannot be the same as existing names")
     } else {
       
@@ -952,7 +951,8 @@ server <- function(input, output, session) {
                       "'", data[row,]$Description, "')"
       )
       connection <- poolCheckout(config_pool()) # can't write with the pool
-      dbSendQuery(connection, query) # update database
+      rs <- dbSendQuery(connection, query) # update database
+      dbClearResult(rs)
       poolReturn(connection)
     
       PracticeLocations(data) # update the dataframe in memory
@@ -971,7 +971,8 @@ server <- function(input, output, session) {
                     )
 
     connection <- poolCheckout(config_pool()) # can't write with the pool
-    dbSendQuery(connection, query) # update database
+    rs <- dbSendQuery(connection, query) # update database
+    dbClearResult(rs)
     poolReturn(connection)
     
     PracticeLocations(data)
@@ -985,7 +986,8 @@ server <- function(input, output, session) {
     
     query <- paste0("DELETE FROM Location WHERE id = ", data[row,]$id)
     connection <- poolCheckout(config_pool()) # can't write with the pool
-    dbSendQuery(connection, query) # update database
+    rs <- dbSendQuery(connection, query) # update database
+    dbClearResult(rs)
     poolReturn(connection)
     
     PracticeLocations(data[-c(row),])
@@ -993,37 +995,28 @@ server <- function(input, output, session) {
     
     return(PracticeLocations())
   }
-
-  # depends on package DTedit
-  create_locations_dt <- function() {
-    dtedit(input, output,
-           name = locations_dt_name, # internally, DTedit will rename this to 'locations_dtdt'
-           thedata = isolate(as.data.frame(PracticeLocations())),
-           view.cols = locations_dt_viewcols, # no need to show 'id' in future
-           edit.cols = c("Name", "Description"),
-           edit.label.cols = c('Practice Locations', 'Description'),
-           show.copy = FALSE,
-           input.types = c(Name = 'textInput', Description = 'textInput'),
-           callback.update = locations.update.callback,
-           callback.insert = locations.insert.callback,
-           callback.delete = locations.delete.callback
-    )
-  }
-  create_locations_dt() # create locations datatable on initialization
+  
+  # depends on modularized version of DTedit
+  locations_edited <- callModule(dtedit, "locations",
+         thedataframe = PracticeLocations, # pass a ReactiveVal
+         view.cols = locations_dt_viewcols, # no need to show 'id' in future
+         edit.cols = c("Name", "Description"),
+         edit.label.cols = c('Practice Locations', 'Description'),
+         show.copy = FALSE,
+         input.types = c(Name = 'textInput', Description = 'textInput'),
+         callback.update = locations.update.callback,
+         callback.insert = locations.insert.callback,
+         callback.delete = locations.delete.callback
+  )
 
   observeEvent(input$tab_config, {
     if (input$tab_config == "Practice locations/groups") {
       # Locations configuration tab has been chosen
       # adjust the data in the datatable
-      locations_dtproxy <- DT::dataTableProxy("locations_dtdt",
-                                              deferUntilFlush = FALSE)
-      # DTedit changes the name 'locations_dt' to 'locations_dtdt'
-      DT::replaceData(locations_dtproxy, as.data.frame(isolate(PracticeLocations()))[,locations_dt_viewcols],
-                      rownames = FALSE, resetPaging = FALSE, clearSelection = "none")
-      shinyjs::runjs("$('#locations_dtdt').DataTable().rows().invalidate().draw('page')")
+      invalidateLater(1000, session)
     }
   })
-    
+  
   output$users_dt <- renderDT({config$users})
   
   add_userModal <- function(location_list, failed = FALSE) {

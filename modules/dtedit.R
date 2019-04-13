@@ -142,7 +142,7 @@ dtedit <- function(input, output, session, thedataframe,
   result$edit.cols <- edit.cols
   result$edit.count <- 0 # number of edits (Add/Delete/Edit/Copy) through dtedit
   
-  dt.proxy <- DT::dataTableProxy(DataTableName, deferUntilFlush = FALSE)
+  dt.proxy <- DT::dataTableProxy(DataTableName)
   
   selectInputMultiple <- function(...) {
     shiny::selectInput(multiple = TRUE, selectize = selectize, ...)

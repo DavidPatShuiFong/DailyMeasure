@@ -926,7 +926,6 @@ server <- function(input, output, session) {
   # callback functions for DTEdit
   ## locations
   
-  locations_dt_name <- "locations_dt"
   locations_dt_viewcols <- c("id", "Name", "Description")
   # columns viewed in DTedit when adding/editing/removing locations
   # 'id' is likely not necessary for end-users
@@ -945,13 +944,14 @@ server <- function(input, output, session) {
       # initially, PracticeLocations$id might be an empty set, so need to append a '0'
       data[row, ]$id <- newid
       
-      query <- paste0("INSERT INTO Location (id, Name, Description) VALUES (",
-                      "'", newid, "', ",
-                      "'", data[row,]$Name, "', ",
-                      "'", data[row,]$Description, "')"
-      )
+      query <- "INSERT INTO Location (id, Name, Description) VALUES (?, ?, ?)"
+      data_for_sql <- as.list.data.frame(c(newid, data[row,]$Name, data[row,]$Description))
+      
       connection <- poolCheckout(config_pool()) # can't write with the pool
-      rs <- dbSendQuery(connection, query) # update database
+      rs <- dbSendQuery(connection, query) # parameterized query can handle apostrophes etc.
+      dbBind(rs, data_for_sql)
+      # for statements, rather than queries, we don't need to dbFetch(rs)
+      # update database
       dbClearResult(rs)
       poolReturn(connection)
     
@@ -964,14 +964,12 @@ server <- function(input, output, session) {
   
   locations.update.callback <- function(data, olddata, row) {
     # change (update) a practice location
-    query <- paste0("UPDATE Location SET ",
-                    "Name = '", data[row,]$Name, "', ",
-                    "Description = '", data[row,]$Description, "' ",
-                    "WHERE id = ", data[row,]$id
-                    )
+    query <- "UPDATE Location SET Name = ?, Description = ? WHERE id = ?"
+    data_for_sql <- as.list.data.frame(c(data[row,]$Name, data[row,]$Description, data[row,]$id))
 
     connection <- poolCheckout(config_pool()) # can't write with the pool
     rs <- dbSendQuery(connection, query) # update database
+    dbBind(rs, data_for_sql)
     dbClearResult(rs)
     poolReturn(connection)
     
@@ -984,9 +982,12 @@ server <- function(input, output, session) {
   locations.delete.callback <- function(data, row) {
     # delete a practice location
     
-    query <- paste0("DELETE FROM Location WHERE id = ", data[row,]$id)
+    query <- "DELETE FROM Location WHERE id = ?"
+    data_for_sql <- as.list.data.frame(c(data[row,]$id))
+    
     connection <- poolCheckout(config_pool()) # can't write with the pool
     rs <- dbSendQuery(connection, query) # update database
+    dbBind(rs, data_for_sql)
     dbClearResult(rs)
     poolReturn(connection)
     

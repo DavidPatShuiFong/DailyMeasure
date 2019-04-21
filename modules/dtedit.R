@@ -41,13 +41,19 @@
 #'        correspond to \code{edit.cols}.
 #' @param input.types a character vector where the name corresponds to a column
 #'        in \code{edit.cols} and the value is the input type. Possible values
-#'        are \code{dateInput}, \code{selectInput}, \code{numericInput},
-#'        \code{textInput}, \code{textAreaInput}, or \code{passwordInput}.
+#'        are \code{dateInput}, \code{selectInput}, \code{selectInputMultiple}, 
+#'        \code{selectInputReactive}, \code{numericInput}, \code{textInput}, \code{textAreaInput},
+#'        or \code{passwordInput}.
 #'        The most common case where this parameter is desirable is when a text
 #'        area is required instead of a simple text input.
 #' @param input.choices a list of character vectors. The names of each element in the list must
-#'        correpsond to a column name in the data. The value, a character vector, are the options
-#'        presented to the user for data entry.
+#'        correspond to a column name in the data. The value, a character vector, are the options
+#'        presented to the user for data entry, in the case of input type \code{selectInput}).
+#'        In the case of input type \code{selectInputReactive}, the value is the name
+#'        of the reactive. in 'input.choices.reactive'
+#' @param input.choices.reactive a named list of reactives, referenced in 'input.choices'
+#'        to use for input type \code{selectInputReactive}. The reactive itself is a
+#'        character vector.
 #' @param selectize Whether to use selectize.js or not. See \code{\link{selectInput}} for more info.
 #' @param defaultPageLength number of rows to show in the data table by default.
 #' @param modal.size the size of the modal dialog. See \code{\link{modalDialog}}.
@@ -93,6 +99,7 @@ dtedit <- function(input, output, session, thedataframe,
                    edit.label.cols = edit.cols,
                    input.types,
                    input.choices = NULL,
+                   input.choices.reactive = NULL,
                    selectize = TRUE,
                    modal.size = 'm',
                    text.width = '100%',
@@ -149,7 +156,8 @@ dtedit <- function(input, output, session, thedataframe,
   }
   
   valid.input.types <- c('dateInput', 'selectInput', 'numericInput',
-                         'textInput', 'textAreaInput', 'passwordInput', 'selectInputMultiple')
+                         'textInput', 'textAreaInput', 'passwordInput', 'selectInputMultiple',
+                         'selectInputReactive')
   inputTypes <- sapply(thedata[,edit.cols], FUN=function(x) {
     switch(class(x),
            list = 'selectInputMultiple',
@@ -157,7 +165,8 @@ dtedit <- function(input, output, session, thedataframe,
            Date = 'dateInput',
            factor = 'selectInput',
            integer = 'numericInput',
-           numeric = 'numericInput')
+           numeric = 'numericInput',
+           factor = 'selectInputReactive')
   })
   if(!missing(input.types)) {
     if(!all(names(input.types) %in% edit.cols)) {
@@ -187,6 +196,7 @@ dtedit <- function(input, output, session, thedataframe,
   # without turning off suspendWhenHidden, changes are not rendered if containing tab is not visible
   
   getFields <- function(typeName, values) {
+    # 'values' are current values of the row (if already existing, or being copied)
     ns <- session$ns # need to use namespace for id elements in module
     fields <- list()
     for(i in seq_along(edit.cols)) {
@@ -222,6 +232,26 @@ dtedit <- function(input, output, session, thedataframe,
                                            selected=value,
                                            width=select.width)
         
+      } else if (inputTypes[i] == 'selectInputReactive') {
+        value <- ifelse(missing(values), '', as.character(values[,edit.cols[i]]))
+        choices <- ''
+        if(!is.null(input.choices.reactive)) {
+          if(edit.cols[i] %in% names(input.choices)) {
+            choices <- input.choices.reactive[[input.choices[[edit.cols]]]]()
+            # it is the responsiblity of the calling functions/reactive variable handlers
+            # that the list of choices includes all CURRENT choices that have already
+            # been chosen in the data.
+          }
+        }
+        if(length(choices) == 1 & choices == '') {
+          warning(paste0("No choices available for ", edit.cols[i],
+                         '. Specify them using the input.choices and input.choices.reactive parameter'))
+        }
+        fields[[i]] <- shiny::selectInput(ns(paste0(name, typeName, edit.cols[i])),
+                                          label=edit.label.cols[i],
+                                          chocies=choices,
+                                          select=value,
+                                          width=select.width)
       } else if(inputTypes[i] == 'selectInput') {
         value <- ifelse(missing(values), '', as.character(values[,edit.cols[i]]))
         fields[[i]] <- shiny::selectInput(ns(paste0(name, typeName, edit.cols[i])),

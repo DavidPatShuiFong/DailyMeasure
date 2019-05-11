@@ -797,19 +797,7 @@ server <- function(input, output, session) {
 		# config$database <-  character()     # e.g. 'BPSSamples' for samples database
 		config$userid <-  c('bpsrawdata')   # database user ID
 		# config$dbpassword <-  character()   # password for the database user
-		config$practice_locations <-  data.frame(Name = character(), Description = character(),
-																						 stringsAsFactors = FALSE) 
-		
-		#config$practice_locations <-  data.frame(Name = character(), Description = character(),
-		#                                         stringsAsFactors = FALSE) 
-		# list of practice locations, or practitioner groups
-		config$users <- data.frame(Fullname = character(),
-															 AuthIdentity = character(),  # authentication identity
-															 Location = character(),
-															 Expert = logical(),         # expert options available
-															 Globalview = logical(),     # able to view all users
-															 Admin = logical(),          # able to change major system settings
-															 stringsAsFactors = FALSE)  
+
 	}
 	
 	# initial database setup
@@ -831,7 +819,7 @@ server <- function(input, output, session) {
 			collect() %>%     # forces database to be read (instead of subsequent 'lazy' read)
 			mutate(Title = trimws(Title), Firstname = trimws(Firstname), Surname = trimws(Surname)) %>%
 			mutate(Fullname = paste(Title, Firstname, Surname, sep = ' ')) %>%
-			left_join(config$users, by = 'Fullname')   # add user details including practice locations
+			left_join(UserConfig(), by = 'Fullname')   # add user details including practice locations
 		
 		db$patients <- emrpool() %>%
 			tbl(in_schema('dbo', 'BPS_Patients'))

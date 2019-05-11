@@ -21,8 +21,8 @@ library(base64enc)  # simple obfuscation for passwords
 library(DT)         # pretty-print tables/tibbles
 library(lubridate)  # time handling library
 
-source("./modules/dtedit.R")
-# library(DTedit)     # datatable edit wrapper.
+# source("./modules/dtedit.R")
+library(DTedit)     # datatable edit wrapper.
 # install with devtools::install_github('DavidPatShuiFong/DTedit')
 # substantially based on jbryer/DTedit
 
@@ -122,7 +122,148 @@ hrmin <- function(t) {
 	sprintf('%02d:%02d', td@hour, td@minute)
 }
 
+##### servers - editable datatable module #######################################################
 
+servers_datatableUI <- function(id) {
+	ns <- NS(id)
+	
+	tagList(
+		wellPanel(
+			uiOutput(ns("selection"))
+		),
+		dteditUI(ns("servers"))
+	)
+}
+
+servers_datatable <- function(input, output, session, BPdatabase, emrpool, config_pool) {
+	# Practice locations/groups server part of module
+	# input : BPdatabase reactiveval, list of servers
+	# input : emrpool reactiveval, current Best Practice (electronic medical record 'EMR') database pool in use
+	# input : config_pool - reactiveval, access to configuration database
+	# returns server_list_change - increments with each GUI edit of server list
+	# change in server_list_change to prompt change in selectable filter list of locations
+	ns <- session$ns
+
+	servers_dt_viewcols <- c("id", "Name", "Address", "Database", "UserID", "dbPassword")
+	# columns viewed in DTedit when adding/editing/removing servers
+	# 'id' is likely not necessary for end-users
+	servers_dt_editcols <- servers_dt_viewcols[!servers_dt_viewcols %in% c("id")]
+
+	chosen_database <- reactiveVal(NULL) # ID of chosen database
+	servers_list_change <- reactiveVal(0)
+
+	servername_list <- reactiveVal(isolate(BPdatabase()$Name))
+	observeEvent(c(BPdatabase(), config_pool()), {
+		servername_list(BPdatabase()$Name)
+	})
+
+	output$selection <- renderUI({
+		selectInput(inputId = ns("server_chosen"), label = "Chosen Best Practice server",
+								choices = servername_list())
+	})
+
+	### callback definitions for DTedit
+	servers.insert.callback <- function(data, row) {
+		# adding a new server description
+		if (toupper(data[row,]$Name) %in% toupper(data[-row,]$Name)) {
+			# if the proposed server is the same as one that already exists
+			# (ignoring case)
+			stop("New practice location name cannot be the same as existing names")
+		} else if (str_length(data[row,]$Name) == 0 | str_length(data[row,]$Address) == 0 |
+							 str_length(data[row,]$Database) == 0 | str_length(data[row,]$UserID) == 0 |
+							 str_length(data[row,]$dbPassword) == 0) {
+			stop("All entries must be described")
+		} else {
+			
+			newid <- max(c(as.data.frame(BPdatabase())$id, 0)) + 1
+			# initially, BPdatabase()$id might be an empty set, so need to append a '0'
+			data[row, ]$id <- newid
+			
+			query <- "INSERT INTO Server (id, Name, Address, Database, UserID, dbPassword) VALUES (?, ?, ?, ?, ?, ?)"
+			data_for_sql <- as.list.data.frame(c(newid, data[row,]$Name, data[row,]$Address,
+																					 data[row,]$Database, data[row,]$UserID,
+																					 data[row,]$dbPassword))
+			
+			connection <- poolCheckout(config_pool()) # can't write with the pool
+			rs <- dbSendQuery(connection, query) # parameterized query can handle apostrophes etc.
+			dbBind(rs, data_for_sql)
+			# for statements, rather than queries, we don't need to dbFetch(rs)
+			# update database
+			dbClearResult(rs)
+			poolReturn(connection)
+			
+			BPdatabase(data) # update the dataframe in memory
+			servers_list_change(servers_list_change() + 1) # this value returned by module
+			
+			return(BPdatabase())
+		}
+	}	
+	
+	servers.update.callback <- function(data, olddata, row) {
+		# change (update) a server description
+		
+		if (toupper(data[row,]$Name) %in% toupper(data[-row,]$Name)) {
+			# if the proposed server is the same as one that already exists
+			# (ignoring case)
+			stop("New practice location name cannot be the same as existing names")
+		} else if (str_length(data[row,]$Name) == 0 | str_length(data[row,]$Address) == 0 |
+							 str_length(data[row,]$Database) == 0 | str_length(data[row,]$UserID) == 0 |
+							 str_length(data[row,]$dbPassword) == 0) {
+			stop("All entries must be described")
+		} else {
+			query <- "UPDATE Server SET Name = ?, Address = ?, Database = ?, UserID = ?, dbPassword = ? WHERE id = ?"
+			data_for_sql <- as.list.data.frame(c(data[row,]$Name, data[row,]$Address,
+																					 data[row,]$Database, data[row,]$UserID,
+																					 data[row,]$dbPassword), newid)
+						
+			connection <- poolCheckout(config_pool()) # can't write with the pool
+			rs <- dbSendQuery(connection, query) # update database
+			dbBind(rs, data_for_sql)
+			dbClearResult(rs)
+			poolReturn(connection)
+			
+			BPdatabase(data)
+			servers_list_change(servers_list_change() + 1) # this value returned by module
+			
+			return(BPdatabase())
+		}
+	}	
+	servers.delete.callback <- function(data, row) {
+		# delete a server description
+		if (FALSE) {
+			stop(paste0("Cannot remove '", data[row,]$Name, "'."))
+		} else {
+			query <- "DELETE FROM Server WHERE id = ?"
+			data_for_sql <- as.list.data.frame(c(data[row,]$id))
+			
+			connection <- poolCheckout(config_pool()) # can't write with the pool
+			rs <- dbSendQuery(connection, query) # update database
+			dbBind(rs, data_for_sql)
+			dbClearResult(rs)
+			poolReturn(connection)
+			
+			BPdatabase(data[-c(row),])
+			servers_list_change(servers_list_change() + 1) # this value returned by module
+			
+			return(BPdatabase())
+		}
+	}
+	# depends on modularized version of DTedit
+	servers_edited <- callModule(dtedit, "servers",
+															 thedataframe = BPdatabase, # pass a ReactiveVal
+															 view.cols = servers_dt_viewcols, # no need to show 'id' in future
+															 edit.cols = servers_dt_editcols,
+															 input.types = c(Name = 'textInput', Address = 'textInput',
+															 								Database = 'textInput', UserID = 'textInput',
+															 								dbPassword = 'textInput'),
+															 callback.update = servers.update.callback,
+															 callback.insert = servers.insert.callback,
+															 callback.delete = servers.delete.callback
+	)
+	
+	return(reactive({servers_list_change()}))
+	# increments each time a callback changes BPdatabase()
+}
 
 ##### locations - editable datatable module #######################################################
 
@@ -168,6 +309,8 @@ locations_datatable <- function(input, output, session, PracticeLocations, UserC
 			# if the proposed new name is the same as one that already exists
 			# (ignoring case). grep returns empty integer list if no match
 			stop("New practice location name cannot be the same as existing names")
+		} else if (is.null(data[row,]$Name)){
+			stop("New practice location name cannot be 'empty'!")
 		} else {
 			
 			newid <- max(c(as.data.frame(PracticeLocations())$id, 0)) + 1
@@ -393,7 +536,7 @@ userconfig_datatable <- function(input, output, session, UserConfig, LocationNam
 	# increments each time a callback changes UserConfig
 }
 
-# Define UI for application that draws a histogram
+##### Define UI for application ######################
 ui <- dashboardPagePlus(
 	
 	header = dashboardHeaderPlus(
@@ -534,13 +677,8 @@ ui <- dashboardPagePlus(
 										# Microsoft SQL server details
 										title = "Microsoft SQL Server details",
 										column(width=12,
-													 wellPanel(
-													 	uiOutput('server_details'),
-													 	actionButton('update_database', 'Update', icon('refresh'),
-													 							 class = 'btn btn-primary'),
-													 	# Database details not changed until the 'Update' button is clicked
-													 	helpText("After adjusting database details, click the 'Update' button")
-													 ))),
+													 servers_datatableUI("servers_dt"))
+									),
 									tabPanel(
 										# Practice locations or groups
 										title = "Practice locations/groups",
@@ -563,7 +701,7 @@ ui <- dashboardPagePlus(
 	)
 )
 
-# Define server logic required to draw a histogram
+##### Define server logic #####################################################
 server <- function(input, output, session) {
 	
 	# read config files
@@ -571,7 +709,13 @@ server <- function(input, output, session) {
 	local_config <- reactiveValues(config_file = character())
 	config_pool <- reactiveVal()
 	configuration_file_path <- reactiveVal()
-	BPdatabase <- reactiveVal()
+	BPdatabase <- reactiveVal(value = data.frame(id = integer(),
+																							 Name = character(),
+																							 Address = character(),
+																							 Database = character(),
+																							 UserID = character(),
+																							 dbPassword = character(),
+																							 stringsAsFactors = FALSE))
 	PracticeLocations <- reactiveVal(value = data.frame(id = integer(),
 																											Name = character(),
 																											Description = character(),
@@ -611,7 +755,8 @@ server <- function(input, output, session) {
 													 error = function(e) {NULL}))
 			# create table 'Server' to hold Server settings (this table will hold only one row)
 			dbWriteTable(config_pool(), "Server",
-									 data.frame(Address=character(), Database=character(),
+									 data.frame(id = integer(), Name = character(),
+									 					 Address=character(), Database=character(),
 									 					 UserID=character(), dbPassword=character()))
 			# create table 'Location' to hold Location settings
 			dbWriteTable(config_pool(), "Location",
@@ -626,7 +771,7 @@ server <- function(input, output, session) {
 		}
 	})
 	observeEvent(config_pool(), ignoreNULL = TRUE, {
-		BPdatabase(isolate(config_pool()) %>% tbl("Server"))
+		BPdatabase(isolate(config_pool()) %>% tbl("Server") %>% collect())
 		PracticeLocations(isolate(config_pool()) %>% tbl("Location"))
 		UserConfig(isolate(config_pool()) %>% tbl("Users") %>%
 							 	# in UserConfig, there can be multiple Locations/Attributes per user
@@ -746,6 +891,7 @@ server <- function(input, output, session) {
 	observeEvent(emrpool(), ignoreNULL = TRUE, {
 		# if emrpool is initialized to a database,
 		# then initialize tables 
+		print("Re-initializing databases")
 		if (is.environment(emrpool())) {
 			initialize_tables(emrpool) # if pool is successfully initialized
 		}
@@ -1173,40 +1319,22 @@ server <- function(input, output, session) {
 		# change local_config when configuration path changes
 		local_config$config_file <<- configuration_file_path() # need to use <<- operator
 	})
-	
+
 	# database configuration tab
-	
-	output$server_details <- renderUI({
-		tagList(
-			textInput('server_address', 'Server address', config$server),
-			textInput('database_name', 'Database name', config$database),
-			textInput('database_user', 'Database user', config$userid),
-			textInput('database_password', 'Database password', config$dbpassword)
-		)
+
+	serverconfig_change <- callModule(servers_datatable, "servers_dt",
+																		BPdatabase, emrpool, config_pool)
+
+	server_list_names <- reactiveVal(isolate(BPdatabase()) %>% 
+																	 select(Name) %>% collect() %>% unlist(use.names = FALSE))
+	# just the names of the servers (no details) 
+
+	observeEvent(c(serverconfig_change(), BPdatabase()), {
+		# change in server list (by GUI editor in server module) prompts
+		server_list_names(BPdatabase() %>% select(Name) %>% collect() %>% unlist(use.names = FALSE))
 	})
-	
-	update_database_details <- observeEvent(input$update_database, {
-		tmp_pool <- tryCatch(dbPool(odbc::odbc(), driver = "SQL Server",
-																server = isolate(input$server_address),
-																database = isolate(input$database_name),
-																uid = isolate(input$database_user),
-																pwd = isolate(input$database_password)),
-												 error = function(e) {NULL})
-		if (is.environment(tmp_pool)) {
-			config$server <- isolate(input$server_address)
-			config$database <- isolate(input$database_name)
-			config$userid <- isolate(input$database_user)
-			config$dbpassword <- isolate(input$database_password)
-			if (is.environment(emrpool())) {
-				poolClose(emrpool()) # close database link if previously successfully initialized
-			}
-			emrpool(tmp_pool) 
-			# changing emrpool reactiveVal will re-initialize tables
-			# through and observeEvent
-		}
-		
-	})
-	
+
+	# location configuration tab
 	location_list_change <- callModule(locations_datatable, "locations_dt",
 																		 PracticeLocations, UserConfig, config_pool)
 	
@@ -1226,6 +1354,6 @@ server <- function(input, output, session) {
 	
 }
 
-# Run the application 
+##### Run the application ###########################################
 shinyApp(ui = ui, server = server)
 

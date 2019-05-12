@@ -140,7 +140,8 @@ servers_datatable <- function(input, output, session, BPdatabase, emrpool, confi
 	# input : BPdatabase reactiveval, list of servers
 	# input : emrpool reactiveval, current Best Practice (electronic medical record 'EMR') database pool in use
 	# input : config_pool - reactiveval, access to configuration database
-	# returns server_list_change - increments with each GUI edit of server list
+	# returns server_list_change$count - increments with each GUI edit of server list
+  # returns server_list_change$selectionName = Name of chosen database
 	# change in server_list_change to prompt change in selectable filter list of locations
 	ns <- session$ns
 
@@ -160,6 +161,10 @@ servers_datatable <- function(input, output, session, BPdatabase, emrpool, confi
 	output$selection <- renderUI({
 		selectInput(inputId = ns("server_chosen"), label = "Chosen Best Practice server",
 								choices = servername_list())
+	})
+	
+	observeEvent(input$server_chosen, {
+	  chosen_database(input$server_chosen) # this will be the server 'Name', a character string
 	})
 
 	### callback definitions for DTedit
@@ -261,7 +266,10 @@ servers_datatable <- function(input, output, session, BPdatabase, emrpool, confi
 															 callback.delete = servers.delete.callback
 	)
 	
-	return(reactive({servers_list_change()}))
+	return(list(
+	  count = reactive({servers_list_change()}),
+	  selectionName = reactive({chosen_database()})
+	  ))
 	# increments each time a callback changes BPdatabase()
 }
 
@@ -744,6 +752,7 @@ server <- function(input, output, session) {
 	
 	observeEvent(configuration_file_path(), ignoreNULL = TRUE, {
 		if (file.exists(isolate(configuration_file_path()))) {
+		  # open config database file
 			config_pool(tryCatch(dbPool(RSQLite::SQLite(),
 																	dbname = isolate(configuration_file_path())),
 													 error = function(e) {NULL}))
@@ -753,23 +762,79 @@ server <- function(input, output, session) {
 																	dbname = isolate(configuration_file_path()),
 																	create = TRUE),
 													 error = function(e) {NULL}))
-			# create table 'Server' to hold Server settings (this table will hold only one row)
-			dbWriteTable(config_pool(), "Server",
-									 data.frame(id = integer(), Name = character(),
-									 					 Address=character(), Database=character(),
-									 					 UserID=character(), dbPassword=character()))
-			# create table 'Location' to hold Location settings
-			dbWriteTable(config_pool(), "Location",
-									 data.frame(id = integer(), Name = character(), Description = character(),
-									 					 stringsAsFactors = FALSE))
-			# create table 'Users' to hold user settings
-			dbWriteTable(config_pool(), "Users",
-									 data.frame(id = integer(), Fullname = character(), AuthIdentity = character(),
-									 					 Location = character(),
-									 					 Attributes = character(),
-									 					 stringsAsFactors = FALSE))
 		}
+	  
+	  initialize_data_table <- function(config_pool, tablename, variable_list) {
+	    # make sure the table in the database has all the right variable headings
+	    # allows 'update' of old databases
+	    #
+	    # input - config_pool : 'pool' reactive of database
+	    # input - tablename : name of table
+	    # input - variable_list : list of variable headings, with variable type
+	    #   e.g. list(c("id", "integer"), c("Name", "character"))
+	    #
+	    # alters table in database directly
+	    #
+	    # returns - nothing
+	    
+	    tablenames <- config_pool() %>% dbListTables()
+	    
+	    if (tablename %in% tablenames) {
+	      # if table exists in config_pool database
+	      columns <- config_pool() %>% tbl(tablename) %>% colnames()
+	      # list of column (variable) names
+	      data <- config_pool() %>% tbl("Server") %>% collect()
+	      # get a copy of the table's data
+	    } else {
+	      # table does not exist, needs to be created
+	      columns <- NULL
+	      data <- data.frame(NULL)
+	    }
+	    
+	    changed <- FALSE
+	    # haven't changed anything yet
+	    
+	    for (a in variable_list) { 
+	      if (!(a[[1]] %in% columns)) {
+	        # if a required variable name is not in the table
+	        data <- data %>%
+	          mutate(!!a[[1]] := vector(a[[2]], nrow(data))) 
+	        # use of !! and := to dynamically specify a[[1]] as a column name
+	        # potentially could use data[,a[[1]]] <- ...
+	        changed <- TRUE
+	      }
+	    }
+	    if (changed == TRUE) {
+	      dbWriteTable(config_pool(), tablename, data, overwrite = TRUE)
+	    }
+	    
+	  }
+	  
+	  # check that tables exist in the config file
+	  # also create new columns (variables) as necessary
+	  initialize_data_table(config_pool, "Server",
+	                        list(c("id", "integer"),
+	                             c("Name", "character"),
+	                             c("Address", "character"),
+	                             c("Database", "character"),
+	                             c("UserID", "character"),
+	                             c("dbPassword", "character")))
+	  # initialize_data_table will create table and/or ADD 'missing' columns to existing table
+
+	  initialize_data_table(config_pool, "Location",
+	                        list(c("id", "integer"),
+	                             c("Name", "character"),
+	                             c("Description", "character")))
+
+	  initialize_data_table(config_pool, "Users",
+	                        list(c("id", "integer"),
+	                             c("Fullname", "character"),
+	                             c("AuthIdentity", "character"),
+	                             c("Location", "character"),
+	                             c("Attributes", "character")))
+	  
 	})
+	
 	observeEvent(config_pool(), ignoreNULL = TRUE, {
 		BPdatabase(isolate(config_pool()) %>% tbl("Server") %>% collect())
 		PracticeLocations(isolate(config_pool()) %>% tbl("Location"))
@@ -1312,14 +1377,20 @@ server <- function(input, output, session) {
 
 	serverconfig_change <- callModule(servers_datatable, "servers_dt",
 																		BPdatabase, emrpool, config_pool)
+	# returns $count and $selectionName
 
 	server_list_names <- reactiveVal(isolate(BPdatabase()) %>% 
 																	 select(Name) %>% collect() %>% unlist(use.names = FALSE))
 	# just the names of the servers (no details) 
 
-	observeEvent(c(serverconfig_change(), BPdatabase()), {
+	observeEvent(c(serverconfig_change$count(),BPdatabase()), {
 		# change in server list (by GUI editor in server module) prompts
 		server_list_names(BPdatabase() %>% select(Name) %>% collect() %>% unlist(use.names = FALSE))
+	  
+	})
+	
+	observeEvent(serverconfig_change$selectionName(), {
+	  print(paste("ChosenServerName:", serverconfig_change$selectionName()))
 	})
 
 	# location configuration tab

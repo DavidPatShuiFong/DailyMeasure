@@ -869,10 +869,37 @@ server <- function(input, output, session) {
                                c("Attributes", "character")))
   })
 
+  ### database initialization
+
+  observeEvent(emrpool(), ignoreNULL = TRUE, {
+    # if emrpool is initialized to a database,
+    # then initialize tables
+    print("Re-initializing databases")
+    if (is.environment(emrpool())) {
+      initialize_tables(emrpool) # if pool is successfully initialized
+    }
+  })
+
+  observeEvent(BPdatabaseChoice(), {
+    print("observed BPdatabaseChoice change")
+    if (!is.null(BPdatabaseChoice())) {
+      server <- BPdatabase() %>% filter(Name == BPdatabaseChoice()) %>% collect()
+      print("Initializing EMR database")
+      emrpool(tryCatch(dbPool(odbc::odbc(), driver = "SQL Server",
+                              server = server$Address, database = server$Database,
+                              uid = server$UserID, pwd = server$dbPassword),
+                       error = function(e) {NULL}
+      ))
+    }
+  }, ignoreInit = TRUE)
+
+  ### configuration database changes
+
   observeEvent(config_pool(), ignoreNULL = TRUE, {
     BPdatabase(isolate(config_pool()) %>% tbl("Server") %>% collect())
-    BPdatabaseChoice((isolate(config_pool()) %>% tbl("Serverchoice") %>%
+    BPdatabaseChoice((isolate(config_pool()) %>% tbl("ServerChoice") %>%
                         filter(id == 1) %>% select("Name") %>% collect())[[1]])
+    print("BPdatabaseChoice changed")
     PracticeLocations(isolate(config_pool()) %>% tbl("Location"))
     UserConfig(isolate(config_pool()) %>% tbl("Users") %>%
                  # in UserConfig, there can be multiple Locations/Attributes per user
@@ -880,29 +907,7 @@ server <- function(input, output, session) {
                                       Attributes = str_split(Attributes, ";")))
   })
 
-  # poolClose(isolate(config_pool()))
-
-  #if (is.yaml.file('./DailyDash_cfg.yaml')) {
-  # if config file exists and is a YAML-type file
-  #	config <- read.config('./DailyDash_cfg.yaml')
-  #} else {
-  #	config <- list()
-
-  #	config$server <- c('127.0.0.1\\BPSINSTANCE') # Note that 'true' server name includes a single backslash
-  # in this string, the backslash is 'escaped' into a double backslash
-  #	config$database <- c('BPSSamples')
-  #	filename <- 'BestPracticeSQL_password.txt'
-  #	config$dbpassword <- rawToChar(base64decode(readChar(filename,file.info(filename)$size)))
-
-  # config$server <-  character()       # e.g. '127.0.0.1\\BPSINSTANCE'
-  # config$database <-  character()     # e.g. 'BPSSamples' for samples database
-  #	config$userid <-  c('bpsrawdata')   # database user ID
-  # config$dbpassword <-  character()   # password for the database user
-
-  #}
-
-  # initial database setup
-
+  ### emr database variables
   emrpool <- reactiveVal()
   # the database pool of the electronic medical record
   # (Best Practice)
@@ -974,30 +979,6 @@ server <- function(input, output, session) {
     db$dbversion <- isolate(db$dbversion+1)
 
   }
-
-  ### database initialization
-
-  observeEvent(emrpool(), ignoreNULL = TRUE, {
-    # if emrpool is initialized to a database,
-    # then initialize tables
-    print("Re-initializing databases")
-    if (is.environment(emrpool())) {
-      initialize_tables(emrpool) # if pool is successfully initialized
-    }
-  })
-
-
-  observeEvent(BPdatabaseChoice(), {
-    if (!is.null(BPdatabaseChoice())) {
-      server <- BPdatabase() %>% filter(Name == BPdatabaseChoice()) %>% collect()
-      print("Initializing EMR database")
-      emrpool(tryCatch(dbPool(odbc::odbc(), driver = "SQL Server",
-                              server = server$Address, database = server$Database,
-                              uid = server$UserID, pwd = server$dbPassword),
-                       error = function(e) {NULL}
-      ))
-    }
-  }, ignoreInit = TRUE)
 
   # 'helper' functions for input panel
 

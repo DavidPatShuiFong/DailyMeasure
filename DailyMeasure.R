@@ -264,7 +264,7 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
   }
   servers.delete.callback <- function(data, row) {
     # delete a server description
-    if (data[row,]$id == BPdatabaseChoice()) {
+    if (toupper(data[row,]$Name) == toupper(BPdatabaseChoice())) {
       stop(paste0("Cannot remove '", data[row,]$Name, "', currently in use!"))
     } else {
       query <- "DELETE FROM Server WHERE id = ?"
@@ -278,9 +278,8 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 
       BPdatabase(data[-c(row),])
       servers_list_change(servers_list_change() + 1) # this value returned by module
-
-      return(BPdatabase())
     }
+    return(BPdatabase())
   }
   # depends on modularized version of DTedit
   servers_edited <- callModule(dtedit, "servers",
@@ -412,9 +411,8 @@ locations_datatable <- function(input, output, session, PracticeLocations, UserC
 
       PracticeLocations(data[-c(row),])
       location_list_change(location_list_change() + 1) # this value returned by module
-
-      return(PracticeLocations())
     }
+    return(PracticeLocations())
   }
 
   # depends on modularized version of DTedit
@@ -880,14 +878,26 @@ server <- function(input, output, session) {
     # if emrpool is initialized to a database,
     # then initialize tables
     print("Re-initializing databases")
-    if (is.environment(emrpool())) {
-      initialize_tables(emrpool) # if pool is successfully initialized
+    if (is.environment(emrpool())) { # emrpool has been defined at least once
+      if (dbIsValid(emrpool())) {  # and is still a valid database object (e.g. not disconnected)
+        initialize_tables(emrpool) # if pool is successfully initialized
+      }
     }
   })
 
   observeEvent(BPdatabaseChoice(), {
     print("observed BPdatabaseChoice change")
-    if (!is.null(BPdatabaseChoice())) {
+    
+    # close existing database connection
+    if (is.environment(emrpool())) {
+      if (dbIsValid(emrpool())) {
+        # if emrpool() is defined as a database, then close it
+        poolClose(emrpool())
+      }
+    }
+    if (BPdatabaseChoice() == "None") {
+      # do nothing
+    } else if (!is.null(BPdatabaseChoice())) {
       server <- BPdatabase() %>% filter(Name == BPdatabaseChoice()) %>% collect()
       print("Initializing EMR database")
       emrpool(tryCatch(dbPool(odbc::odbc(), driver = "SQL Server",
@@ -895,6 +905,23 @@ server <- function(input, output, session) {
                               uid = server$UserID, pwd = server$dbPassword),
                        error = function(e) {NULL}
       ))
+    }
+    if (!is.environment(emrpool()) || !dbIsValid(emrpool())) {
+      # || 'short-circuits' the evaluation, so if not an environment,
+      # then dbIsValid() is not evaluated (will return an error if emrpool() is NULL)
+      
+      # either database not opened, or has just been closed
+      db$users <- NULL
+      db$patients <- NULL
+      db$investigations <- NULL
+      db$appointments <- NULL
+      db$immunizations <- NULL
+      db$preventive_health <- NULL
+      db$correspondenceIn <- NULL
+      db$reportValues <- NULL
+      db$invoices <- NULL
+      db$services <- NULL
+      db$history <- NULL
     }
   }, ignoreInit = TRUE)
 
@@ -904,7 +931,6 @@ server <- function(input, output, session) {
     BPdatabase(isolate(config_pool()) %>% tbl("Server") %>% collect())
     BPdatabaseChoice((isolate(config_pool()) %>% tbl("ServerChoice") %>%
                         filter(id == 1) %>% select("Name") %>% collect())[[1]])
-    print("BPdatabaseChoice changed")
     PracticeLocations(isolate(config_pool()) %>% tbl("Location"))
     UserConfig(isolate(config_pool()) %>% tbl("Users") %>%
                  # in UserConfig, there can be multiple Locations/Attributes per user

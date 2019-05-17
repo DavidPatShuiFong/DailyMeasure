@@ -877,9 +877,9 @@ server <- function(input, output, session) {
   observeEvent(emrpool(), ignoreNULL = TRUE, {
     # if emrpool is initialized to a database,
     # then initialize tables
-    print("Re-initializing databases")
     if (is.environment(emrpool())) { # emrpool has been defined at least once
       if (dbIsValid(emrpool())) {  # and is still a valid database object (e.g. not disconnected)
+        print("Re-initializing databases")
         initialize_tables(emrpool) # if pool is successfully initialized
       }
     }
@@ -922,6 +922,7 @@ server <- function(input, output, session) {
       db$invoices <- NULL
       db$services <- NULL
       db$history <- NULL
+      clinician_choice_list(NULL)
     }
   }, ignoreInit = TRUE)
 
@@ -943,7 +944,7 @@ server <- function(input, output, session) {
   # the database pool of the electronic medical record
   # (Best Practice)
   db <- reactiveValues() # the database tables
-  db$version <- 0
+  db$dbversion <- 0
 
   # change database tables whenever database is initialized
   # this is called by an observeEvent when emrpool() changes
@@ -1007,8 +1008,8 @@ server <- function(input, output, session) {
       tbl(in_schema('dbo', 'BPS_History')) %>%
       select(c('InternalID', 'Year', 'Condition', 'ConditionID', 'Status'))
 
-    db$dbversion <- isolate(db$dbversion+1)
-
+    db$dbversion <- isolate(db$dbversion)+1
+    print(paste("dbversion:", db$dbversion))
   }
 
   # 'helper' functions for input panel
@@ -1057,8 +1058,10 @@ server <- function(input, output, session) {
     {
       if (!is.null(input$location)) { # only if initialized
         clinician_choice_list(
-          if (isolate(input$location) == 'All')
-          {isolate(db$users$Fullname)} else {
+          if (isolate(input$location) == 'All') {
+            db$users$Fullname
+          }
+          else {
             subset(db$users, Location == input$location)$Fullname
             # initially, $Location might include a lot of NA,
             # so db$users[db$users$Location == input$location,] will also return NAs

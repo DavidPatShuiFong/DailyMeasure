@@ -1,0 +1,9 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+DailyMeasure.Rproj
+
+DailyMeasure_cfg\.sqlite
+
+DailyMeasure_cfg\.yaml

@@ -138,10 +138,10 @@ servers_datatableUI <- function(id) {
 servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoice, emrpool, config_pool) {
   # Practice locations/groups server part of module
   # input : BPdatabase reactiveval, list of servers
+	# input : BPdatabaseChoice reactiveval, name of chosen server
   # input : emrpool reactiveval, current Best Practice (electronic medical record 'EMR') database pool in use
   # input : config_pool - reactiveval, access to configuration database
   # returns server_list_change$count - increments with each GUI edit of server list
-  # returns server_list_change$selectionName = Name of chosen database
   # change in server_list_change to prompt change in selectable filter list of locations
   ns <- session$ns
 
@@ -152,8 +152,8 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 
   chosen_database <- reactiveVal(NULL) # ID of chosen database
   servers_list_change <- reactiveVal(0)
-
-  servername_list <- reactiveVal(isolate(BPdatabase()$Name))
+  
+  servername_list <- reactiveVal(append("None", isolate(BPdatabase()$Name)))
   observeEvent(c(BPdatabase(), config_pool()), {
     servername_list(BPdatabase()$Name)
   })
@@ -165,6 +165,10 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 
   observeEvent(BPdatabaseChoice(), {
     updateSelectInput(session, inputId = ns("server_chosen"), selected = BPdatabaseChoice())
+  })
+  
+  observeEvent(BPdatabase()$Name, {
+  	servername_list(append("None", BPdatabase()$Name))
   })
 
   observeEvent(input$server_chosen, {
@@ -193,10 +197,10 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
   ### callback definitions for DTedit
   servers.insert.callback <- function(data, row) {
     # adding a new server description
-    if (toupper(data[row,]$Name) %in% toupper(data[-row,]$Name)) {
+    if (toupper(data[row,]$Name) %in% toupper(append(data[-row,]$Name, "None"))) {
       # if the proposed server is the same as one that already exists
       # (ignoring case)
-      stop("New practice location name cannot be the same as existing names")
+      stop("New server name cannot be the same as existing names, or 'None'")
     } else if (str_length(data[row,]$Name) == 0 | str_length(data[row,]$Address) == 0 |
                str_length(data[row,]$Database) == 0 | str_length(data[row,]$UserID) == 0 |
                str_length(data[row,]$dbPassword) == 0) {
@@ -230,10 +234,12 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
   servers.update.callback <- function(data, olddata, row) {
     # change (update) a server description
 
-    if (toupper(data[row,]$Name) %in% toupper(data[-row,]$Name)) {
-      # if the proposed server is the same as one that already exists
-      # (ignoring case)
-      stop("New practice location name cannot be the same as existing names")
+  	if (toupper(data[row,]$Name) %in% toupper(append(data[-row,]$Name, "None"))) {
+  		# if the proposed server is the same as one that already exists
+  		# (ignoring case)
+  		stop("New server name cannot be the same as existing names, or 'None'")
+    } else if (toupper(data[row,]$Name == "NONE")) {
+    	stop("New server name cannot be 'None'!")
     } else if (str_length(data[row,]$Name) == 0 | str_length(data[row,]$Address) == 0 |
                str_length(data[row,]$Database) == 0 | str_length(data[row,]$UserID) == 0 |
                str_length(data[row,]$dbPassword) == 0) {
@@ -258,8 +264,8 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
   }
   servers.delete.callback <- function(data, row) {
     # delete a server description
-    if (FALSE) {
-      stop(paste0("Cannot remove '", data[row,]$Name, "'."))
+    if (toupper(data[row,]$Name) == toupper(BPdatabaseChoice())) {
+      stop(paste0("Cannot remove '", data[row,]$Name, "', currently in use!"))
     } else {
       query <- "DELETE FROM Server WHERE id = ?"
       data_for_sql <- as.list.data.frame(c(data[row,]$id))
@@ -272,9 +278,8 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 
       BPdatabase(data[-c(row),])
       servers_list_change(servers_list_change() + 1) # this value returned by module
-
-      return(BPdatabase())
     }
+    return(BPdatabase())
   }
   # depends on modularized version of DTedit
   servers_edited <- callModule(dtedit, "servers",
@@ -290,8 +295,7 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
   )
 
   return(list(
-    count = reactive({servers_list_change()}),
-    selectionName = reactive({chosen_database()})
+  	count = reactive({servers_list_change()})
   ))
   # increments each time a callback changes BPdatabase()
 }
@@ -407,9 +411,8 @@ locations_datatable <- function(input, output, session, PracticeLocations, UserC
 
       PracticeLocations(data[-c(row),])
       location_list_change(location_list_change() + 1) # this value returned by module
-
-      return(PracticeLocations())
     }
+    return(PracticeLocations())
   }
 
   # depends on modularized version of DTedit
@@ -874,15 +877,27 @@ server <- function(input, output, session) {
   observeEvent(emrpool(), ignoreNULL = TRUE, {
     # if emrpool is initialized to a database,
     # then initialize tables
-    print("Re-initializing databases")
-    if (is.environment(emrpool())) {
-      initialize_tables(emrpool) # if pool is successfully initialized
+    if (is.environment(emrpool())) { # emrpool has been defined at least once
+      if (dbIsValid(emrpool())) {  # and is still a valid database object (e.g. not disconnected)
+        print("Re-initializing databases")
+        initialize_tables(emrpool) # if pool is successfully initialized
+      }
     }
   })
 
   observeEvent(BPdatabaseChoice(), {
     print("observed BPdatabaseChoice change")
-    if (!is.null(BPdatabaseChoice())) {
+    
+    # close existing database connection
+    if (is.environment(emrpool())) {
+      if (dbIsValid(emrpool())) {
+        # if emrpool() is defined as a database, then close it
+        poolClose(emrpool())
+      }
+    }
+    if (BPdatabaseChoice() == "None") {
+      # do nothing
+    } else if (!is.null(BPdatabaseChoice())) {
       server <- BPdatabase() %>% filter(Name == BPdatabaseChoice()) %>% collect()
       print("Initializing EMR database")
       emrpool(tryCatch(dbPool(odbc::odbc(), driver = "SQL Server",
@@ -890,6 +905,24 @@ server <- function(input, output, session) {
                               uid = server$UserID, pwd = server$dbPassword),
                        error = function(e) {NULL}
       ))
+    }
+    if (!is.environment(emrpool()) || !dbIsValid(emrpool())) {
+      # || 'short-circuits' the evaluation, so if not an environment,
+      # then dbIsValid() is not evaluated (will return an error if emrpool() is NULL)
+      
+      # either database not opened, or has just been closed
+      db$users <- NULL
+      db$patients <- NULL
+      db$investigations <- NULL
+      db$appointments <- NULL
+      db$immunizations <- NULL
+      db$preventive_health <- NULL
+      db$correspondenceIn <- NULL
+      db$reportValues <- NULL
+      db$invoices <- NULL
+      db$services <- NULL
+      db$history <- NULL
+      clinician_choice_list(NULL)
     }
   }, ignoreInit = TRUE)
 
@@ -899,7 +932,6 @@ server <- function(input, output, session) {
     BPdatabase(isolate(config_pool()) %>% tbl("Server") %>% collect())
     BPdatabaseChoice((isolate(config_pool()) %>% tbl("ServerChoice") %>%
                         filter(id == 1) %>% select("Name") %>% collect())[[1]])
-    print("BPdatabaseChoice changed")
     PracticeLocations(isolate(config_pool()) %>% tbl("Location"))
     UserConfig(isolate(config_pool()) %>% tbl("Users") %>%
                  # in UserConfig, there can be multiple Locations/Attributes per user
@@ -912,7 +944,7 @@ server <- function(input, output, session) {
   # the database pool of the electronic medical record
   # (Best Practice)
   db <- reactiveValues() # the database tables
-  db$version <- 0
+  db$dbversion <- 0
 
   # change database tables whenever database is initialized
   # this is called by an observeEvent when emrpool() changes
@@ -976,8 +1008,8 @@ server <- function(input, output, session) {
       tbl(in_schema('dbo', 'BPS_History')) %>%
       select(c('InternalID', 'Year', 'Condition', 'ConditionID', 'Status'))
 
-    db$dbversion <- isolate(db$dbversion+1)
-
+    db$dbversion <- isolate(db$dbversion)+1
+    print(paste("dbversion:", db$dbversion))
   }
 
   # 'helper' functions for input panel
@@ -1026,8 +1058,10 @@ server <- function(input, output, session) {
     {
       if (!is.null(input$location)) { # only if initialized
         clinician_choice_list(
-          if (isolate(input$location) == 'All')
-          {isolate(db$users$Fullname)} else {
+          if (isolate(input$location) == 'All') {
+            db$users$Fullname
+          }
+          else {
             subset(db$users, Location == input$location)$Fullname
             # initially, $Location might include a lot of NA,
             # so db$users[db$users$Location == input$location,] will also return NAs
@@ -1401,7 +1435,7 @@ server <- function(input, output, session) {
 
   serverconfig_change <- callModule(servers_datatable, "servers_dt",
                                     BPdatabase, BPdatabaseChoice, emrpool, config_pool)
-  # returns $count and $selectionName
+  # returns $count
 
   server_list_names <- reactiveVal(isolate(BPdatabase()) %>%
                                      select(Name) %>% collect() %>% unlist(use.names = FALSE))
@@ -1410,12 +1444,11 @@ server <- function(input, output, session) {
   observeEvent(c(serverconfig_change$count(),BPdatabase()), {
     # change in server list (by GUI editor in server module) prompts
     server_list_names(BPdatabase() %>% select(Name) %>% collect() %>% unlist(use.names = FALSE))
-
   })
 
-  observeEvent(serverconfig_change$selectionName(), {
-    print(paste("ChosenServerName:", serverconfig_change$selectionName()))
-  })
+  observeEvent(BPdatabaseChoice(), {
+    print(paste("ChosenServerName:", BPdatabaseChoice()))
+  }, ignoreInit = TRUE)
 
   # location configuration tab
   location_list_change <- callModule(locations_datatable, "locations_dt",

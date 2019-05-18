@@ -42,7 +42,7 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 	})
 	
 	observeEvent(BPdatabaseChoice(), {
-		updateSelectInput(session, inputId = ns("server_chosen"), selected = BPdatabaseChoice())
+		updateSelectInput(session, inputId = "server_chosen", selected = BPdatabaseChoice())
 	})
 	
 	observeEvent(BPdatabase()$Name, {

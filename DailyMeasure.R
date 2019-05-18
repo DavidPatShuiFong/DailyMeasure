@@ -306,7 +306,9 @@ if (is.yaml.file('./DailyMeasure_cfg.yaml')) {
 
 ##### Define server logic #####################################################
 server <- function(input, output, session) {
-
+	
+	useSweetAlert() # needed with 'progressSweetAlert'
+	
   # read config files
 
   # local_config <- reactiveValues(config_file = character())
@@ -439,8 +441,8 @@ server <- function(input, output, session) {
   })
 
   observeEvent(BPdatabaseChoice(), {
-    print("observed BPdatabaseChoice change")
-    
+  	print(paste("ChosenServerName:", BPdatabaseChoice()))
+  	
     # close existing database connection
     if (is.environment(emrpool())) {
       if (dbIsValid(emrpool())) {
@@ -456,9 +458,17 @@ server <- function(input, output, session) {
       emrpool(tryCatch(dbPool(odbc::odbc(), driver = "SQL Server",
                               server = server$Address, database = server$Database,
                               uid = server$UserID, pwd = server$dbPassword),
-                       error = function(e) {NULL}
+                       error = function(e) {
+                       	sendSweetAlert(
+                       		session = session,
+                       		title = "Error opening database",
+                       		text = e,
+                       		type = "error"
+                       	)
+                       }
       ))
     }
+  	
     if (!is.environment(emrpool()) || !dbIsValid(emrpool())) {
       # || 'short-circuits' the evaluation, so if not an environment,
       # then dbIsValid() is not evaluated (will return an error if emrpool() is NULL)
@@ -476,6 +486,7 @@ server <- function(input, output, session) {
       db$services <- NULL
       db$history <- NULL
       clinician_choice_list(NULL)
+      BPdatabaseChoice("None") # set choice of database to 'None'
     }
   }, ignoreInit = TRUE)
 
@@ -998,10 +1009,6 @@ server <- function(input, output, session) {
     # change in server list (by GUI editor in server module) prompts
     server_list_names(BPdatabase() %>% select(Name) %>% collect() %>% unlist(use.names = FALSE))
   })
-
-  observeEvent(BPdatabaseChoice(), {
-    print(paste("ChosenServerName:", BPdatabaseChoice()))
-  }, ignoreInit = TRUE)
 
   # location configuration tab
   location_list_change <- callModule(locations_datatable, "locations_dt",

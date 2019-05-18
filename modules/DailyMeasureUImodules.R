@@ -464,6 +464,11 @@ cdm_datatableUI <- function(id) {
   ns <- NS(id)
 
   tagList(
+  	switchInput(
+  		inputId = ns("printcopy_view"),
+  		label = "<i class=\"fas fa-print\"></i> </i><i class=\"far fa-copy\"></i>  Print and Copy View", 
+  		labelWidth = "280px"
+  	),
     DTOutput(ns("cdm_table"))
   )
 }
@@ -507,22 +512,30 @@ cdm_datatable <- function(input, output, session,
       # group by patient, apppointment and CDM type (name)
       filter(SERVICEDATE == max(SERVICEDATE, na.rm = TRUE)) %>% # only keep most recent service
       ungroup() %>%
-      mutate(mbstag =
-               semantic_tag(MBSNAME,
-                            colour =
-                              if_else(SERVICEDATE == -Inf,
-                                      'red', # invalid date is '-Inf', means item not claimed yet
-                                      if_else(interval(SERVICEDATE, AppointmentDate)<=years(1),
-                                              'green',
-                                              'yellow')),
-                            popuphtml =
-                              paste0("<h4>Date : ", SERVICEDATE,
-                                     "</h4><h6>Item : ", MBSITEM,
-                                     "</h6><p><font size=\'+0\'>", DESCRIPTION, "</p>")
-               )) %>%
+  		mutate(mbstag = 
+  					 	semantic_tag(MBSNAME, # semantic/fomantic buttons
+  					 							 colour =
+  					 							 	if_else(SERVICEDATE == -Inf,
+  					 							 					'red', # invalid date is '-Inf', means item not claimed yet
+  					 							 					if_else(interval(SERVICEDATE, AppointmentDate)<=years(1),
+  					 							 									'green',
+  					 							 									'yellow')),
+  					 							 popuphtml =
+  					 							 	paste0("<h4>Date : ", SERVICEDATE,
+  					 							 				 "</h4><h6>Item : ", MBSITEM,
+  					 							 				 "</h6><p><font size=\'+0\'>", DESCRIPTION, "</p>")),
+  					 mbstag_print = paste0(MBSNAME, " ", # printable version of information
+      			 											if_else(SERVICEDATE == -Inf,
+      			 															'',
+      			 															paste0("(", SERVICEDATE, ")",
+      			 																		 if_else(interval(SERVICEDATE, AppointmentDate)<=years(1),
+      			 																		 				"", " Overdue")))
+  					 											)
+      			 ) %>%
       group_by(InternalID, AppointmentDate, AppointmentTime, Provider) %>%
       # gathers item numbers on the same day into a single row
-      summarise(cdm = paste(mbstag, collapse = "")) %>%
+      summarise(cdm = paste(mbstag, collapse = ""),
+      					cdm_print = paste(mbstag_print, collapse = ", ")) %>%
       ungroup()
   })
 
@@ -556,15 +569,29 @@ cdm_datatable <- function(input, output, session,
     # people with diabetes also qualify for GPMP. duplicate list with 'GPMP' MBSNAME
     rbind(a, b)
   })
-
+  
+  cdm_styled_datatable <- reactive({
+  	if (input$printcopy_view == TRUE) {
+  		# printable/copyable view
+  		datatable_styled(appointments_filtered_time() %>%
+  										 	inner_join(appointments_billings_cdm(),
+  										 						 by = c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider')) %>%
+  										 	select(c('Patient', 'AppointmentDate', 'AppointmentTime', 'Provider', 'cdm_print')),
+  										 colnames = c('Patient', 'Appointment Date', 'Appointment Time', 'Provider', 'CDM items'))
+  	} else {
+  		# fomantic/semantic tag view
+  		datatable_styled(appointments_filtered_time() %>%
+  										 	inner_join(appointments_billings_cdm(),
+  										 						 by = c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider')) %>%
+  										 	select(c('Patient', 'AppointmentDate', 'AppointmentTime', 'Provider', 'cdm')),
+  										 colnames = c('Patient', 'Appointment Date', 'Appointment Time', 'Provider', 'CDM items'),
+  										 dom = 'frltip', # no copy/print buttons
+  										 escape = c(5)) # only interpret HTML for last column
+  	}
+  })
 
   output$cdm_table <- renderDT({
-    datatable_styled(appointments_filtered_time() %>%
-                       inner_join(appointments_billings_cdm(),
-                                  by = c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider')) %>%
-                       select(c('Patient', 'AppointmentDate', 'AppointmentTime', 'Provider', 'cdm')),
-                     colnames = c('Patient', 'Appointment Date', 'Appointment Time', 'Provider', 'CDM items'),
-                     escape = c(5)) # only interpret HTML for last column
+    cdm_styled_datatable()
   },
   server = TRUE)
 }

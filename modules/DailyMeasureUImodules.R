@@ -518,6 +518,13 @@ cdm_datatable <- function(input, output, session,
 
   # filter to CDM item billed prior to (or on) the day of displayed appointments
   # only show most recent billed item in each category
+  
+  cdm_selected <- reactiveVal(cdm_item_names)
+  # use instead of input$cdm_chosen directly because
+  # input$cdm_chosen is not defined until the dropdown button is selected!
+  observeEvent(input$cdm_chosen, {
+  	cdm_selected(input$cdm_chosen)
+  })
 
   appointments_billings_cdm <- reactive({
     appointments_billings() %>%
@@ -528,7 +535,7 @@ cdm_datatable <- function(input, output, session,
       mutate(MBSNAME = cdm_item$name[match(MBSITEM, cdm_item$code)]) %>%
       rbind(diabetes_list_cdm()) %>%
       rbind(asthma_list_cdm()) %>%
-      filter(MBSNAME %in% input$cdm_chosen) %>%
+      filter(MBSNAME %in% cdm_selected()) %>%
       group_by(InternalID, AppointmentDate, AppointmentTime, Provider, MBSNAME) %>%
       # group by patient, apppointment and CDM type (name)
       filter(SERVICEDATE == max(SERVICEDATE, na.rm = TRUE)) %>% # only keep most recent service

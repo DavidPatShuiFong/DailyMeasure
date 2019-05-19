@@ -7,6 +7,7 @@ library(shinyjs)
 library(shinydashboard)
 library(shinydashboardPlus) # version 0.6.0+ preferred (development version as of Feb/2019)
 library(shinyWidgets)
+library(shinytoastr) # notifications
 library(shinyFiles) # file-picker. currently depends on development version 0.7.2
 
 library(tidyverse)
@@ -187,6 +188,8 @@ ui <- dashboardPagePlus(
   ),
 
   dashboardBody(
+    useSweetAlert(),
+    useToastr(),
     tags$head(
       # stylesheets from fomantic.ui (a fork of semantic.ui)
       # Note that this is a specially edited version of semantic.css that is provided with fomantic
@@ -306,9 +309,7 @@ if (is.yaml.file('./DailyMeasure_cfg.yaml')) {
 
 ##### Define server logic #####################################################
 server <- function(input, output, session) {
-	
-	useSweetAlert() # needed with 'progressSweetAlert'
-	
+
   # read config files
 
   # local_config <- reactiveValues(config_file = character())
@@ -442,7 +443,7 @@ server <- function(input, output, session) {
 
   observeEvent(BPdatabaseChoice(), {
   	print(paste("ChosenServerName:", BPdatabaseChoice()))
-  	
+
     # close existing database connection
     if (is.environment(emrpool())) {
       if (dbIsValid(emrpool())) {
@@ -455,24 +456,25 @@ server <- function(input, output, session) {
     } else if (!is.null(BPdatabaseChoice())) {
       server <- BPdatabase() %>% filter(Name == BPdatabaseChoice()) %>% collect()
       print("Initializing EMR database")
+      toastr_info("Opening link to Best Practice", title = "Best Practice database")
       emrpool(tryCatch(dbPool(odbc::odbc(), driver = "SQL Server",
                               server = server$Address, database = server$Database,
                               uid = server$UserID, pwd = server$dbPassword),
                        error = function(e) {
-                       	sendSweetAlert(
-                       		session = session,
-                       		title = "Error opening database",
-                       		text = e,
-                       		type = "error"
-                       	)
+                         sendSweetAlert(
+                           session = session,
+                           title = "Error opening database",
+                           text = e,
+                           type = "error")
                        }
       ))
+
     }
-  	
+
     if (!is.environment(emrpool()) || !dbIsValid(emrpool())) {
       # || 'short-circuits' the evaluation, so if not an environment,
       # then dbIsValid() is not evaluated (will return an error if emrpool() is NULL)
-      
+
       # either database not opened, or has just been closed
       db$users <- NULL
       db$patients <- NULL
@@ -487,6 +489,9 @@ server <- function(input, output, session) {
       db$history <- NULL
       clinician_choice_list(NULL)
       BPdatabaseChoice("None") # set choice of database to 'None'
+    } else {
+      toastr_success("Linking to Best Practice database successful!",
+                     title = "Best Practice database")
     }
   }, ignoreInit = TRUE)
 

@@ -466,7 +466,7 @@ cdm_datatableUI <- function(id) {
   tagList(
   	switchInput(
   		inputId = ns("printcopy_view"),
-  		label = "<i class=\"fas fa-print\"></i> </i><i class=\"far fa-copy\"></i>  Print and Copy View", 
+  		label = "<i class=\"fas fa-print\"></i> </i><i class=\"far fa-copy\"></i>  Print and Copy View",
   		labelWidth = "280px"
   	),
     DTOutput(ns("cdm_table"))
@@ -508,11 +508,12 @@ cdm_datatable <- function(input, output, session,
                'SERVICEDATE', 'MBSITEM', 'DESCRIPTION')) %>%
       mutate(MBSNAME = cdm_item$name[match(MBSITEM, cdm_item$code)]) %>%
       rbind(diabetes_list_cdm()) %>%
+      rbind(asthma_list_cdm()) %>%
       group_by(InternalID, AppointmentDate, AppointmentTime, Provider, MBSNAME) %>%
       # group by patient, apppointment and CDM type (name)
       filter(SERVICEDATE == max(SERVICEDATE, na.rm = TRUE)) %>% # only keep most recent service
       ungroup() %>%
-  		mutate(mbstag = 
+  		mutate(mbstag =
   					 	semantic_tag(MBSNAME, # semantic/fomantic buttons
   					 							 colour =
   					 							 	if_else(SERVICEDATE == -Inf,
@@ -569,7 +570,38 @@ cdm_datatable <- function(input, output, session,
     # people with diabetes also qualify for GPMP. duplicate list with 'GPMP' MBSNAME
     rbind(a, b)
   })
-  
+
+  ### Asthma sub-code
+
+  # Best Practice Asthma code
+  asthma_codes <- c(281, 285, 283, 284, 282)
+
+  asthma_list <- reactive({
+    # Returns InternalID of patients who have asthma
+    appointments_filtered() %>%
+      inner_join(dbHistory %>%
+                   filter(ConditionID %in% asthma_codes),
+                 by = c('InternalID')) %>%
+      select('InternalID')
+  })
+
+  asthma_list_cdm <- reactive({
+
+    a <- appointments_list() %>%
+      inner_join(asthma_list(), by = 'InternalID', copy = TRUE) %>%
+      select(c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider')) %>%
+      mutate(MBSNAME = c('AsthmaSIP'), DESCRIPTION = c('History : Asthma'),
+             SERVICEDATE = as.Date(-Inf, origin = '1970-01-01'), MBSITEM = NA) %>%
+      unique()
+    # invalid date set as -Inf, which looks like NA, but is not (is equal to -Inf)
+    # setting invalid date to NA is not good for later comparisons,
+    # where max(... , na.rm=TRUE) needs to be used
+
+    b <- a %>% mutate(MBSNAME = c('GPMP'))
+    # people with asthma also qualify for GPMP. duplicate list with 'GPMP' MBSNAME
+    rbind(a, b)
+  })
+
   cdm_styled_datatable <- reactive({
   	if (input$printcopy_view == TRUE) {
   		# printable/copyable view

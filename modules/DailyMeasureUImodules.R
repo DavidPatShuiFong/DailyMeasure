@@ -1,8 +1,7 @@
 # modules for input/output
 
 ##### configuration modules #####################################################################
-##### servers - editable datatable module #######################################################
-
+##### servers - editable datatable module ######################################################
 servers_datatableUI <- function(id) {
 	ns <- NS(id)
 
@@ -464,10 +463,20 @@ cdm_datatableUI <- function(id) {
   ns <- NS(id)
 
   tagList(
-  	switchInput(
-  		inputId = ns("printcopy_view"),
-  		label = "<i class=\"fas fa-print\"></i> </i><i class=\"far fa-copy\"></i>  Print and Copy View",
-  		labelWidth = "280px"
+    fluidRow(
+      column(4,
+             switchInput(
+               inputId = ns("printcopy_view"),
+               label = "<i class=\"fas fa-print\"></i> </i><i class=\"far fa-copy\"></i>  Print and Copy View",
+               labelWidth = "100%")
+             ),
+      column(2, offset = 6, # note that total 'column' width = 12
+             dropdown(
+               uiOutput(ns("cdm_item_choice")),
+               icon = icon("gear"),
+               label = "CDM items shown"
+             )
+      )
   	),
     DTOutput(ns("cdm_table"))
   )
@@ -497,6 +506,16 @@ cdm_datatable <- function(input, output, session,
              'AsthmaSIP', 'AsthmaSIP', 'AsthmaSIP', 'MHCP', 'MHCP', 'MHCP', 'MHCP')
   )
 
+  cdm_item_names <- as.character(unique(cdm_item$name)) # de-factored
+
+  output$cdm_item_choice <- renderUI({
+    checkboxGroupButtons(inputId = ns("cdm_chosen"), label = "CDM items shown",
+                         choices = cdm_item_names, selected = cdm_item_names,
+                         # all choices initially selected
+                         status = "primary",
+                         checkIcon = list(yes = icon("ok", lib = "glyphicon")))
+    })
+
   # filter to CDM item billed prior to (or on) the day of displayed appointments
   # only show most recent billed item in each category
 
@@ -509,6 +528,7 @@ cdm_datatable <- function(input, output, session,
       mutate(MBSNAME = cdm_item$name[match(MBSITEM, cdm_item$code)]) %>%
       rbind(diabetes_list_cdm()) %>%
       rbind(asthma_list_cdm()) %>%
+      filter(MBSNAME %in% input$cdm_chosen) %>%
       group_by(InternalID, AppointmentDate, AppointmentTime, Provider, MBSNAME) %>%
       # group by patient, apppointment and CDM type (name)
       filter(SERVICEDATE == max(SERVICEDATE, na.rm = TRUE)) %>% # only keep most recent service

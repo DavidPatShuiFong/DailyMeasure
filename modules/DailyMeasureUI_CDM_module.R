@@ -70,45 +70,55 @@ cdm_datatable <- function(input, output, session,
 		cdm_selected(input$cdm_chosen)
 	})
 	
-	appointments_billings_cdm <- reactive({
-		appointments_billings() %>%
-			filter(MBSITEM %in% cdm_item$code) %>% # only chronic disease management items
-			filter(SERVICEDATE <= AppointmentDate) %>% # only items billed before the appointment day
-			select(c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider',
-							 'SERVICEDATE', 'MBSITEM', 'DESCRIPTION')) %>%
-			mutate(MBSNAME = cdm_item$name[match(MBSITEM, cdm_item$code)]) %>%
-			rbind(diabetes_list_cdm()) %>%
-			rbind(asthma_list_cdm()) %>%
-			filter(MBSNAME %in% cdm_selected()) %>%
-			group_by(InternalID, AppointmentDate, AppointmentTime, Provider, MBSNAME) %>%
-			# group by patient, apppointment and CDM type (name)
-			filter(SERVICEDATE == max(SERVICEDATE, na.rm = TRUE)) %>% # only keep most recent service
-			ungroup() %>%
-			mutate(mbstag =
-						 	semantic_tag(MBSNAME, # semantic/fomantic buttons
-						 							 colour =
-						 							 	if_else(SERVICEDATE == -Inf,
-						 							 					'red', # invalid date is '-Inf', means item not claimed yet
-						 							 					if_else(interval(SERVICEDATE, AppointmentDate)<=years(1),
-						 							 									'green',
-						 							 									'yellow')),
-						 							 popuphtml =
-						 							 	paste0("<h4>Date : ", SERVICEDATE,
-						 							 				 "</h4><h6>Item : ", MBSITEM,
-						 							 				 "</h6><p><font size=\'+0\'>", DESCRIPTION, "</p>")),
-						 mbstag_print = paste0(MBSNAME, " ", # printable version of information
-						 											if_else(SERVICEDATE == -Inf,
-						 															'',
-						 															paste0("(", SERVICEDATE, ")",
-						 																		 if_else(interval(SERVICEDATE, AppointmentDate)<=years(1),
-						 																		 				"", " Overdue")))
-						 )
-			) %>%
-			group_by(InternalID, AppointmentDate, AppointmentTime, Provider) %>%
-			# gathers item numbers on the same day into a single row
-			summarise(cdm = paste(mbstag, collapse = ""),
-								cdm_print = paste(mbstag_print, collapse = ", ")) %>%
-			ungroup()
+	appointments_billings_cdm <- reactiveVal(NULL)
+	
+	observeEvent(c(appointments_billings(), diabetes_list_cdm(), asthma_list_cdm(),
+								 cdm_selected()), {
+								 	appointments <- appointments_billings() %>%
+								 		filter(MBSITEM %in% cdm_item$code) %>% 
+								 		# only chronic disease management items
+								 		filter(SERVICEDATE <= AppointmentDate) %>% 
+								 		# only items billed before the appointment day
+								 		select(c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider',
+								 						 'SERVICEDATE', 'MBSITEM', 'DESCRIPTION')) %>%
+								 		mutate(MBSNAME = cdm_item$name[match(MBSITEM, cdm_item$code)]) %>%
+								 		rbind(diabetes_list_cdm()) %>%
+								 		rbind(asthma_list_cdm()) %>%
+								 		filter(MBSNAME %in% cdm_selected()) %>%
+								 		group_by(InternalID, AppointmentDate, AppointmentTime, Provider, MBSNAME) %>%
+								 		# group by patient, apppointment and CDM type (name)
+								 		filter(SERVICEDATE == max(SERVICEDATE, na.rm = TRUE)) %>% 
+								 		# only keep most recent service
+								 		ungroup()
+								 	
+								 	appointments <- appointments %>%
+								 		mutate(mbstag =
+								 					 	semantic_tag(MBSNAME, # semantic/fomantic buttons
+								 					 							 colour =
+								 					 							 	if_else(SERVICEDATE == -Inf,
+								 					 							 					'red', 
+								 					 							 					# invalid date is '-Inf', means item not claimed yet
+								 					 							 					if_else(interval(SERVICEDATE, AppointmentDate)<=years(1),
+								 					 							 									'green',
+								 					 							 									'yellow')),
+								 					 							 popuphtml =
+								 					 							 	paste0("<h4>Date : ", SERVICEDATE,
+								 					 							 				 "</h4><h6>Item : ", MBSITEM,
+								 					 							 				 "</h6><p><font size=\'+0\'>", DESCRIPTION, "</p>")),
+								 					 mbstag_print = paste0(MBSNAME, " ", # printable version of information
+								 					 											if_else(SERVICEDATE == -Inf,
+								 					 															'',
+								 					 															paste0("(", SERVICEDATE, ")",
+								 					 																		 if_else(interval(SERVICEDATE, AppointmentDate)<=years(1),
+								 					 																		 				"", " Overdue")))
+								 					 )
+								 		) %>%
+								 		group_by(InternalID, AppointmentDate, AppointmentTime, Provider) %>%
+								 		# gathers item numbers on the same day into a single row
+								 		summarise(cdm = paste(mbstag, collapse = ""),
+								 							cdm_print = paste(mbstag_print, collapse = ", ")) %>%
+								 		ungroup()
+								 	appointments_billings_cdm(appointments)
 	})
 	
 	### Diabetes sub-code
@@ -174,22 +184,24 @@ cdm_datatable <- function(input, output, session,
 	})
 	
 	cdm_styled_datatable <- reactive({
-		if (input$printcopy_view == TRUE) {
-			# printable/copyable view
-			datatable_styled(appointments_filtered_time() %>%
-											 	inner_join(appointments_billings_cdm(),
-											 						 by = c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider')) %>%
-											 	select(c('Patient', 'AppointmentDate', 'AppointmentTime', 'Provider', 'cdm_print')),
-											 colnames = c('Patient', 'Appointment Date', 'Appointment Time', 'Provider', 'CDM items'))
-		} else {
-			# fomantic/semantic tag view
-			datatable_styled(appointments_filtered_time() %>%
-											 	inner_join(appointments_billings_cdm(),
-											 						 by = c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider')) %>%
-											 	select(c('Patient', 'AppointmentDate', 'AppointmentTime', 'Provider', 'cdm')),
-											 colnames = c('Patient', 'Appointment Date', 'Appointment Time', 'Provider', 'CDM items'),
-											 dom = 'frltip', # no copy/print buttons
-											 escape = c(5)) # only interpret HTML for last column
+		if (!is.null(appointments_billings_cdm()) & !is.null(appointments_filtered_time())) {
+			if (input$printcopy_view == TRUE) {
+				# printable/copyable view
+				datatable_styled(appointments_filtered_time() %>%
+												 	inner_join(appointments_billings_cdm(),
+												 						 by = c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider')) %>%
+												 	select(c('Patient', 'AppointmentDate', 'AppointmentTime', 'Provider', 'cdm_print')),
+												 colnames = c('Patient', 'Appointment Date', 'Appointment Time', 'Provider', 'CDM items'))
+			} else {
+				# fomantic/semantic tag view
+				datatable_styled(appointments_filtered_time() %>%
+												 	inner_join(appointments_billings_cdm(),
+												 						 by = c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider')) %>%
+												 	select(c('Patient', 'AppointmentDate', 'AppointmentTime', 'Provider', 'cdm')),
+												 colnames = c('Patient', 'Appointment Date', 'Appointment Time', 'Provider', 'CDM items'),
+												 dom = 'frltip', # no copy/print buttons
+												 escape = c(5)) # only interpret HTML for last column
+			}
 		}
 	})
 	

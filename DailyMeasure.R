@@ -56,6 +56,7 @@ hrmin <- function(t) {
 
 ##### UI modules
 source("./modules/DailyMeasureUImodules.R")
+source("./modules/DailyMeasureUI_CDM_module.R")
 
 ##### Define UI for application ######################
 ui <- dashboardPagePlus(

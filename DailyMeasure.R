@@ -802,7 +802,38 @@ server <- function(input, output, session) {
   cdm_table_results <- callModule(cdm_datatable, "cdm_dt",
                                   appointments_billings, appointments_filtered,
                                   appointments_filtered_time, appointments_list,
+  																diabetes_list, asthma_list,
                                   db$history)
+
+  ### Diabetes sub-code
+
+
+
+  diabetes_list <- reactive({
+  	# Best Practice Diabetes code
+  	diabetes_codes <- c(3, 775, 776, 778, 774, 7840, 11998)
+
+  	# Returns InternalID of patients who have diabetes
+  	appointments_filtered() %>%
+  		inner_join(db$history %>%
+  							 	filter(ConditionID %in% diabetes_codes),
+  							 by = c('InternalID')) %>%
+  		select('InternalID')
+  })
+
+  ### Asthma sub-code
+
+  asthma_list <- reactive({
+  	# Best Practice Asthma code
+  	asthma_codes <- c(281, 285, 283, 284, 282)
+
+  	# Returns InternalID of patients who have asthma
+  	appointments_filtered() %>%
+  		inner_join(db$history %>%
+  							 	filter(ConditionID %in% asthma_codes),
+  							 by = c('InternalID')) %>%
+  		select('InternalID')
+  })
 
   # appointment list
   output$appointments_dt <- renderDT({datatable_styled(

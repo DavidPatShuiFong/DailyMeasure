@@ -29,13 +29,16 @@ cdm_datatableUI <- function(id) {
 cdm_datatable <- function(input, output, session,
 													appointments_billings, appointments_filtered,
 													appointments_filtered_time, appointments_list,
+													diabetes_list, asthma_list,
 													dbHistory) {
 	# chronic disease management items claimed, pending or unclaimed for appointment list
 	# input - input, output, session (as required by modules)
 	# input - appointments_billings - reactive. joining appointments and billings
 	# input - appointments_filtered - reactive
 	# input - appointments_filtered_time - reactive. filtered appointments list
-	# input - appointments_list - reactive. same as appointments_filtered_time, but with DOB added
+	# input - appointments_list - reactive. same as appointments_filtered_time, but with DOB and Age added
+	# input - diabetes_list - list of diabetic patients with appointments
+	# input - asthma_list - list of asthma patients with apponitments
 	# input - dbhistory - table of history items, lazy evaluation
 	# output - none
 	ns <- session$ns
@@ -132,6 +135,7 @@ cdm_datatable <- function(input, output, session,
 								 		filter(!(MBSNAME == "GPMP R/V")) %>% # GPMP R/V will be added back in as a 'tagged' version
 								 		rbind(diabetes_list_cdm()) %>%
 								 		rbind(asthma_list_cdm()) %>%
+								 		rbind(aha75_list_cdm()) %>%
 								 		filter(MBSNAME %in% cdm_selected()) %>%
 								 		group_by(InternalID, AppointmentDate, AppointmentTime, Provider, MBSNAME) %>%
 								 		# group by patient, apppointment and CDM type (name)
@@ -170,19 +174,17 @@ cdm_datatable <- function(input, output, session,
 								 	appointments_billings_cdm(appointments)
 	})
 	
-	### Diabetes sub-code
-	
-	# Best Practice Diabetes code
-	diabetes_codes <- c(3, 775, 776, 778, 774, 7840, 11998)
-	
-	diabetes_list <- reactive({
-		# Returns InternalID of patients who have diabetes
-		appointments_filtered() %>%
-			inner_join(dbHistory %>%
-								 	filter(ConditionID %in% diabetes_codes),
-								 by = c('InternalID')) %>%
-			select('InternalID')
+	### AHA 75 (annual health assessment for those aged 75 years and above)
+	aha75_list_cdm <- reactive({
+		appointments_list() %>%
+			filter(Age >= 75) %>%
+			select(c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider')) %>%
+			mutate(MBSNAME = c('HA'), DESCRIPTION = c('Age 75 years or older'),
+						 SERVICEDATE = as.Date(-Inf, origin = '1970-01-01'), MBSITEM = NA) %>%
+			unique()
 	})
+	
+	### Diabetes CDM list
 	
 	diabetes_list_cdm <- reactive({
 		
@@ -201,19 +203,7 @@ cdm_datatable <- function(input, output, session,
 		rbind(a, b)
 	})
 	
-	### Asthma sub-code
-	
-	# Best Practice Asthma code
-	asthma_codes <- c(281, 285, 283, 284, 282)
-	
-	asthma_list <- reactive({
-		# Returns InternalID of patients who have asthma
-		appointments_filtered() %>%
-			inner_join(dbHistory %>%
-								 	filter(ConditionID %in% asthma_codes),
-								 by = c('InternalID')) %>%
-			select('InternalID')
-	})
+	### asthma list CDM
 	
 	asthma_list_cdm <- reactive({
 		
@@ -231,6 +221,8 @@ cdm_datatable <- function(input, output, session,
 		# people with asthma also qualify for GPMP. duplicate list with 'GPMP' MBSNAME
 		rbind(a, b)
 	})
+	
+	### create tag-styled datatable (or 'printable' datatable)
 	
 	cdm_styled_datatable <- reactive({
 		if (!is.null(appointments_billings_cdm()) & !is.null(appointments_filtered_time())) {

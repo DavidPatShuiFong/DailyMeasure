@@ -7,6 +7,7 @@ library(shinyjs)
 library(shinydashboard)
 library(shinydashboardPlus) # version 0.6.0+ preferred (development version as of Feb/2019)
 library(shinyWidgets)
+library(shinytoastr) # notifications
 library(shinyFiles) # file-picker. currently depends on development version 0.7.2
 
 library(tidyverse)
@@ -28,79 +29,10 @@ library(DTedit)     # datatable edit wrapper.
 
 # function setup
 
-# fomantic (semantic.ui) string functions
+## fomantic/semantic definitions
+source("./modules/fomantic_definitions.R")
 
-semantic_tag <- function(tag, colour="", popuptext = NA, popuphtml = NA) {
-  # returns a vector of tags. user-defined colour and popuptext (tooltip) or popuphtml (HTMl tooltip)
-  # note that 'data-variation' is only available in the fomantic version of semantic.ui
-  # as of writing, semantic.ui does not allow variation in text-size of javascript-free tags
-  paste0('<span class="huge ', colour, ' ui tag label"',
-         ifelse(!is.na(popuphtml),
-                paste0('data-variation="wide" data-position = "left center" data-html="',
-                       popuphtml,
-                       '"', sep=""),
-                ''),
-         '> ',
-         ifelse(!is.na(popuptext),
-                paste0('<span data-tooltip = "',
-                       popuptext,
-                       '" data-variation = "wide huge" data-position = "left center">', sep=""),
-                ''),
-         tag,
-         ifelse(!is.na(popuptext), '</span>', ''),
-         ' </span>', sep = "")
-  # paste0 is vectorized version of 'paste'
-}
-
-semantic_button <- function(button, colour="", popuptext = NA, popuphtml = NA) {
-  # returns a vector of buttons.
-  # user-defined colour and popuptext (tooltip) or popuphtml (HTML tooltip)
-  # note that 'data-variation' is only available in the fomantic version of semantic.ui
-  # as of writing, semantic.ui does not allow variation in text-size of javascript-free tags
-  paste0('<span class="huge ', colour, ' ui button"',
-         ifelse(!is.na(popuphtml),
-                paste0('data-variation="wide" data-position = "left center" data-html="',
-                       popuphtml,
-                       '"', sep=""),
-                ''),
-         '> ',
-         ifelse(!is.na(popuptext),
-                paste0('<span data-tooltip = "',
-                       popuptext,
-                       '" data-variation = "wide huge" data-position = "left center">', sep=""),
-                ''),
-         button,
-         ifelse(!is.na(popuptext), '</span>', ''),
-         ' </span>', sep = "")
-  # paste0 is vectorized version of 'paste'
-}
-
-## datatables functions and definitions
-
-semantic_popupJS <- c("window.onload = function() {$('.ui.button') .popup({on: 'hover'});
-                      $('.ui.tag.label') .popup({on: 'hover'})
-                      }")
-
-# (1) necessary for semantic/fomantic JS popups. included directly in datatables options
-# (2) provide padding for export/print buttons
-datatable_styled <- function(data, fillContainer = TRUE,
-                             extensions = c('Buttons', 'Scroller', 'Responsive'),
-                             dom = 'frltiBp',
-                             buttons = c('copyHtml5', 'csvHtml5', 'excel', 'pdf', 'print'),
-                             initComplete = JS(semantic_popupJS),
-                             paging = FALSE,
-                             scrollY = "60vh",
-                             # 60% of window height, otherwise will just a few rows in size
-                             ...) {
-  options <- list(dom = dom, buttons = buttons, initComplete = initComplete,
-                  paging = paging, scrollY = scrollY)
-  datatable(data, fillContainer = fillContainer, extensions = extensions, options = options, ... )
-}
-# by default, have export/print buttons, only render what is visible
-# javascript code to attach labels to semantic/fomantic JS popups
-# no pagination
-
-# 'helper' functions for calculation
+## 'helper' functions for calculation
 
 calc_age <- function(birthDate, refDate = Sys.Date()) {
   # Calculate age at a given reference date
@@ -124,6 +56,7 @@ hrmin <- function(t) {
 
 ##### UI modules
 source("./modules/DailyMeasureUImodules.R")
+source("./modules/DailyMeasureUI_CDM_module.R")
 
 ##### Define UI for application ######################
 ui <- dashboardPagePlus(
@@ -187,6 +120,8 @@ ui <- dashboardPagePlus(
   ),
 
   dashboardBody(
+    useSweetAlert(),
+    useToastr(),
     tags$head(
       # stylesheets from fomantic.ui (a fork of semantic.ui)
       # Note that this is a specially edited version of semantic.css that is provided with fomantic
@@ -225,7 +160,7 @@ ui <- dashboardPagePlus(
       ),
       tabItem(tabName = "cdm",
               fluidRow(column(width = 12, align = "center", h2("Chronic Disease Management items"))),
-              fluidRow(column(width = 12, DTOutput("cdm_dt")))
+              fluidRow(column(width = 12, cdm_datatableUI("cdm_dt")))
       ),
       tabItem(tabName = "appointments",
               fluidRow(column(width = 12, align = "center", h2("Appointments"))),
@@ -306,9 +241,7 @@ if (is.yaml.file('./DailyMeasure_cfg.yaml')) {
 
 ##### Define server logic #####################################################
 server <- function(input, output, session) {
-	
-	useSweetAlert() # needed with 'progressSweetAlert'
-	
+
   # read config files
 
   # local_config <- reactiveValues(config_file = character())
@@ -442,7 +375,7 @@ server <- function(input, output, session) {
 
   observeEvent(BPdatabaseChoice(), {
   	print(paste("ChosenServerName:", BPdatabaseChoice()))
-  	
+
     # close existing database connection
     if (is.environment(emrpool())) {
       if (dbIsValid(emrpool())) {
@@ -455,24 +388,25 @@ server <- function(input, output, session) {
     } else if (!is.null(BPdatabaseChoice())) {
       server <- BPdatabase() %>% filter(Name == BPdatabaseChoice()) %>% collect()
       print("Initializing EMR database")
+      toastr_info("Opening link to Best Practice", title = "Best Practice database")
       emrpool(tryCatch(dbPool(odbc::odbc(), driver = "SQL Server",
                               server = server$Address, database = server$Database,
                               uid = server$UserID, pwd = server$dbPassword),
                        error = function(e) {
-                       	sendSweetAlert(
-                       		session = session,
-                       		title = "Error opening database",
-                       		text = e,
-                       		type = "error"
-                       	)
+                         sendSweetAlert(
+                           session = session,
+                           title = "Error opening database",
+                           text = e,
+                           type = "error")
                        }
       ))
+
     }
-  	
+
     if (!is.environment(emrpool()) || !dbIsValid(emrpool())) {
       # || 'short-circuits' the evaluation, so if not an environment,
       # then dbIsValid() is not evaluated (will return an error if emrpool() is NULL)
-      
+
       # either database not opened, or has just been closed
       db$users <- NULL
       db$patients <- NULL
@@ -487,6 +421,9 @@ server <- function(input, output, session) {
       db$history <- NULL
       clinician_choice_list(NULL)
       BPdatabaseChoice("None") # set choice of database to 'None'
+    } else {
+      toastr_success("Linking to Best Practice database successful!",
+                     title = "Best Practice database")
     }
   }, ignoreInit = TRUE)
 
@@ -825,88 +762,6 @@ server <- function(input, output, session) {
     )
   }, server = TRUE)
 
-  # CDM items
-
-  cdm_item <- data.frame(
-    code = c(721, 723, 732, 703, 705, 707, 2517, 2521, 2525, 2546, 2552, 2558, 2700, 2701, 2715, 2717),
-    name = c('GPMP', 'TCA', 'GPMP R/V', 'HA', 'HA', 'HA', 'DiabetesSIP', 'DiabetesSIP', 'DiabetesSIP',
-             'AsthmaSIP', 'AsthmaSIP', 'AsthmaSIP', 'MHCP', 'MHCP', 'MHCP', 'MHCP')
-  )
-
-  # filter to CDM item billed prior to (or on) the day of displayed appointments
-  # only show most recent billed item in each category
-
-  appointments_billings_cdm <- reactive({
-    appointments_billings() %>%
-      filter(MBSITEM %in% cdm_item$code) %>% # only chronic disease management items
-      filter(SERVICEDATE <= AppointmentDate) %>% # only items billed before the appointment day
-      select(c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider',
-               'SERVICEDATE', 'MBSITEM', 'DESCRIPTION')) %>%
-      mutate(MBSNAME = cdm_item$name[match(MBSITEM, cdm_item$code)]) %>%
-      rbind(diabetes_list_cdm()) %>%
-      group_by(InternalID, AppointmentDate, AppointmentTime, Provider, MBSNAME) %>%
-      # group by patient, apppointment and CDM type (name)
-      filter(SERVICEDATE == max(SERVICEDATE, na.rm = TRUE)) %>% # only keep most recent service
-      ungroup() %>%
-      mutate(mbstag =
-               semantic_tag(MBSNAME,
-                            colour =
-                              if_else(SERVICEDATE == -Inf,
-                                      'red', # invalid date is '-Inf', means item not claimed yet
-                                      if_else(interval(SERVICEDATE, AppointmentDate)<=years(1),
-                                              'green',
-                                              'yellow')),
-                            popuphtml =
-                              paste0("<h4>Date : ", SERVICEDATE,
-                                     "</h4><h6>Item : ", MBSITEM,
-                                     "</h6><p><font size=\'+0\'>", DESCRIPTION, "</p>")
-               )) %>%
-      group_by(InternalID, AppointmentDate, AppointmentTime, Provider) %>%
-      # gathers item numbers on the same day into a single row
-      summarise(cdm = paste(mbstag, collapse = "")) %>%
-      ungroup()
-  })
-
-  output$cdm_dt <- renderDT({
-    datatable_styled(appointments_filtered_time() %>%
-                       inner_join(appointments_billings_cdm(),
-                                  by = c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider')) %>%
-                       select(c('Patient', 'AppointmentDate', 'AppointmentTime', 'Provider', 'cdm')),
-                     colnames = c('Patient', 'Appointment Date', 'Appointment Time', 'Provider', 'CDM items'),
-                     escape = c(5)) # only interpret HTML for last column
-  },
-  server = TRUE)
-
-  # Diabetes
-
-  # Best Practice Diabetes code
-  diabetes_codes <- c(3, 775, 776, 778, 774, 7840, 11998)
-
-  # Returns InternalID
-  diabetes_list <- reactive({
-    appointments_filtered() %>%
-      inner_join(db$history %>%
-                   filter(ConditionID %in% diabetes_codes),
-                 by = c('InternalID')) %>%
-      select('InternalID')
-  })
-
-  diabetes_list_cdm <- reactive({
-    a <- appointments_list() %>%
-      inner_join(diabetes_list(), by = 'InternalID', copy = TRUE) %>%
-      select(c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider')) %>%
-      mutate(MBSNAME = c('DiabetesSIP'), DESCRIPTION = c('History : Diabetes'),
-             SERVICEDATE = as.Date(-Inf, origin = '1970-01-01'), MBSITEM = NA) %>%
-      unique()
-    # invalid date set as -Inf, which looks like NA, but is not (is equal to -Inf)
-    # setting invalid date to NA is not good for later comparisons,
-    # where max(... , na.rm=TRUE) needs to be used
-
-    b <- a %>% mutate(MBSNAME = c('GPMP'))
-    # people with diabetes also qualify for GPMP. duplicate list with 'GPMP' MBSNAME
-    rbind(a, b)
-  })
-
   # Appointment list
 
   appointments_filtered <- reactive({
@@ -943,6 +798,44 @@ server <- function(input, output, session) {
       mutate(Age = calc_age(DOB, AppointmentDate))
   })
 
+  # chronic disease management table
+  cdm_table_results <- callModule(cdm_datatable, "cdm_dt",
+                                  appointments_billings, appointments_filtered,
+                                  appointments_filtered_time, appointments_list,
+  																diabetes_list, asthma_list,
+                                  db$history)
+
+  ### Diabetes sub-code
+
+
+
+  diabetes_list <- reactive({
+  	# Best Practice Diabetes code
+  	diabetes_codes <- c(3, 775, 776, 778, 774, 7840, 11998)
+
+  	# Returns InternalID of patients who have diabetes
+  	appointments_filtered() %>%
+  		inner_join(db$history %>%
+  							 	filter(ConditionID %in% diabetes_codes),
+  							 by = c('InternalID')) %>%
+  		select('InternalID')
+  })
+
+  ### Asthma sub-code
+
+  asthma_list <- reactive({
+  	# Best Practice Asthma code
+  	asthma_codes <- c(281, 285, 283, 284, 282)
+
+  	# Returns InternalID of patients who have asthma
+  	appointments_filtered() %>%
+  		inner_join(db$history %>%
+  							 	filter(ConditionID %in% asthma_codes),
+  							 by = c('InternalID')) %>%
+  		select('InternalID')
+  })
+
+  # appointment list
   output$appointments_dt <- renderDT({datatable_styled(
     appointments_filtered_time() %>%
       select(c('Patient', 'AppointmentDate', 'AppointmentTime', 'Provider', 'Status')))

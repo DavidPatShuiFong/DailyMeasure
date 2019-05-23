@@ -1,10 +1,10 @@
 # modules for input/output
 
-##### servers - editable datatable module #######################################################
-
+##### configuration modules #####################################################################
+##### servers - editable datatable module ######################################################
 servers_datatableUI <- function(id) {
 	ns <- NS(id)
-	
+
 	tagList(
 		wellPanel(
 			uiOutput(ns("selection"))
@@ -22,33 +22,33 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 	# returns server_list_change$count - increments with each GUI edit of server list
 	# change in server_list_change to prompt change in selectable filter list of locations
 	ns <- session$ns
-	
+
 	servers_dt_viewcols <- c("id", "Name", "Address", "Database", "UserID", "dbPassword")
 	# columns viewed in DTedit when adding/editing/removing servers
 	# 'id' is likely not necessary for end-users
 	servers_dt_editcols <- servers_dt_viewcols[!servers_dt_viewcols %in% c("id")]
-	
+
 	chosen_database <- reactiveVal(NULL) # ID of chosen database
 	servers_list_change <- reactiveVal(0)
-	
+
 	servername_list <- reactiveVal(append("None", isolate(BPdatabase()$Name)))
 	observeEvent(c(BPdatabase(), config_pool()), {
 		servername_list(BPdatabase()$Name)
 	})
-	
+
 	output$selection <- renderUI({
 		selectInput(inputId = ns("server_chosen"), label = "Chosen Best Practice server",
 								choices = servername_list(), selected = isolate(BPdatabaseChoice()))
 	})
-	
+
 	observeEvent(BPdatabaseChoice(), {
 		updateSelectInput(session, inputId = "server_chosen", selected = BPdatabaseChoice())
 	})
-	
+
 	observeEvent(BPdatabase()$Name, {
 		servername_list(append("None", BPdatabase()$Name))
 	})
-	
+
 	observeEvent(input$server_chosen, {
 		chosen_database(input$server_chosen) # this will be the server 'Name', a character string
 		BPdatabaseChoice(input$server_chosen)
@@ -61,7 +61,7 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 			query <- "INSERT INTO ServerChoice (id, Name) VALUES (?, ?)"
 			data_for_sql <- as.list.data.frame(c(1, input$server_chosen))
 		}
-		
+
 		connection <- poolCheckout(config_pool()) # can't write with the pool
 		rs <- dbSendQuery(connection, query) # parameterized query can handle apostrophes etc.
 		dbBind(rs, data_for_sql)
@@ -69,9 +69,9 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 		# update database
 		dbClearResult(rs)
 		poolReturn(connection)
-		
+
 	})
-	
+
 	### callback definitions for DTedit
 	servers.insert.callback <- function(data, row) {
 		# adding a new server description
@@ -84,16 +84,16 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 							 str_length(data[row,]$dbPassword) == 0) {
 			stop("All entries must be described")
 		} else {
-			
+
 			newid <- max(c(as.data.frame(BPdatabase())$id, 0)) + 1
 			# initially, BPdatabase()$id might be an empty set, so need to append a '0'
 			data[row, ]$id <- newid
-			
+
 			query <- "INSERT INTO Server (id, Name, Address, Database, UserID, dbPassword) VALUES (?, ?, ?, ?, ?, ?)"
 			data_for_sql <- as.list.data.frame(c(newid, data[row,]$Name, data[row,]$Address,
 																					 data[row,]$Database, data[row,]$UserID,
 																					 data[row,]$dbPassword))
-			
+
 			connection <- poolCheckout(config_pool()) # can't write with the pool
 			rs <- dbSendQuery(connection, query) # parameterized query can handle apostrophes etc.
 			dbBind(rs, data_for_sql)
@@ -101,21 +101,21 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 			# update database
 			dbClearResult(rs)
 			poolReturn(connection)
-			
+
 			BPdatabase(data) # update the dataframe in memory
 			servers_list_change(servers_list_change() + 1) # this value returned by module
-			
+
 			return(BPdatabase())
 		}
 	}
-	
+
 	servers.update.callback <- function(data, olddata, row) {
 		# change (update) a server description
-		
+
 		if (toupper(data[row,]$Name) %in% toupper(append(data[-row,]$Name, "None"))) {
 			# if the proposed server is the same as one that already exists
 			# (ignoring case)
-			stop("New server name cannot be the same as existing names, or 'None'") 
+			stop("New server name cannot be the same as existing names, or 'None'")
 		} else if (toupper(data[row,]$Name) == toupper(BPdatabaseChoice())) {
 			stop(paste0("Cannot edit '", data[row,]$Name, "', currently in use!"))
 		} else if (toupper(data[row,]$Name == "NONE")) {
@@ -130,16 +130,16 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 			data_for_sql <- as.list.data.frame(c(data[row,]$Name, data[row,]$Address,
 																					 data[row,]$Database, data[row,]$UserID,
 																					 data[row,]$dbPassword, data[row,]$id))
-			
+
 			connection <- poolCheckout(config_pool()) # can't write with the pool
 			rs <- dbSendQuery(connection, query) # update database
 			dbBind(rs, data_for_sql)
 			dbClearResult(rs)
 			poolReturn(connection)
-			
+
 			BPdatabase(data)
 			servers_list_change(servers_list_change() + 1) # this value returned by module
-			
+
 			return(BPdatabase())
 		}
 	}
@@ -150,13 +150,13 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 		} else {
 			query <- "DELETE FROM Server WHERE id = ?"
 			data_for_sql <- as.list.data.frame(c(data[row,]$id))
-			
+
 			connection <- poolCheckout(config_pool()) # can't write with the pool
 			rs <- dbSendQuery(connection, query) # update database
 			dbBind(rs, data_for_sql)
 			dbClearResult(rs)
 			poolReturn(connection)
-			
+
 			BPdatabase(data[-c(row),])
 			servers_list_change(servers_list_change() + 1) # this value returned by module
 		}
@@ -174,7 +174,7 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 															 callback.insert = servers.insert.callback,
 															 callback.delete = servers.delete.callback
 	)
-	
+
 	return(list(
 		count = reactive({servers_list_change()})
 	))
@@ -185,7 +185,7 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 
 locations_datatableUI <- function(id) {
 	ns <- NS(id)
-	
+
 	tagList(
 		dteditUI(ns("locations"))
 	)
@@ -198,14 +198,14 @@ locations_datatable <- function(input, output, session, PracticeLocations, UserC
 	# input : config_pool - reactiveval, access to configuration database
 	# returns location_list_change - increments with each GUI edit of location list
 	# change in location_list_change to prompt change in selectable filter list of locations
-	
+
 	# callback functions for DTEdit
 	## locations
-	
+
 	locations_dt_viewcols <- c("id", "Name", "Description")
 	# columns viewed in DTedit when adding/editing/removing locations
 	# 'id' is likely not necessary for end-users
-	
+
 	userlocations <- reactiveVal()
 	# list of user names
 	observeEvent(UserConfig(), {
@@ -214,9 +214,9 @@ locations_datatable <- function(input, output, session, PracticeLocations, UserC
 		# can't exclude names already configured, because this is also used when
 		# editing a current user configuration
 	})
-	
+
 	location_list_change <- reactiveVal(0)
-	
+
 	### callback definitions for DTedit location
 	locations.insert.callback <- function(data, row) {
 		# adding a new practice location
@@ -228,14 +228,14 @@ locations_datatable <- function(input, output, session, PracticeLocations, UserC
 		} else if (is.null(data[row,]$Name)){
 			stop("New practice location name cannot be 'empty'!")
 		} else {
-			
+
 			newid <- max(c(as.data.frame(PracticeLocations())$id, 0)) + 1
 			# initially, PracticeLocations$id might be an empty set, so need to append a '0'
 			data[row, ]$id <- newid
-			
+
 			query <- "INSERT INTO Location (id, Name, Description) VALUES (?, ?, ?)"
 			data_for_sql <- as.list.data.frame(c(newid, data[row,]$Name, data[row,]$Description))
-			
+
 			connection <- poolCheckout(config_pool()) # can't write with the pool
 			rs <- dbSendQuery(connection, query) # parameterized query can handle apostrophes etc.
 			dbBind(rs, data_for_sql)
@@ -243,17 +243,17 @@ locations_datatable <- function(input, output, session, PracticeLocations, UserC
 			# update database
 			dbClearResult(rs)
 			poolReturn(connection)
-			
+
 			PracticeLocations(data) # update the dataframe in memory
 			location_list_change(location_list_change() + 1) # this value returned by module
-			
+
 			return(PracticeLocations())
 		}
 	}
-	
+
 	locations.update.callback <- function(data, olddata, row) {
 		# change (update) a practice location
-		
+
 		if (length(grep(toupper(data[row, ]$Name),
 										toupper(as.data.frame(isolate(PracticeLocations()))$Name)))){
 			# if the proposed new name is the same as one that already exists
@@ -262,16 +262,16 @@ locations_datatable <- function(input, output, session, PracticeLocations, UserC
 		} else {
 			query <- "UPDATE Location SET Name = ?, Description = ? WHERE id = ?"
 			data_for_sql <- as.list.data.frame(c(data[row,]$Name, data[row,]$Description, data[row,]$id))
-			
+
 			connection <- poolCheckout(config_pool()) # can't write with the pool
 			rs <- dbSendQuery(connection, query) # update database
 			dbBind(rs, data_for_sql)
 			dbClearResult(rs)
 			poolReturn(connection)
-			
+
 			PracticeLocations(data)
 			location_list_change(location_list_change() + 1) # this value returned by module
-			
+
 			return(PracticeLocations())
 		}
 	}
@@ -283,19 +283,19 @@ locations_datatable <- function(input, output, session, PracticeLocations, UserC
 		} else {
 			query <- "DELETE FROM Location WHERE id = ?"
 			data_for_sql <- as.list.data.frame(c(data[row,]$id))
-			
+
 			connection <- poolCheckout(config_pool()) # can't write with the pool
 			rs <- dbSendQuery(connection, query) # update database
 			dbBind(rs, data_for_sql)
 			dbClearResult(rs)
 			poolReturn(connection)
-			
+
 			PracticeLocations(data[-c(row),])
 			location_list_change(location_list_change() + 1) # this value returned by module
 		}
 		return(PracticeLocations())
 	}
-	
+
 	# depends on modularized version of DTedit
 	locations_edited <- callModule(dtedit, "locations",
 																 thedataframe = PracticeLocations, # pass a ReactiveVal
@@ -308,7 +308,7 @@ locations_datatable <- function(input, output, session, PracticeLocations, UserC
 																 callback.insert = locations.insert.callback,
 																 callback.delete = locations.delete.callback
 	)
-	
+
 	return(reactive({location_list_change()}))
 	# increments each time a callback changes PracticeLocations()
 }
@@ -317,7 +317,7 @@ locations_datatable <- function(input, output, session, PracticeLocations, UserC
 
 userconfig_datatableUI <- function(id) {
 	ns <- NS(id)
-	
+
 	tagList(
 		dteditUI(ns("userconfigs"))
 	)
@@ -330,16 +330,16 @@ userconfig_datatable <- function(input, output, session, UserConfig, LocationNam
 	# input : Users - dataframe of users. This is a 'lazy' evaluation database reference
 	# input : config_pool - reactiveval, access to configuration database
 	# returns userconfig_list_change - increments with each GUI edit of userconfig list
-	
+
 	# callback functions for DTEdit
 	## locations
-	
+
 	userconfig_dt_viewcols <- c("id", "Fullname", "AuthIdentity", "Location",
 															"Attributes")
 	userconfig_dt_editcols <- userconfig_dt_viewcols[!userconfig_dt_viewcols %in% c("id")]
 	user_attribute_types <- c("Expert", "GlobalView", "Admin")
 	# columns viewed in DTedit when adding/editing/removing user config
-	
+
 	usernames <- reactiveVal()
 	# list of user names
 	observeEvent(UserConfig(), {
@@ -350,13 +350,13 @@ userconfig_datatable <- function(input, output, session, UserConfig, LocationNam
 			# editing a current user configuration
 		}
 	})
-	
+
 	userconfig_list_change <- reactiveVal(0)
-	
+
 	### callback definitions for DTedit userconfig
 	userconfig.insert.callback <- function(data, row) {
 		# adding a new user configuration
-		
+
 		if (data[row,]$Fullname %in% data[-row,]$Fullname) {
 			# if the proposed new name is the same as one that is configured elsewhere
 			stop("This user is already configured")
@@ -364,13 +364,13 @@ userconfig_datatable <- function(input, output, session, UserConfig, LocationNam
 			newid <- max(c(as.data.frame(UserConfig())$id, 0)) + 1
 			# initially, UserConfig()$id might be an empty set, so need to append a '0'
 			data[row, ]$id <- newid
-			
+
 			query <- "INSERT INTO Users (id, Fullname, AuthIdentity, Location, Attributes) VALUES ($id, $fn, $au, $lo, $at)"
 			data_for_sql <- list(id = newid, fn = data[row,]$Fullname, au = paste0(data[row,]$Authidentity, ""),
 													 # $Location and $Attribute could both have multiple (or no) entries
 													 lo = paste0(data[row,]$Location[[1]], collapse = ";"),
 													 at = paste0(data[row,]$Attributes[[1]], collapse = ";"))
-			
+
 			connection <- poolCheckout(config_pool()) # can't write with the pool
 			rs <- dbSendQuery(connection, query) # parameterized query can handle apostrophes etc.
 			dbBind(rs, data_for_sql)
@@ -378,17 +378,17 @@ userconfig_datatable <- function(input, output, session, UserConfig, LocationNam
 			# update database
 			dbClearResult(rs)
 			poolReturn(connection)
-			
+
 			UserConfig(data) # update the dataframe in memory
 			userconfig_list_change(userconfig_list_change() + 1) # this value returned by module
-			
+
 			return(UserConfig())
 		}
 	}
-	
+
 	userconfig.update.callback <- function(data, olddata, row) {
 		# change (update) a user configuration
-		
+
 		if (data[row, ]$Fullname %in% data[-row,]$Fullname) {
 			# if the proposed new name is the same as one that is configured elsewhere
 			stop("This user is already configured")
@@ -403,29 +403,29 @@ userconfig_datatable <- function(input, output, session, UserConfig, LocationNam
 			dbBind(rs, data_for_sql)
 			dbClearResult(rs)
 			poolReturn(connection)
-			
+
 			UserConfig(data)
 			userconfig_list_change(userconfig_list_change() + 1) # this value returned by module
-			
+
 			return(UserConfig())
 		}
 	}
-	
+
 	userconfig.delete.callback <- function(data, row) {
 		# delete a user configuration
-		
+
 		query <- "DELETE FROM Users WHERE id = ?"
 		data_for_sql <- as.list.data.frame(c(data[row,]$id))
-		
+
 		connection <- poolCheckout(config_pool()) # can't write with the pool
 		rs <- dbSendQuery(connection, query) # update database
 		dbBind(rs, data_for_sql)
 		dbClearResult(rs)
 		poolReturn(connection)
-		
+
 		UserConfig(data[-c(row),])
 		userconfig_list_change(userconfig_list_change() + 1) # this value returned by module
-		
+
 		return(UserConfig())
 	}
 	# depends on modularized version of DTedit
@@ -448,7 +448,7 @@ userconfig_datatable <- function(input, output, session, UserConfig, LocationNam
 																	callback.insert = userconfig.insert.callback,
 																	callback.delete = userconfig.delete.callback
 	)
-	
+
 	return(reactive({userconfig_list_change()}))
 	# increments each time a callback changes UserConfig
 }

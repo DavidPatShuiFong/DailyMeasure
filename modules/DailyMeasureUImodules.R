@@ -125,7 +125,6 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 							 str_length(data[row,]$dbPassword) == 0) {
 			stop("All entries must be described")
 		} else {
-			browser()
 			query <- "UPDATE Server SET Name = ?, Address = ?, Database = ?, UserID = ?, dbPassword = ? WHERE id = ?"
 			data_for_sql <- as.list.data.frame(c(data[row,]$Name, data[row,]$Address,
 																					 data[row,]$Database, data[row,]$UserID,
@@ -323,11 +322,12 @@ userconfig_datatableUI <- function(id) {
 	)
 }
 
-userconfig_datatable <- function(input, output, session, UserConfig, LocationNames, Users, config_pool) {
+userconfig_datatable <- function(input, output, session, UserConfig, LocationNames, db, config_pool) {
 	# User config, server part of module
 	# input : UserConfig() reactiveval, list of user config
 	# input : LocationNames - list of location names (not including ID or Description)
-	# input : Users - dataframe of users. This is a 'lazy' evaluation database reference
+	# input : db - reactivevalues link to EMR database
+  # input :    - includes $users and $dbversion
 	# input : config_pool - reactiveval, access to configuration database
 	# returns userconfig_list_change - increments with each GUI edit of userconfig list
 
@@ -342,9 +342,10 @@ userconfig_datatable <- function(input, output, session, UserConfig, LocationNam
 
 	usernames <- reactiveVal()
 	# list of user names
-	observeEvent(UserConfig(), {
-		if (!is.null(Users)) {
-			usernames(Users %>% select(Fullname) %>% collect() %>% unlist(use.names = FALSE))
+	observeEvent(db$dbversion, {
+	  browser()
+		if (!is.null(db$users)) {
+			usernames(db$users %>% select(Fullname) %>% collect() %>% unlist(use.names = FALSE))
 			# extract from EMR database. note that this is NOT reactive to underlying change in EMR database
 			# can't exclude names already configured, because this is also used when
 			# editing a current user configuration

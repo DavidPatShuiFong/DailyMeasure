@@ -366,11 +366,10 @@ userconfig_datatable <- function(input, output, session, UserConfig, LocationNam
 			data[row, ]$id <- newid
 
 			query <- "INSERT INTO Users (id, Fullname, AuthIdentity, Location, Attributes) VALUES ($id, $fn, $au, $lo, $at)"
-			data_for_sql <- list(id = newid, fn = data[row,]$Fullname, au = paste0(data[row,]$Authidentity, ""),
+			data_for_sql <- list(id = newid, fn = data[row,]$Fullname, au = paste0(data[row,]$AuthIdentity, ""),
 													 # $Location and $Attribute could both have multiple (or no) entries
-													 lo = paste0(data[row,]$Location[[1]], collapse = ";"),
-													 at = paste0(data[row,]$Attributes[[1]], collapse = ";"))
-
+													 lo = paste0(data[row,]$Location[[1]], "", collapse = ";"),
+													 at = paste0(data[row,]$Attributes[[1]], "", collapse = ";"))
 			connection <- poolCheckout(config_pool()) # can't write with the pool
 			rs <- dbSendQuery(connection, query) # parameterized query can handle apostrophes etc.
 			dbBind(rs, data_for_sql)
@@ -395,9 +394,10 @@ userconfig_datatable <- function(input, output, session, UserConfig, LocationNam
 		} else {
 			query <- "UPDATE Users SET Fullname = ?, AuthIdentity = ?, Location = ?, Attributes = ? WHERE id = ?"
 			data_for_sql <- as.list(c(data[row,]$Fullname, paste0(data[row,]$AuthIdentity, ""),
-																paste0(data[row,]$Location[[1]], collapse = ";"),
-																paste0(data[row,]$Attributes[[1]], collapse = ";"),
+																paste0(data[row,]$Location[[1]], "", collapse = ";"),
+																paste0(data[row,]$Attributes[[1]], "", collapse = ";"),
 																data[row,]$id))
+			# note extra "" within paste0 is required in the case of empty data
 			connection <- poolCheckout(config_pool()) # can't write with the pool
 			rs <- dbSendQuery(connection, query) # update database
 			dbBind(rs, data_for_sql)

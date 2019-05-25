@@ -925,7 +925,28 @@ server <- function(input, output, session) {
   output$user <- renderUser({
     dashboardUser(
       name = UserConfig()$Fullname[UserConfig()$AuthIdentity == Sys.info()[["user"]]],
-      subtitle = Sys.info()[["user"]]
+      src = "./assets/icons/user-avatar.svg", # note the lack of "./www/..."
+      subtitle = Sys.info()[["user"]],
+      fluidRow(
+      	dashboardUserItem(
+      		width = 6,
+      		descriptionBlock(
+      			text = paste0(
+      				unlist(UserConfig()$Location[UserConfig()$AuthIdentity == Sys.info()[["user"]]]),
+      				collapse = ", "),
+      			right_border = TRUE,
+      			margin_bottom = TRUE)
+      	),
+      	dashboardUserItem(
+      		width = 6,
+      		descriptionBlock(
+      			text = paste0(
+      				unlist(UserConfig()$Attributes[UserConfig()$AuthIdentity == Sys.info()[["user"]]]),
+      				collapse = ", "),
+      			right_border = FALSE,
+      			margin_bottom = TRUE)
+      	)
+      )
     )
   })
 

@@ -5,7 +5,7 @@
 library(shiny)
 library(shinyjs)
 library(shinydashboard)
-library(shinydashboardPlus) # version 0.6.0+ preferred (development version as of Feb/2019)
+library(shinydashboardPlus) # version 0.7.0+ required
 library(shinyWidgets)
 library(shinytoastr) # notifications
 library(shinyFiles) # file-picker. currently depends on development version 0.7.2
@@ -56,6 +56,7 @@ hrmin <- function(t) {
 
 ##### UI modules
 source("./modules/DailyMeasureUImodules.R")
+source("./modules/DailyMeasureUI_Immunization_module.R")
 source("./modules/DailyMeasureUI_CDM_module.R")
 
 ##### Define UI for application ######################
@@ -64,13 +65,14 @@ ui <- dashboardPagePlus(
   header = dashboardHeaderPlus(
     enable_rightsidebar = TRUE,
     rightSidebarIcon = "bars",
-    title = "Daily Measure"
+    title = "Daily Measure",
+    userOutput("user")
   ),
 
   sidebar = dashboardSidebar(
     sidebarMenu(
       id = "sidebartabs",
-      menuItem("Zostavax", tabName = "zostavax"),
+      menuItem("Immunization", tabName = "immunization"),
       menuItem("Bowel Cancer Screening", tabName = "fobt"),
       menuItem("Billings", tabName = "billings"),
       menuItem("CDM items", tabName = "cdm"),
@@ -146,9 +148,9 @@ ui <- dashboardPagePlus(
     ),
 
     tabItems(
-      tabItem(tabName = "zostavax",
-              fluidRow(column(width = 12, align = "center", h2("Zostavax"))),
-              fluidRow(column(width = 12, DTOutput("zostavax_dt")))
+      tabItem(tabName = "immunization",
+              fluidRow(column(width = 12, align = "center", h2("Immunization"))),
+              fluidRow(column(width = 12, vax_datatableUI("vax_dt")))
       ),
       tabItem(tabName = "fobt",
               fluidRow(column(width = 12, align = "center", h2("Bowel cancer screening"))),
@@ -430,11 +432,11 @@ server <- function(input, output, session) {
   ### configuration database changes
 
   observeEvent(config_pool(), ignoreNULL = TRUE, {
-    BPdatabase(isolate(config_pool()) %>% tbl("Server") %>% collect())
-    BPdatabaseChoice((isolate(config_pool()) %>% tbl("ServerChoice") %>%
+    BPdatabase(config_pool() %>% tbl("Server") %>% collect())
+    BPdatabaseChoice((config_pool() %>% tbl("ServerChoice") %>%
                         filter(id == 1) %>% select("Name") %>% collect())[[1]])
-    PracticeLocations(isolate(config_pool()) %>% tbl("Location"))
-    UserConfig(isolate(config_pool()) %>% tbl("Users") %>%
+    PracticeLocations(config_pool() %>% tbl("Location"))
+    UserConfig(config_pool() %>% tbl("Users") %>%
                  # in UserConfig, there can be multiple Locations/Attributes per user
                  collect() %>% mutate(Location = str_split(Location, ";"),
                                       Attributes = str_split(Attributes, ";")))
@@ -590,49 +592,10 @@ server <- function(input, output, session) {
     }
   })
 
-  # Zostavax functions
-  zostavax_vax_list <- reactive({
-    appointments_list() %>%
-      filter(Age >= 70 & Age <= 80) %>% # from age 70 to 80 years inclusive
-      left_join(db$immunizations %>%
-                  # those who have had the zostavax vaccine
-                  filter((VaccineName %LIKE% "%zostavax%") | (VaccineID == 103)),
-                copy = TRUE) %>%
-      left_join(db$preventive_health %>%
-                  # those who have been removed from the reminder system for Zostavax
-                  filter(ITEMID == 15), by = c('InternalID' = 'INTERNALID'),
-                copy = TRUE) %>%
-      collect() %>%
-      mutate(GivenDate = as.Date(substr(GivenDate, 1, 10))) %>%
-      mutate(GivenDate = if_else(GivenDate <= AppointmentDate, GivenDate, as.Date(NA))) %>%
-      # only include immunizations given up to date of appointment,
-      # if there are any immunizations at all
-      # note that 'if_else' is vectorize,
-      # demanding same datatype for TRUE/FALSE alternatives
-      # 'ifelse' does not preserve date type in this circumstance
-      mutate(zostavaxtag =
-               semantic_tag(paste0(' Zostavax '),
-                            colour =
-                              if_else(is.na(GivenDate),
-                                      if_else(is.na(ITEMID), c('red'), c('purple')),
-                                      c('green')),
-                            # red if not given, purple if removed from herpes zoster vax reminders
-                            # and green if has had the vax
-                            popuphtml =
-                              paste0("<h4>",
-                                     if_else(is.na(ITEMID),
-                                             paste0('Date : ', format(GivenDate)),
-                                             'Removed from herpes zoster immunization reminders'),
-                                     "</h4>")))
-  })
+  # Immunization functions
 
-  output$zostavax_dt <- renderDT({
-    datatable_styled(zostavax_vax_list() %>%
-                       select(c('Patient', 'AppointmentDate', 'AppointmentTime',
-                                'Provider', 'DOB', 'Age', 'zostavaxtag')),
-                     escape = c(7),
-                     colnames = c('Zostavax' = 'zostavaxtag'))
-  })
+  vax_table_results <- callModule(vax_datatable, "vax_dt",
+  																appointments_list, db)
 
   # Bowel cancer screening
   bowel_cancer_screen_terms <-
@@ -767,7 +730,7 @@ server <- function(input, output, session) {
   appointments_filtered <- reactive({
     # find appointments with chosen date range and providers
     validate (
-      need(input$clinicians, 'Choose at least one clinician appointment to view'),
+      need(input$clinicians, 'Choose at least one clinician\'s appointment to view'),
       need(date_a(), 'Invalid date range'),
       need(date_b(), 'Invalid date range')
     )
@@ -919,7 +882,35 @@ server <- function(input, output, session) {
   })
 
   userconfig_change <- callModule(userconfig_datatable, "userconfig_dt",
-                                  UserConfig, location_list_names, db$users, config_pool)
+                                  UserConfig, location_list_names, db, config_pool)
+
+  output$user <- renderUser({
+    dashboardUser(
+      name = UserConfig()$Fullname[UserConfig()$AuthIdentity == Sys.info()[["user"]]],
+      src = "./assets/icons/user-avatar.svg", # note the lack of "./www/..."
+      subtitle = Sys.info()[["user"]],
+      fluidRow(
+      	dashboardUserItem(
+      		width = 6,
+      		descriptionBlock(
+      			text = paste0(
+      				unlist(UserConfig()$Location[UserConfig()$AuthIdentity == Sys.info()[["user"]]]),
+      				collapse = ", "),
+      			right_border = TRUE,
+      			margin_bottom = TRUE)
+      	),
+      	dashboardUserItem(
+      		width = 6,
+      		descriptionBlock(
+      			text = paste0(
+      				unlist(UserConfig()$Attributes[UserConfig()$AuthIdentity == Sys.info()[["user"]]]),
+      				collapse = ", "),
+      			right_border = FALSE,
+      			margin_bottom = TRUE)
+      	)
+      )
+    )
+  })
 
 }
 

@@ -56,6 +56,7 @@ hrmin <- function(t) {
 
 ##### UI modules
 source("./modules/DailyMeasureUImodules.R")
+source("./modules/DailyMeasureUI_Immunization_module.R")
 source("./modules/DailyMeasureUI_CDM_module.R")
 
 ##### Define UI for application ######################
@@ -71,7 +72,7 @@ ui <- dashboardPagePlus(
   sidebar = dashboardSidebar(
     sidebarMenu(
       id = "sidebartabs",
-      menuItem("Zostavax", tabName = "zostavax"),
+      menuItem("Immunization", tabName = "immunization"),
       menuItem("Bowel Cancer Screening", tabName = "fobt"),
       menuItem("Billings", tabName = "billings"),
       menuItem("CDM items", tabName = "cdm"),
@@ -147,9 +148,9 @@ ui <- dashboardPagePlus(
     ),
 
     tabItems(
-      tabItem(tabName = "zostavax",
-              fluidRow(column(width = 12, align = "center", h2("Zostavax"))),
-              fluidRow(column(width = 12, DTOutput("zostavax_dt")))
+      tabItem(tabName = "immunization",
+              fluidRow(column(width = 12, align = "center", h2("Immunization"))),
+              fluidRow(column(width = 12, vax_datatableUI("vax_dt")))
       ),
       tabItem(tabName = "fobt",
               fluidRow(column(width = 12, align = "center", h2("Bowel cancer screening"))),
@@ -591,49 +592,10 @@ server <- function(input, output, session) {
     }
   })
 
-  # Zostavax functions
-  zostavax_vax_list <- reactive({
-    appointments_list() %>%
-      filter(Age >= 70 & Age <= 80) %>% # from age 70 to 80 years inclusive
-      left_join(db$immunizations %>%
-                  # those who have had the zostavax vaccine
-                  filter((VaccineName %LIKE% "%zostavax%") | (VaccineID == 103)),
-                copy = TRUE) %>%
-      left_join(db$preventive_health %>%
-                  # those who have been removed from the reminder system for Zostavax
-                  filter(ITEMID == 15), by = c('InternalID' = 'INTERNALID'),
-                copy = TRUE) %>%
-      collect() %>%
-      mutate(GivenDate = as.Date(substr(GivenDate, 1, 10))) %>%
-      mutate(GivenDate = if_else(GivenDate <= AppointmentDate, GivenDate, as.Date(NA))) %>%
-      # only include immunizations given up to date of appointment,
-      # if there are any immunizations at all
-      # note that 'if_else' is vectorize,
-      # demanding same datatype for TRUE/FALSE alternatives
-      # 'ifelse' does not preserve date type in this circumstance
-      mutate(zostavaxtag =
-               semantic_tag(paste0(' Zostavax '),
-                            colour =
-                              if_else(is.na(GivenDate),
-                                      if_else(is.na(ITEMID), c('red'), c('purple')),
-                                      c('green')),
-                            # red if not given, purple if removed from herpes zoster vax reminders
-                            # and green if has had the vax
-                            popuphtml =
-                              paste0("<h4>",
-                                     if_else(is.na(ITEMID),
-                                             paste0('Date : ', format(GivenDate)),
-                                             'Removed from herpes zoster immunization reminders'),
-                                     "</h4>")))
-  })
+  # Immunization functions
 
-  output$zostavax_dt <- renderDT({
-    datatable_styled(zostavax_vax_list() %>%
-                       select(c('Patient', 'AppointmentDate', 'AppointmentTime',
-                                'Provider', 'DOB', 'Age', 'zostavaxtag')),
-                     escape = c(7),
-                     colnames = c('Zostavax' = 'zostavaxtag'))
-  })
+  vax_table_results <- callModule(vax_datatable, "vax_dt",
+  																appointments_list, db)
 
   # Bowel cancer screening
   bowel_cancer_screen_terms <-
@@ -768,7 +730,7 @@ server <- function(input, output, session) {
   appointments_filtered <- reactive({
     # find appointments with chosen date range and providers
     validate (
-      need(input$clinicians, 'Choose at least one clinician appointment to view'),
+      need(input$clinicians, 'Choose at least one clinician\'s appointment to view'),
       need(date_a(), 'Invalid date range'),
       need(date_b(), 'Invalid date range')
     )

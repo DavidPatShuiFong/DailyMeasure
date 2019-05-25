@@ -5,7 +5,7 @@
 library(shiny)
 library(shinyjs)
 library(shinydashboard)
-library(shinydashboardPlus) # version 0.6.0+ preferred (development version as of Feb/2019)
+library(shinydashboardPlus) # version 0.7.0+ required
 library(shinyWidgets)
 library(shinytoastr) # notifications
 library(shinyFiles) # file-picker. currently depends on development version 0.7.2
@@ -64,7 +64,8 @@ ui <- dashboardPagePlus(
   header = dashboardHeaderPlus(
     enable_rightsidebar = TRUE,
     rightSidebarIcon = "bars",
-    title = "Daily Measure"
+    title = "Daily Measure",
+    userOutput("user")
   ),
 
   sidebar = dashboardSidebar(
@@ -430,11 +431,11 @@ server <- function(input, output, session) {
   ### configuration database changes
 
   observeEvent(config_pool(), ignoreNULL = TRUE, {
-    BPdatabase(isolate(config_pool()) %>% tbl("Server") %>% collect())
-    BPdatabaseChoice((isolate(config_pool()) %>% tbl("ServerChoice") %>%
+    BPdatabase(config_pool() %>% tbl("Server") %>% collect())
+    BPdatabaseChoice((config_pool() %>% tbl("ServerChoice") %>%
                         filter(id == 1) %>% select("Name") %>% collect())[[1]])
-    PracticeLocations(isolate(config_pool()) %>% tbl("Location"))
-    UserConfig(isolate(config_pool()) %>% tbl("Users") %>%
+    PracticeLocations(config_pool() %>% tbl("Location"))
+    UserConfig(config_pool() %>% tbl("Users") %>%
                  # in UserConfig, there can be multiple Locations/Attributes per user
                  collect() %>% mutate(Location = str_split(Location, ";"),
                                       Attributes = str_split(Attributes, ";")))
@@ -919,7 +920,35 @@ server <- function(input, output, session) {
   })
 
   userconfig_change <- callModule(userconfig_datatable, "userconfig_dt",
-                                  UserConfig, location_list_names, db$users, config_pool)
+                                  UserConfig, location_list_names, db, config_pool)
+
+  output$user <- renderUser({
+    dashboardUser(
+      name = UserConfig()$Fullname[UserConfig()$AuthIdentity == Sys.info()[["user"]]],
+      src = "./assets/icons/user-avatar.svg", # note the lack of "./www/..."
+      subtitle = Sys.info()[["user"]],
+      fluidRow(
+      	dashboardUserItem(
+      		width = 6,
+      		descriptionBlock(
+      			text = paste0(
+      				unlist(UserConfig()$Location[UserConfig()$AuthIdentity == Sys.info()[["user"]]]),
+      				collapse = ", "),
+      			right_border = TRUE,
+      			margin_bottom = TRUE)
+      	),
+      	dashboardUserItem(
+      		width = 6,
+      		descriptionBlock(
+      			text = paste0(
+      				unlist(UserConfig()$Attributes[UserConfig()$AuthIdentity == Sys.info()[["user"]]]),
+      				collapse = ", "),
+      			right_border = FALSE,
+      			margin_bottom = TRUE)
+      	)
+      )
+    )
+  })
 
 }
 

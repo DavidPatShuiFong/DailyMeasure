@@ -482,6 +482,12 @@ server <- function(input, output, session) {
       tbl(in_schema('dbo', 'BPS_Immunisations')) %>%
       select(c('InternalID', 'GivenDate', 'VaccineName', 'VaccineID'))
 
+    db$vaccine_disease <- emrpool() %>%
+      # vaccineIDs linked to diseases
+      # e.g. diseasecode 7+30 are for influenza vaccines
+      tbl(in_schema("bpsdrugs.dbo", "VACCINE_DISEASE")) %>%
+      select("VACCINEID", "DISEASECODE")
+
     db$preventive_health <- emrpool() %>%
       # INTERNALID, ITEMID (e.g. not for Zostavax remindders)
       tbl(in_schema('dbo', 'PreventiveHealth')) %>%
@@ -594,7 +600,8 @@ server <- function(input, output, session) {
   # Immunization functions
 
   vax_table_results <- callModule(vax_datatable, "vax_dt",
-  																appointments_list, db)
+  																appointments_list, db,
+  																diabetes_list, asthma_list)
 
   # Bowel cancer screening
   bowel_cancer_screen_terms <-

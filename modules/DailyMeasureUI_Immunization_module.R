@@ -63,6 +63,9 @@ vax_datatable <- function(input, output, session,
 			# note that 'if_else' is vectorize,
 			# demanding same datatype for TRUE/FALSE alternatives
 			# 'ifelse' does not preserve date type in this circumstance
+		  select(c("Patient", "InternalID", "AppointmentDate", "AppointmentTime", "Provider",
+		           "DOB", "Age", "ITEMID",
+		           "GivenDate")) %>%
 		  mutate(vaxtag =
 		           semantic_tag(paste0(' Zostavax '),
 		                        colour =
@@ -85,9 +88,8 @@ vax_datatable <- function(input, output, session,
 		           )
 		         )
 
-		l2 <- appointments_list() %>%
-		  # filter((Age >= 65) | (InternalID %in% c(asthma_list(), diabetes_list()))) %>%
-		  # from age 65, or in asthma or diabetes list
+		l2a <- appointments_list() %>%
+		  # those who have had influenza vaccines in the past
 		  left_join(db$immunizations %>% collect() %>%
 		              # those who have had the influenza vaccine
 		              filter(VaccineID %in%
@@ -99,7 +101,7 @@ vax_datatable <- function(input, output, session,
 		            # via the db$vaccine_disease database
 		            copy = TRUE) %>%
 		  mutate(GivenDate = as.Date(substr(GivenDate, 1, 10))) %>%
-		  mutate(GivenDate = if_else(GivenDate <= AppointmentDate, GivenDate, as.Date(NA))) %>%
+		  filter(GivenDate <= AppointmentDate) %>%
 		  # only include immunizations given up to date of appointment,
 		  # if there are any immunizations at all
 		  # note that 'if_else' is vectorize,
@@ -110,6 +112,27 @@ vax_datatable <- function(input, output, session,
 		  slice(which.max(GivenDate)) %>%
 		  ungroup() %>%
 		  # (one) item with latest vaccinedate (prior to appointmentdate)
+		  mutate(Reason = paste0("Given : ", GivenDate)) %>%
+		  select(c("Patient", "InternalID", "AppointmentDate", "AppointmentTime", "Provider",
+		           "DOB", "Age",
+		           "GivenDate", "Reason"))
+
+		l2b <- appointments_list() %>%
+		  filter(Age>=65) %>%
+		  mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+		         Reason = "Age 65 years or greater")
+
+		l2c <- appointments_list() %>%
+		  left_join(diabetes_list(), by = c("InternalID" = "InternalID"),
+		            copy = TRUE) %>%
+		  mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+		         Reason = "Diabetes")
+
+		l2 <- rbind(l2a, l2b, l2c) %>%
+		  group_by(Patient, InternalID, AppointmentDate, AppointmentTime, Provider, DOB, Age) %>%
+		  summarise(GivenDate = max(GivenDate),
+		            Reason = paste0(unique(Reason), collapse = ", ")) %>% # join unique Reasons together
+		  ungroup() %>%
 		  left_join(db$preventive_health %>%
 		              # those who have been removed from the reminder system for influenza
 		              filter(ITEMID == 1), by = c('InternalID' = 'INTERNALID'),
@@ -118,25 +141,29 @@ vax_datatable <- function(input, output, session,
 		  mutate(vaxtag =
 		           semantic_tag(paste0(' Influenza '),
 		                        colour =
-		                          if_else(is.na(GivenDate),
+		                          if_else(is.na(GivenDate) | (GivenDate == as.Date(-Inf, origin = '1970-01-01')),
 		                                  if_else(is.na(ITEMID), c('red'), c('purple')),
 		                                  if_else(year(GivenDate) == year(AppointmentDate), c('green'), c("yellow"))),
-		                        # red if not given, purple if removed from herpes zoster vax reminders
-		                        # and green if has had the vax
+		                        # red if not given, purple if removed from flu vax reminders
+		                        # and green if has had the vax this year. yellow if 'old' vax
 		                        popuphtml =
 		                          paste0("<h4>",
 		                                 if_else(is.na(ITEMID),
-		                                         paste0('Date : ', format(GivenDate)),
+		                                         as.character(Reason), # co-erce to character (it could be empty)
 		                                         'Removed from influenza immunization reminders'),
 		                                 "</h4>")),
 		         vaxtag_print =
 		           paste0("Influenza", " ", # printable version of information
 		                  if_else(is.na(GivenDate),
-		                          if_else(is.na(ITEMID), "(Due)", "(Removed from influenza immunization reminders)"),
-		                          paste0("(Given : ", format(GivenDate), ")",
+		                          if_else(is.na(ITEMID),
+		                                  paste0("(", as.character(Reason), ")"),
+		                                  "(Removed from influenza immunization reminders)"),
+		                          paste0("(", Reason, ")",
 		                                 if_else(year(GivenDate) == year(AppointmentDate), c(""), c(" Due"))))
 		           )
-		  )
+		  ) %>%
+		  select(-c("Reason"))
+
 		vax_list(rbind(l1, l2) %>%
 		           group_by(Patient, InternalID, AppointmentDate, AppointmentTime, Provider,
 		                    DOB, Age) %>%

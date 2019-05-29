@@ -200,7 +200,7 @@ vax_datatable <- function(input, output, session,
 	vax_selected <- reactiveVal(vax_names)
 	# use instead of input$vax_chosen directly because
 	# input$vax_chosen is not defined until the dropdown button is selected!
-	observeEvent(input$vax_chosen, {
+	observeEvent(input$vax_chosen, ignoreNULL = FALSE, {
 	  vax_selected(input$vax_chosen)
 	  print(paste0("Vax input  :", input$vax_chosen))
 	  print(paste0("Vax select :", vax_selected()))
@@ -222,13 +222,17 @@ vax_datatable <- function(input, output, session,
 	  if ("Influenza" %in% vax_selected())
 	    {vlist <- rbind(vlist, influenza_list(appointments_list, db, diabetes_list))}
 
-		vax_list(vlist %>%
-		           group_by(Patient, InternalID, AppointmentDate, AppointmentTime, Provider,
-		                    DOB, Age) %>%
-		           # gathers vaccination notifications on the same appointment into a single row
-		           summarise(vaxtag = paste(vaxtag, collapse = ""),
-		                     vaxtag_print = paste(vaxtag_print, collapse = ", ")) %>%
-		           ungroup())
+	  if (is.null(vlist)) {
+	    vax_list(NULL)
+	  } else {
+	    vax_list(vlist %>%
+	               group_by(Patient, InternalID, AppointmentDate, AppointmentTime, Provider,
+	                        DOB, Age) %>%
+	               # gathers vaccination notifications on the same appointment into a single row
+	               summarise(vaxtag = paste(vaxtag, collapse = ""),
+	                         vaxtag_print = paste(vaxtag_print, collapse = ", ")) %>%
+	               ungroup())
+	  }
 	})
 
 	styled_vax_list <- reactive({

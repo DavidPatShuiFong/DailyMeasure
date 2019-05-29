@@ -69,7 +69,7 @@ cdm_datatable <- function(input, output, session,
 	cdm_selected <- reactiveVal(cdm_item_names)
 	# use instead of input$cdm_chosen directly because
 	# input$cdm_chosen is not defined until the dropdown button is selected!
-	observeEvent(input$cdm_chosen, {
+	observeEvent(input$cdm_chosen, ignoreNULL = FALSE, {
 		cdm_selected(input$cdm_chosen)
 	})
 

@@ -5,7 +5,7 @@
 
 cdm_datatableUI <- function(id) {
 	ns <- NS(id)
-	
+
 	tagList(
 		fluidRow(
 			column(4,
@@ -37,24 +37,24 @@ cdm_datatable <- function(input, output, session,
 	# input - appointments_filtered - reactive
 	# input - appointments_filtered_time - reactive. filtered appointments list
 	# input - appointments_list - reactive. same as appointments_filtered_time, but with DOB and Age added
-	# input - diabetes_list - list of diabetic patients with appointments
-	# input - asthma_list - list of asthma patients with apponitments
+	# input - diabetes_list - vector of diabetic patients with appointments
+	# input - asthma_list - vector of asthma patients with apponitments
 	# input - dbhistory - table of history items, lazy evaluation
 	# output - none
 	ns <- session$ns
-	
+
 	# fomantic/semantic UI definitions
 	source("./modules/fomantic_definitions.R")
-	
+
 	# MBS (medicare benefits schedule) item numbers for CDM
 	cdm_item <- data.frame(
 		code = c(721, 723, 732, 703, 705, 707, 2517, 2521, 2525, 2546, 2552, 2558, 2700, 2701, 2715, 2717),
 		name = c('GPMP', 'TCA', 'GPMP R/V', 'HA', 'HA', 'HA', 'DiabetesSIP', 'DiabetesSIP', 'DiabetesSIP',
 						 'AsthmaSIP', 'AsthmaSIP', 'AsthmaSIP', 'MHCP', 'MHCP', 'MHCP', 'MHCP')
 	)
-	
+
 	cdm_item_names <- as.character(unique(cdm_item$name)) # de-factored
-	
+
 	output$cdm_item_choice <- renderUI({
 		checkboxGroupButtons(inputId = ns("cdm_chosen"), label = "CDM items shown",
 												 choices = cdm_item_names, selected = cdm_item_names,
@@ -62,29 +62,29 @@ cdm_datatable <- function(input, output, session,
 												 status = "primary",
 												 checkIcon = list(yes = icon("ok", lib = "glyphicon")))
 	})
-	
+
 	# filter to CDM item billed prior to (or on) the day of displayed appointments
 	# only show most recent billed item in each category
-	
+
 	cdm_selected <- reactiveVal(cdm_item_names)
 	# use instead of input$cdm_chosen directly because
 	# input$cdm_chosen is not defined until the dropdown button is selected!
 	observeEvent(input$cdm_chosen, {
 		cdm_selected(input$cdm_chosen)
 	})
-	
+
 	appointments_billings_cdm <- reactiveVal(NULL)
-	
+
 	observeEvent(c(appointments_billings(), diabetes_list_cdm(), asthma_list_cdm(),
 								 cdm_selected()), {
 								 	appointments <- appointments_billings() %>%
-								 		filter(MBSITEM %in% cdm_item$code) %>% 
+								 		filter(MBSITEM %in% cdm_item$code) %>%
 								 		# only chronic disease management items
-								 		filter(SERVICEDATE <= AppointmentDate) %>% 
+								 		filter(SERVICEDATE <= AppointmentDate) %>%
 								 		# only items billed before the appointment day
 								 		select(c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider',
 								 						 'SERVICEDATE', 'MBSITEM', 'DESCRIPTION')) %>%
-								 		mutate(MBSNAME = cdm_item$name[match(MBSITEM, cdm_item$code)]) 
+								 		mutate(MBSNAME = cdm_item$name[match(MBSITEM, cdm_item$code)])
 
 								 	gpmprv <- appointments %>%
 								 		# GPMP R/V tags.
@@ -111,7 +111,7 @@ cdm_datatable <- function(input, output, session,
 								 					 	semantic_tag("GPMP R/V", # semantic/fomantic buttons
 								 					 							 colour =
 								 					 							 	if_else(MBSNAME %in% c("GPMP", "TCA"),
-								 					 							 					'red', 
+								 					 							 					'red',
 								 					 							 					# no GPMP R/V since the last GPMP/TCA
 								 					 							 					if_else(interval(SERVICEDATE, AppointmentDate)<months(3),
 								 					 							 									# GPMP R/V. Less than or more than 3 months?
@@ -130,7 +130,7 @@ cdm_datatable <- function(input, output, session,
 								 					 											)
 								 					 )
 								 		)
-								 	
+
 								 	appointments <- appointments %>%
 								 		filter(!(MBSNAME == "GPMP R/V")) %>% # GPMP R/V will be added back in as a 'tagged' version
 								 		rbind(diabetes_list_cdm()) %>%
@@ -139,16 +139,16 @@ cdm_datatable <- function(input, output, session,
 								 		filter(MBSNAME %in% cdm_selected()) %>%
 								 		group_by(InternalID, AppointmentDate, AppointmentTime, Provider, MBSNAME) %>%
 								 		# group by patient, apppointment and CDM type (name)
-								 		filter(SERVICEDATE == max(SERVICEDATE, na.rm = TRUE)) %>% 
+								 		filter(SERVICEDATE == max(SERVICEDATE, na.rm = TRUE)) %>%
 								 		# only keep most recent service
 								 		ungroup()
-								 	
+
 								 	appointments <- appointments %>%
 								 		mutate(mbstag =
 								 					 	semantic_tag(MBSNAME, # semantic/fomantic buttons
 								 					 							 colour =
 								 					 							 	if_else(SERVICEDATE == -Inf,
-								 					 							 					'red', 
+								 					 							 					'red',
 								 					 							 					# invalid date is '-Inf', means item not claimed yet
 								 					 							 					if_else(interval(SERVICEDATE, AppointmentDate)<years(1),
 								 					 							 									'green',
@@ -173,7 +173,7 @@ cdm_datatable <- function(input, output, session,
 								 		ungroup()
 								 	appointments_billings_cdm(appointments)
 	})
-	
+
 	### AHA 75 (annual health assessment for those aged 75 years and above)
 	aha75_list_cdm <- reactive({
 		appointments_list() %>%
@@ -183,13 +183,13 @@ cdm_datatable <- function(input, output, session,
 						 SERVICEDATE = as.Date(-Inf, origin = '1970-01-01'), MBSITEM = NA) %>%
 			unique()
 	})
-	
+
 	### Diabetes CDM list
-	
+
 	diabetes_list_cdm <- reactive({
-		
+
 		a <- appointments_list() %>%
-			inner_join(diabetes_list(), by = 'InternalID', copy = TRUE) %>%
+			filter(InternalID %in% diabetes_list()) %>%
 			select(c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider')) %>%
 			mutate(MBSNAME = c('DiabetesSIP'), DESCRIPTION = c('History : Diabetes'),
 						 SERVICEDATE = as.Date(-Inf, origin = '1970-01-01'), MBSITEM = NA) %>%
@@ -197,18 +197,18 @@ cdm_datatable <- function(input, output, session,
 		# invalid date set as -Inf, which looks like NA, but is not (is equal to -Inf)
 		# setting invalid date to NA is not good for later comparisons,
 		# where max(... , na.rm=TRUE) needs to be used
-		
+
 		b <- a %>% mutate(MBSNAME = c('GPMP'))
 		# people with diabetes also qualify for GPMP. duplicate list with 'GPMP' MBSNAME
 		rbind(a, b)
 	})
-	
+
 	### asthma list CDM
-	
+
 	asthma_list_cdm <- reactive({
-		
+
 		a <- appointments_list() %>%
-			inner_join(asthma_list(), by = 'InternalID', copy = TRUE) %>%
+		  filter(InternalID %in% asthma_list()) %>%
 			select(c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider')) %>%
 			mutate(MBSNAME = c('AsthmaSIP'), DESCRIPTION = c('History : Asthma'),
 						 SERVICEDATE = as.Date(-Inf, origin = '1970-01-01'), MBSITEM = NA) %>%
@@ -216,14 +216,14 @@ cdm_datatable <- function(input, output, session,
 		# invalid date set as -Inf, which looks like NA, but is not (is equal to -Inf)
 		# setting invalid date to NA is not good for later comparisons,
 		# where max(... , na.rm=TRUE) needs to be used
-		
+
 		b <- a %>% mutate(MBSNAME = c('GPMP'))
 		# people with asthma also qualify for GPMP. duplicate list with 'GPMP' MBSNAME
 		rbind(a, b)
 	})
-	
+
 	### create tag-styled datatable (or 'printable' datatable)
-	
+
 	cdm_styled_datatable <- reactive({
 		if (!is.null(appointments_billings_cdm()) & !is.null(appointments_filtered_time())) {
 			if (input$printcopy_view == TRUE) {
@@ -245,7 +245,7 @@ cdm_datatable <- function(input, output, session,
 			}
 		}
 	})
-	
+
 	output$cdm_table <- renderDT({
 		cdm_styled_datatable()
 	},

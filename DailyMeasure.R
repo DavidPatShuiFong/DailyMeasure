@@ -389,7 +389,8 @@ server <- function(input, output, session) {
     } else if (!is.null(BPdatabaseChoice())) {
       server <- BPdatabase() %>% filter(Name == BPdatabaseChoice()) %>% collect()
       print("Initializing EMR database")
-      toastr_info("Opening link to Best Practice", title = "Best Practice database")
+      toastr_info("Opening link to Best Practice", closeButton = TRUE,
+                  position = "top-center", title = "Best Practice database")
       emrpool(tryCatch(dbPool(odbc::odbc(), driver = "SQL Server",
                               server = server$Address, database = server$Database,
                               uid = server$UserID, pwd = server$dbPassword),
@@ -424,6 +425,8 @@ server <- function(input, output, session) {
       BPdatabaseChoice("None") # set choice of database to 'None'
     } else {
       toastr_success("Linking to Best Practice database successful!",
+                     closeButton = TRUE,
+                     position = "top-center",
                      title = "Best Practice database")
     }
   }, ignoreInit = TRUE)
@@ -782,12 +785,13 @@ server <- function(input, output, session) {
   	# Best Practice Diabetes code
   	diabetes_codes <- c(3, 775, 776, 778, 774, 7840, 11998)
 
-  	# Returns InternalID of patients who have diabetes
+  	# Returns vector of InternalID of patients who have diabetes
   	appointments_filtered() %>%
   		inner_join(db$history %>%
   							 	filter(ConditionID %in% diabetes_codes),
   							 by = c('InternalID')) %>%
-  		select('InternalID')
+  		pull(InternalID) %>%
+  	  unique()
   })
 
   ### Asthma sub-code
@@ -796,12 +800,13 @@ server <- function(input, output, session) {
   	# Best Practice Asthma code
   	asthma_codes <- c(281, 285, 283, 284, 282)
 
-  	# Returns InternalID of patients who have asthma
+  	# Returns vector of InternalID of patients who have asthma
   	appointments_filtered() %>%
   		inner_join(db$history %>%
   							 	filter(ConditionID %in% asthma_codes),
   							 by = c('InternalID')) %>%
-  		select('InternalID')
+  		pull(InternalID) %>%
+  	  unique()
   })
 
   # appointment list

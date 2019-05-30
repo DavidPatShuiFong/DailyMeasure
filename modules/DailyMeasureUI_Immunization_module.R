@@ -78,7 +78,9 @@ zostavax_list <- function(appointments_list, db) {
              "DOB", "Age", "vaxtag", "vaxtag_print"))
 }
 
-influenza_list <- function(appointments_list, db, diabetes_list) {
+influenza_list <- function(appointments_list, db,
+													 diabetes_list, asthma_list,
+													 atsi_list) {
   # return datatable of appointments where influenza is recommended (might already be given)
   #  Patient, InternalID, AppointmentDate, ApppointmentTime, Provider, DOB, Age
   #  vaxtag, vaxtag_print (these two are the 'semantic' tags and printable tags)
@@ -86,7 +88,7 @@ influenza_list <- function(appointments_list, db, diabetes_list) {
   # input - db - access to Best Practice EMR database
   # input - reactive - vector of patients with diabetes
 
-  l2a <- appointments_list() %>%
+  lprevious <- appointments_list() %>%
     # those who have had influenza vaccines in the past
     left_join(db$immunizations %>% collect() %>%
                 # those who have had the influenza vaccine
@@ -115,17 +117,34 @@ influenza_list <- function(appointments_list, db, diabetes_list) {
              "DOB", "Age",
              "GivenDate", "Reason"))
 
-  l2b <- appointments_list() %>%
+  l65 <- appointments_list() %>%
     filter(Age>=65) %>%
     mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
            Reason = "Age 65 years or greater")
 
-  l2c <- appointments_list() %>%
+  l5 <- appointments_list() %>%
+  	mutate(AgeInMonths = calc_age_months(DOB, AppointmentDate)) %>%
+  	filter(AgeInMonths >= 6 & AgeInMonths < 60) %>%
+  	mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+  				 Reason = "Age 6 months to 4 years inclusive") %>%
+  	select(-AgeInMonths)
+
+  ldiabetes <- appointments_list() %>%
     filter(InternalID %in% diabetes_list()) %>%
     mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
            Reason = "Diabetes")
 
-  l2 <- rbind(l2a, l2b, l2c) %>%
+  latsi <- appointments_list() %>%
+  	filter(InternalID %in% atsi_list()) %>%
+  	mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+  				 Reason = "Aboriginal or Torres Strait Islander")
+
+  lasthma <- appointments_list() %>%
+  	filter(InternalID %in% asthma_list()) %>%
+  	mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+  				 Reason = "Asthma")
+
+  l <- rbind(lprevious, l65, l5, latsi, ldiabetes, lasthma) %>%
     group_by(Patient, InternalID, AppointmentDate, AppointmentTime, Provider, DOB, Age) %>%
     summarise(GivenDate = max(GivenDate),
               Reason = paste0(Reason, collapse = ", ")) %>% # join unique Reasons together
@@ -168,22 +187,26 @@ influenza_list <- function(appointments_list, db, diabetes_list) {
     select(c("Patient", "InternalID", "AppointmentDate", "AppointmentTime", "Provider",
              "DOB", "Age", "vaxtag", "vaxtag_print"))
 
-  return(l2)
+  return(l)
 }
 
 vax_datatable <- function(input, output, session,
 													appointments_list, db,
-													diabetes_list, asthma_list) {
+													diabetes_list, asthma_list,
+													atsi_list) {
 	# vaccinations done, pending or never done for appointment list
 	# input - input, output, session (as required by modules)
 	# input - appointments_list - reactive. same as appointments_filtered_time, but with DOB and Age added
 	# input - db - EMR database
   # input - diabetes_list, asthma_list - condition lists
+	# input - atsi_list - Aboriginal or Torres Strait islander
 	# output - none
 	ns <- session$ns
 
 	# fomantic/semantic UI definitions
 	source("./modules/fomantic_definitions.R")
+	# age calculation functions
+	source("./modules/calculation_definitions.R")
 
 	vax_names <- c("Zostavax", "Influenza")
 
@@ -218,10 +241,12 @@ vax_datatable <- function(input, output, session,
 	  vlist <- NULL
 	  # Zostavax (herpes zoster 'shingles' vaccine)
 	  if ("Zostavax" %in% vax_selected())
-	    {vlist <- rbind(vlist, zostavax_list(appointments_list, db))}
-		# influenza
+	  {vlist <- rbind(vlist, zostavax_list(appointments_list, db))}
+	  # influenza
 	  if ("Influenza" %in% vax_selected())
-	    {vlist <- rbind(vlist, influenza_list(appointments_list, db, diabetes_list))}
+	  {vlist <- rbind(vlist, influenza_list(appointments_list, db,
+	  																			diabetes_list, asthma_list,
+	  																			atsi_list))}
 
 	  if (is.null(vlist)) {
 	    vax_list(NULL)

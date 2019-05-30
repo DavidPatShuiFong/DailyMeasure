@@ -31,28 +31,8 @@ library(DTedit)     # datatable edit wrapper.
 
 ## fomantic/semantic definitions
 source("./modules/fomantic_definitions.R")
-
 ## 'helper' functions for calculation
-
-calc_age <- function(birthDate, refDate = Sys.Date()) {
-  # Calculate age at a given reference date
-  # Create an interval between the date of birth and the enrollment date;
-  # intervals are specific to the two dates. Periods give the actual length
-  # of time between those dates, so convert to period and extract the year.
-  # written by 'mmparker' https://gist.github.com/mmparker/7254445
-
-  period <- as.period(interval(birthDate, refDate),
-                      unit = "year")
-  period$year
-}
-
-hrmin <- function(t) {
-  # converts seconds to a 'time' starting from midnight
-  # t : value in seconds
-  # returns 24-hour time of form '14:15' (hh:mm)
-  td <- seconds_to_period(t)
-  sprintf('%02d:%02d', td@hour, td@minute)
-}
+source("./modules/calculation_definitions.R")
 
 ##### UI modules
 source("./modules/DailyMeasureUImodules.R")
@@ -604,7 +584,8 @@ server <- function(input, output, session) {
 
   vax_table_results <- callModule(vax_datatable, "vax_dt",
   																appointments_list, db,
-  																diabetes_list, asthma_list)
+  																diabetes_list, asthma_list,
+  																atsi_list)
 
   # Bowel cancer screening
   bowel_cancer_screen_terms <-
@@ -807,6 +788,21 @@ server <- function(input, output, session) {
   							 by = c('InternalID')) %>%
   		pull(InternalID) %>%
   	  unique()
+  })
+
+  atsi_list <- reactive({
+  	# Best Practice Aboriginal or Torres Strait Islander codes
+  	atsi_codes <- c("Aboriginal", "Torres Strait Islander",
+  									"Aboriginal/Torres Strait Islander")
+
+  	# returns vector of InternalID of patients who are
+  	# Aboriginal or Torres Strait Islander as recorded in patient into
+  	appointments_filtered() %>%
+  		inner_join(db$patients %>%
+  							 	filter(Ethnicity %in% atsi_codes),
+  							 by = c("InternalID")) %>%
+  		pull(InternalID) %>%
+  		unique()
   })
 
   # appointment list

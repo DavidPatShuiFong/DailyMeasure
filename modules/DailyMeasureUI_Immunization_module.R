@@ -70,7 +70,9 @@ zostavax_list <- function(appointments_list, db) {
            vaxtag_print =
              paste0("Zostavax", " ", # printable version of information
                     if_else(is.na(GivenDate),
-                            if_else(is.na(ITEMID), "(Due)", "(Removed from herpes zoster immunization reminders)"),
+                            if_else(is.na(ITEMID),
+                                    "(DUE) (Age 70 to 79 years)",
+                                    "(Removed from herpes zoster immunization reminders)"),
                             paste0("(Given : ", format(GivenDate), ")"))
              )
     ) %>%
@@ -80,13 +82,21 @@ zostavax_list <- function(appointments_list, db) {
 
 influenza_list <- function(appointments_list, db,
 													 diabetes_list, asthma_list,
-													 atsi_list) {
+													 atsi_list,
+													 malignancy_list, hiv_list,
+													 haemoglobinopathy_list, asplenic_list,
+													 transplant_list, cardiacdisease_list, trisomy21_list,
+													 bmi30_list, chroniclungdisease_list, neurologic_list,
+													 chronicliverdisease_list, chronicrenaldisease_list,
+													 pregnant_list) {
   # return datatable of appointments where influenza is recommended (might already be given)
   #  Patient, InternalID, AppointmentDate, ApppointmentTime, Provider, DOB, Age
   #  vaxtag, vaxtag_print (these two are the 'semantic' tags and printable tags)
   # input - appointment_list - reactive of appointment list
   # input - db - access to Best Practice EMR database
-  # input - reactive - vector of patients with diabetes
+  # input - reactive - vector of patients with diabetes, asthma, who are ATSI
+  # input - various immune compromising conditions
+  # input - pregnant_list
 
   lprevious <- appointments_list() %>%
     # those who have had influenza vaccines in the past
@@ -123,11 +133,22 @@ influenza_list <- function(appointments_list, db,
            Reason = "Age 65 years or greater")
 
   l5 <- appointments_list() %>%
-  	mutate(AgeInMonths = calc_age_months(DOB, AppointmentDate)) %>%
-  	filter(AgeInMonths >= 6 & AgeInMonths < 60) %>%
+    mutate(AgeInMonths = calc_age_months(DOB, AppointmentDate)) %>%
+    filter(AgeInMonths >= 6 & AgeInMonths < 60) %>%
   	mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
   				 Reason = "Age 6 months to 4 years inclusive") %>%
   	select(-AgeInMonths)
+
+  lprematurity <- appointments_list() %>%
+    # pre-term infants
+    mutate(AgeInMonths = calc_age_months(DOB, AppointmentDate)) %>%
+    filter(AgeInMonths >= 6 & AgeInMonths < 24) %>%
+    filter(InternalID %in%
+             (db$history %>% filter(ConditionID == 2973) %>%
+                pull(InternalID))) %>%
+    mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+           Reason = "Premature infant (if <37 weeks gestation)") %>%
+    select(-AgeInMonths)
 
   ldiabetes <- appointments_list() %>%
     filter(InternalID %in% diabetes_list()) %>%
@@ -144,7 +165,100 @@ influenza_list <- function(appointments_list, db,
   	mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
   				 Reason = "Asthma")
 
-  l <- rbind(lprevious, l65, l5, latsi, ldiabetes, lasthma) %>%
+  lmalignancy <- appointments_list() %>%
+    filter(InternalID %in% malignancy_list()) %>%
+    mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+           Reason = "Malignancy")
+
+  lhiv <- appointments_list() %>%
+    filter(InternalID %in% hiv_list()) %>%
+    mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+           Reason = "HIV")
+
+  lhaemoglobinopathy <- appointments_list() %>%
+    filter(InternalID %in% haemoglobinopathy_list()) %>%
+    mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+           Reason = "Haemoglobinopathy")
+
+  lasplenic <- appointments_list() %>%
+    filter(InternalID %in% asplenic_list()) %>%
+    mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+           Reason = "Asplenia")
+
+  ltransplant <- appointments_list() %>%
+    filter(InternalID %in% transplant_list()) %>%
+    mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+           Reason = "Transplant recipient")
+
+  lcardiac <- appointments_list() %>%
+    filter(InternalID %in% cardiacdisease_list()) %>%
+    mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+           Reason = "Heart disease")
+
+  lbmi30 <- appointments_list() %>%
+    filter(InternalID %in% bmi30_list()) %>%
+    mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+           Reason = "BMI>30")
+
+  lchroniclung <- appointments_list() %>%
+    filter(InternalID %in% chroniclungdisease_list()) %>%
+    mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+           Reason = "Chronic lung disease")
+
+  lneurology <- appointments_list() %>%
+    filter(InternalID %in% neurologic_list()) %>%
+    mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+           Reason = "Neurological disease")
+
+  lchronicliver <- appointments_list() %>%
+    filter(InternalID %in% chronicliverdisease_list()) %>%
+    mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+           Reason = "Chronic liver disease")
+
+  lrenaldisease <- appointments_list() %>%
+    filter(InternalID %in% chronicrenaldisease_list()) %>%
+    mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+           Reason = "BMI>30")
+
+  lchildaspirin <- appointments_list() %>%
+    # children aged 6 months to 10 years on long-term aspirin
+    # risk of Reye's syndrome after influenza infection
+    mutate(AgeInMonths = calc_age_months(DOB, AppointmentDate)) %>%
+    filter(AgeInMonths >= 6 & AgeInMonths <= 131) %>%
+    filter(InternalID %in%
+             (db$currentrx %>%
+                filter(RXSTATUS == 1 & PRODUCTID %in%
+                         c(99,8489,222,522,534,12254,545,546,547,549,548,550,554,551,552,553,555,
+                           8726,11362,540,8060,8062,8061,8063,8064,541,8304,560,559,558,562,563,8071,
+                           710,13262,1131,1148,11361,11327,1612,1613,1614,1619,11360,1917,16891,2328,
+                           2340,2341,2342,2345,2344,11326,14681,2523,3531,16877,6827,6918,12519,
+                           7651,7704)) %>%
+                # RXSTATUS == 1 (long-term medication), many aspirin productIDs!
+                pull(INTERNALID))
+           ) %>%
+    mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+           Reason = "Child aged 6 months to 10 years on long-term aspirin") %>%
+    select(c("Patient", "InternalID", "AppointmentDate", "AppointmentTime", "Provider",
+             "DOB", "Age",
+             "GivenDate", "Reason"))
+
+  lpregnant <- appointments_list() %>%
+    filter(InternalID %in% pregnant_list()) %>%
+    mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+           Reason = "Pregnancy")
+
+  lhomeless <- appointments_list() %>%
+    # homeless infants
+    filter(InternalID %in%
+             (db$history %>% filter(ConditionID == 3017 & Status == "Active") %>%
+                pull(InternalID))) %>%
+    mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+           Reason = "Homeless")
+
+  l <- rbind(lprevious, l65, l5, lprematurity, latsi, ldiabetes, lasthma,
+             lmalignancy, lhiv, lhaemoglobinopathy, lasplenic, ltransplant,
+             lcardiac, lbmi30, lchroniclung, lneurology, lrenaldisease, lchronicliver,
+             lchildaspirin, lpregnant, lhomeless) %>%
     group_by(Patient, InternalID, AppointmentDate, AppointmentTime, Provider, DOB, Age) %>%
     summarise(GivenDate = max(GivenDate),
               Reason = paste0(Reason, collapse = ", ")) %>% # join unique Reasons together
@@ -177,11 +291,12 @@ influenza_list <- function(appointments_list, db,
                             if_else(is.na(ITEMID),
                                     paste0("(", as.character(Reason), ")"),
                                     "(Removed from influenza immunization reminders)"),
-                            paste0("(", Reason, ")",
-                                   if_else(is.na(GivenDate) | (GivenDate == -Inf), # no previous vax
-                                           " Due",
+                            paste0(if_else(is.na(GivenDate) | (GivenDate == -Inf), # no previous vax
+                                           " (DUE) ",
                                            if_else(year(GivenDate) == year(AppointmentDate),
-                                                   "", " Due")))) # ?vax given this year
+                                                   " ", " (DUE) ")),
+                                   "(", Reason, ")"
+                                   )) # ?vax given this year
              )
     ) %>%
     select(c("Patient", "InternalID", "AppointmentDate", "AppointmentTime", "Provider",
@@ -193,13 +308,20 @@ influenza_list <- function(appointments_list, db,
 vax_datatable <- function(input, output, session,
 													appointments_list, db,
 													diabetes_list, asthma_list,
-													atsi_list) {
+													atsi_list,
+													malignancy_list, hiv_list, haemoglobinopathy_list, asplenic_list,
+													transplant_list, cardiacdisease_list, trisomy21_list,
+													bmi30_list, chroniclungdisease_list, neurologic_list,
+													chronicliverdisease_list, chronicrenaldisease_list,
+													pregnant_list) {
 	# vaccinations done, pending or never done for appointment list
 	# input - input, output, session (as required by modules)
 	# input - appointments_list - reactive. same as appointments_filtered_time, but with DOB and Age added
 	# input - db - EMR database
   # input - diabetes_list, asthma_list - condition lists
 	# input - atsi_list - Aboriginal or Torres Strait islander
+  # input - malignancy, hiv, haemoglobinopathy, asplenic - various immunocompromising conditions
+  # input - transplant_list - those who have had transplants
 	# output - none
 	ns <- session$ns
 
@@ -246,7 +368,13 @@ vax_datatable <- function(input, output, session,
 	  if ("Influenza" %in% vax_selected())
 	  {vlist <- rbind(vlist, influenza_list(appointments_list, db,
 	  																			diabetes_list, asthma_list,
-	  																			atsi_list))}
+	  																			atsi_list,
+	  																			malignancy_list, hiv_list,
+	  																			haemoglobinopathy_list, asplenic_list,
+	  																			transplant_list, cardiacdisease_list, trisomy21_list,
+	  																			bmi30_list, chroniclungdisease_list, neurologic_list,
+	  																			chronicliverdisease_list, chronicrenaldisease_list,
+	  																			pregnant_list))}
 
 	  if (is.null(vlist)) {
 	    vax_list(NULL)
@@ -274,7 +402,6 @@ vax_datatable <- function(input, output, session,
 	    datatable_styled(vax_list() %>%
 	                       select(c('Patient', 'AppointmentDate', 'AppointmentTime',
 	                                'Provider', 'DOB', 'Age', 'vaxtag_print')),
-	                     escape = c(7),
 	                     colnames = c('Vaccination' = 'vaxtag_print'))
 	  } else {
 	    # fomantic/semantic tag view
@@ -282,6 +409,7 @@ vax_datatable <- function(input, output, session,
 	                       select(c('Patient', 'AppointmentDate', 'AppointmentTime',
 	                                'Provider', 'DOB', 'Age', 'vaxtag')),
 	                     escape = c(7),
+	                     dom = 'frltip', # no copy/print buttons
 	                     colnames = c('Vaccination' = 'vaxtag'))
 	  }
 #		}

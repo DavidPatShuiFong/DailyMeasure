@@ -69,7 +69,9 @@ cdm_datatable <- function(input, output, session,
 	cdm_selected <- reactiveVal(cdm_item_names)
 	# use instead of input$cdm_chosen directly because
 	# input$cdm_chosen is not defined until the dropdown button is selected!
-	observeEvent(input$cdm_chosen, {
+	observeEvent(input$cdm_chosen, ignoreNULL = FALSE, ignoreInit = TRUE, {
+		# cannot ignoreNULL because all  items could be de-selected
+		# ignoreInit is true because input$cdm_chosen is not defined initially
 		cdm_selected(input$cdm_chosen)
 	})
 
@@ -86,50 +88,54 @@ cdm_datatable <- function(input, output, session,
 								 						 'SERVICEDATE', 'MBSITEM', 'DESCRIPTION')) %>%
 								 		mutate(MBSNAME = cdm_item$name[match(MBSITEM, cdm_item$code)])
 
-								 	gpmprv <- appointments %>%
-								 		# GPMP R/V tags.
-								 		# unlike other items, this is on a 3 month schedule, and can follow
-								 		# an item 'other' than itself (e.g. it can follow a GPMP or TCA)
-								 		#
-								 		# only show if a GPMP R/V is due (greater than three months since gpmp or tca or gpmp r/v)
-								 		# or if GPMP R/V is the most recent of gpmp/tca/gpmp r/v
-								 		#
-								 		# green if 'up-to-date' (GPMP R/V is the most recent, and less than 3/months)
-								 		# yellow if 'done, but old' (GPMP R/V is the most recent, and more than 3/months)
-								 		# red if 'not done' (GPMP/TCA most recent, and more than three)
-								 		filter(MBSNAME %in% c("GPMP", "TCA", "GPMP R/V")) %>%
-								 		# r/v only applies if gpmp/tca or r/v already claimed
-								 		group_by(InternalID, AppointmentDate, AppointmentTime, Provider) %>%
-								 		# group by appointment
-								 		slice(which.max(SERVICEDATE)) %>%
-								 		ungroup() %>%
-								 		# (one) item with latest servicedate
-								 		filter((MBSNAME == "GPMP R/V") | interval(SERVICEDATE, AppointmentDate)>months(3)) %>%
-								 		# minimum 3-month gap since claiming previous GPMP/TCA,
-								 		# or most recent claim is a GPMP R/V
-								 		mutate(mbstag =
-								 					 	semantic_tag("GPMP R/V", # semantic/fomantic buttons
-								 					 							 colour =
-								 					 							 	if_else(MBSNAME %in% c("GPMP", "TCA"),
-								 					 							 					'red',
-								 					 							 					# no GPMP R/V since the last GPMP/TCA
-								 					 							 					if_else(interval(SERVICEDATE, AppointmentDate)<months(3),
-								 					 							 									# GPMP R/V. Less than or more than 3 months?
-								 					 							 									'green',
-								 					 							 									'yellow')),
-								 					 							 popuphtml =
-								 					 							 	paste0("<h4>Date : ", SERVICEDATE,
-								 					 							 				 "</h4><h6>Item : ", MBSITEM,
-								 					 							 				 "</h6><p><font size=\'+0\'>", DESCRIPTION, "</p>")),
-								 					 mbstag_print = paste0("GPMP R/V", " ", # printable version of information
-								 					 											if_else(MBSNAME %in% c("GPMP", "TCA"),
-								 					 															paste0("(", MBSNAME, ": ", SERVICEDATE, ") Overdue"),
-								 					 															if_else(interval(SERVICEDATE, AppointmentDate)<months(3),
-								 					 																			paste0("(", SERVICEDATE, ")"),
-								 					 																			paste0("(", SERVICEDATE, ") Overdue"))
-								 					 											)
-								 					 )
-								 		)
+								 	if ("GPMP R/V" %in% cdm_selected()) {
+								 		gpmprv <- appointments %>%
+								 			# GPMP R/V tags.
+								 			# unlike other items, this is on a 3 month schedule, and can follow
+								 			# an item 'other' than itself (e.g. it can follow a GPMP or TCA)
+								 			#
+								 			# only show if a GPMP R/V is due (greater than three months since gpmp or tca or gpmp r/v)
+								 			# or if GPMP R/V is the most recent of gpmp/tca/gpmp r/v
+								 			#
+								 			# green if 'up-to-date' (GPMP R/V is the most recent, and less than 3/months)
+								 			# yellow if 'done, but old' (GPMP R/V is the most recent, and more than 3/months)
+								 			# red if 'not done' (GPMP/TCA most recent, and more than three)
+								 			filter(MBSNAME %in% c("GPMP", "TCA", "GPMP R/V")) %>%
+								 			# r/v only applies if gpmp/tca or r/v already claimed
+								 			group_by(InternalID, AppointmentDate, AppointmentTime, Provider) %>%
+								 			# group by appointment
+								 			slice(which.max(SERVICEDATE)) %>%
+								 			ungroup() %>%
+								 			# (one) item with latest servicedate
+								 			filter((MBSNAME == "GPMP R/V") | interval(SERVICEDATE, AppointmentDate)>months(3)) %>%
+								 			# minimum 3-month gap since claiming previous GPMP/TCA,
+								 			# or most recent claim is a GPMP R/V
+								 			mutate(mbstag =
+								 						 	semantic_tag("GPMP R/V", # semantic/fomantic buttons
+								 						 							 colour =
+								 						 							 	if_else(MBSNAME %in% c("GPMP", "TCA"),
+								 						 							 					'red',
+								 						 							 					# no GPMP R/V since the last GPMP/TCA
+								 						 							 					if_else(interval(SERVICEDATE, AppointmentDate)<months(3),
+								 						 							 									# GPMP R/V. Less than or more than 3 months?
+								 						 							 									'green',
+								 						 							 									'yellow')),
+								 						 							 popuphtml =
+								 						 							 	paste0("<h4>Date : ", SERVICEDATE,
+								 						 							 				 "</h4><h6>Item : ", MBSITEM,
+								 						 							 				 "</h6><p><font size=\'+0\'>", DESCRIPTION, "</p>")),
+								 						 mbstag_print = paste0("GPMP R/V", " ", # printable version of information
+								 						 											if_else(MBSNAME %in% c("GPMP", "TCA"),
+								 						 															paste0("(", MBSNAME, ": ", SERVICEDATE, ") Overdue"),
+								 						 															if_else(interval(SERVICEDATE, AppointmentDate)<months(3),
+								 						 																			paste0("(", SERVICEDATE, ")"),
+								 						 																			paste0("(", SERVICEDATE, ") Overdue"))
+								 						 											)
+								 						 )
+								 			)
+								 	} else {
+								 		gpmprv <- NULL
+								 	}
 
 								 	appointments <- appointments %>%
 								 		filter(!(MBSNAME == "GPMP R/V")) %>% # GPMP R/V will be added back in as a 'tagged' version

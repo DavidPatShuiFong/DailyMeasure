@@ -41,7 +41,7 @@ zostavax_list <- function(appointments_list, db) {
               copy = TRUE) %>%
     left_join(db$preventive_health %>%
                 # those who have been removed from the reminder system for Zostavax
-                filter(ITEMID == 15), by = c('InternalID' = 'INTERNALID'),
+                filter(ITEMID == 15), by = "InternalID",
               copy = TRUE) %>%
     collect() %>%
     mutate(GivenDate = as.Date(substr(GivenDate, 1, 10))) %>%
@@ -234,7 +234,7 @@ influenza_list <- function(appointments_list, db,
                            2340,2341,2342,2345,2344,11326,14681,2523,3531,16877,6827,6918,12519,
                            7651,7704)) %>%
                 # RXSTATUS == 1 (long-term medication), many aspirin productIDs!
-                pull(INTERNALID))
+                pull(InternalID))
            ) %>%
     mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
            Reason = "Child aged 6 months to 10 years on long-term aspirin") %>%
@@ -265,7 +265,7 @@ influenza_list <- function(appointments_list, db,
     ungroup() %>%
     left_join(db$preventive_health %>%
                 # those who have been removed from the reminder system for influenza
-                filter(ITEMID == 1), by = c('InternalID' = 'INTERNALID'),
+                filter(ITEMID == 1), by = "InternalID",
               copy = TRUE) %>%
     collect() %>%
     mutate(vaxtag =

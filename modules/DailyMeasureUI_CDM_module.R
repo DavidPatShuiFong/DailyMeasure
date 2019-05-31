@@ -1,6 +1,5 @@
 ##### information modules ###############################################################
 
-
 ##### CDM (chronic disease management) modules ##########################################
 
 cdm_datatableUI <- function(id) {
@@ -80,13 +79,13 @@ cdm_datatable <- function(input, output, session,
 	observeEvent(c(appointments_billings(), diabetes_list_cdm(), asthma_list_cdm(),
 								 cdm_selected()), {
 								 	appointments <- appointments_billings() %>%
-								 		filter(MBSITEM %in% cdm_item$code) %>%
+								 		filter(MBSItem %in% cdm_item$code) %>%
 								 		# only chronic disease management items
-								 		filter(SERVICEDATE <= AppointmentDate) %>%
+								 		filter(ServiceDate <= AppointmentDate) %>%
 								 		# only items billed before the appointment day
-								 		select(c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider',
-								 						 'SERVICEDATE', 'MBSITEM', 'DESCRIPTION')) %>%
-								 		mutate(MBSNAME = cdm_item$name[match(MBSITEM, cdm_item$code)])
+								 	  select(InternalID, AppointmentDate, AppointmentTime, Provider,
+								 	         ServiceDate, MBSItem, Description) %>%
+								 		mutate(MBSName = cdm_item$name[match(MBSItem, cdm_item$code)])
 
 								 	if ("GPMP R/V" %in% cdm_selected()) {
 								 		gpmprv <- appointments %>%
@@ -100,36 +99,36 @@ cdm_datatable <- function(input, output, session,
 								 			# green if 'up-to-date' (GPMP R/V is the most recent, and less than 3/months)
 								 			# yellow if 'done, but old' (GPMP R/V is the most recent, and more than 3/months)
 								 			# red if 'not done' (GPMP/TCA most recent, and more than three)
-								 			filter(MBSNAME %in% c("GPMP", "TCA", "GPMP R/V")) %>%
+								 			filter(MBSName %in% c("GPMP", "TCA", "GPMP R/V")) %>%
 								 			# r/v only applies if gpmp/tca or r/v already claimed
 								 			group_by(InternalID, AppointmentDate, AppointmentTime, Provider) %>%
 								 			# group by appointment
-								 			slice(which.max(SERVICEDATE)) %>%
+								 			slice(which.max(ServiceDate)) %>%
 								 			ungroup() %>%
 								 			# (one) item with latest servicedate
-								 			filter((MBSNAME == "GPMP R/V") | interval(SERVICEDATE, AppointmentDate)>months(3)) %>%
+								 			filter((MBSName == "GPMP R/V") | interval(ServiceDate, AppointmentDate)>months(3)) %>%
 								 			# minimum 3-month gap since claiming previous GPMP/TCA,
 								 			# or most recent claim is a GPMP R/V
 								 			mutate(mbstag =
 								 						 	semantic_tag("GPMP R/V", # semantic/fomantic buttons
 								 						 							 colour =
-								 						 							 	if_else(MBSNAME %in% c("GPMP", "TCA"),
+								 						 							 	if_else(MBSName %in% c("GPMP", "TCA"),
 								 						 							 					'red',
 								 						 							 					# no GPMP R/V since the last GPMP/TCA
-								 						 							 					if_else(interval(SERVICEDATE, AppointmentDate)<months(3),
+								 						 							 					if_else(interval(ServiceDate, AppointmentDate)<months(3),
 								 						 							 									# GPMP R/V. Less than or more than 3 months?
 								 						 							 									'green',
 								 						 							 									'yellow')),
 								 						 							 popuphtml =
-								 						 							 	paste0("<h4>Date : ", SERVICEDATE,
-								 						 							 				 "</h4><h6>Item : ", MBSITEM,
-								 						 							 				 "</h6><p><font size=\'+0\'>", DESCRIPTION, "</p>")),
+								 						 							 	paste0("<h4>Date : ", ServiceDate,
+								 						 							 				 "</h4><h6>Item : ", MBSItem,
+								 						 							 				 "</h6><p><font size=\'+0\'>", Description, "</p>")),
 								 						 mbstag_print = paste0("GPMP R/V", " ", # printable version of information
-								 						 											if_else(MBSNAME %in% c("GPMP", "TCA"),
-								 						 															paste0("(", MBSNAME, ": ", SERVICEDATE, ") Overdue"),
-								 						 															if_else(interval(SERVICEDATE, AppointmentDate)<months(3),
-								 						 																			paste0("(", SERVICEDATE, ")"),
-								 						 																			paste0("(", SERVICEDATE, ") Overdue"))
+								 						 											if_else(MBSName %in% c("GPMP", "TCA"),
+								 						 															paste0("(", MBSName, ": ", ServiceDate, ") Overdue"),
+								 						 															if_else(interval(ServiceDate, AppointmentDate)<months(3),
+								 						 																			paste0("(", ServiceDate, ")"),
+								 						 																			paste0("(", ServiceDate, ") Overdue"))
 								 						 											)
 								 						 )
 								 			)
@@ -138,36 +137,36 @@ cdm_datatable <- function(input, output, session,
 								 	}
 
 								 	appointments <- appointments %>%
-								 		filter(!(MBSNAME == "GPMP R/V")) %>% # GPMP R/V will be added back in as a 'tagged' version
+								 		filter(!(MBSName == "GPMP R/V")) %>% # GPMP R/V will be added back in as a 'tagged' version
 								 		rbind(diabetes_list_cdm()) %>%
 								 		rbind(asthma_list_cdm()) %>%
 								 		rbind(aha75_list_cdm()) %>%
-								 		filter(MBSNAME %in% cdm_selected()) %>%
-								 		group_by(InternalID, AppointmentDate, AppointmentTime, Provider, MBSNAME) %>%
+								 		filter(MBSName %in% cdm_selected()) %>%
+								 		group_by(InternalID, AppointmentDate, AppointmentTime, Provider, MBSName) %>%
 								 		# group by patient, apppointment and CDM type (name)
-								 		filter(SERVICEDATE == max(SERVICEDATE, na.rm = TRUE)) %>%
+								 		filter(ServiceDate == max(ServiceDate, na.rm = TRUE)) %>%
 								 		# only keep most recent service
 								 		ungroup()
 
 								 	appointments <- appointments %>%
 								 		mutate(mbstag =
-								 					 	semantic_tag(MBSNAME, # semantic/fomantic buttons
+								 					 	semantic_tag(MBSName, # semantic/fomantic buttons
 								 					 							 colour =
-								 					 							 	if_else(SERVICEDATE == -Inf,
+								 					 							 	if_else(ServiceDate == -Inf,
 								 					 							 					'red',
 								 					 							 					# invalid date is '-Inf', means item not claimed yet
-								 					 							 					if_else(interval(SERVICEDATE, AppointmentDate)<years(1),
+								 					 							 					if_else(interval(ServiceDate, AppointmentDate)<years(1),
 								 					 							 									'green',
 								 					 							 									'yellow')),
 								 					 							 popuphtml =
-								 					 							 	paste0("<h4>Date : ", SERVICEDATE,
-								 					 							 				 "</h4><h6>Item : ", MBSITEM,
-								 					 							 				 "</h6><p><font size=\'+0\'>", DESCRIPTION, "</p>")),
-								 					 mbstag_print = paste0(MBSNAME, " ", # printable version of information
-								 					 											if_else(SERVICEDATE == -Inf,
+								 					 							 	paste0("<h4>Date : ", ServiceDate,
+								 					 							 				 "</h4><h6>Item : ", MBSItem,
+								 					 							 				 "</h6><p><font size=\'+0\'>", Description, "</p>")),
+								 					 mbstag_print = paste0(MBSName, " ", # printable version of information
+								 					 											if_else(ServiceDate == -Inf,
 								 					 															'',
-								 					 															paste0("(", SERVICEDATE, ")",
-								 					 																		 if_else(interval(SERVICEDATE, AppointmentDate)<years(1),
+								 					 															paste0("(", ServiceDate, ")",
+								 					 																		 if_else(interval(ServiceDate, AppointmentDate)<years(1),
 								 					 																		 				"", " Overdue")))
 								 					 )
 								 		) %>%
@@ -185,8 +184,8 @@ cdm_datatable <- function(input, output, session,
 		appointments_list() %>%
 			filter(Age >= 75) %>%
 			select(c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider')) %>%
-			mutate(MBSNAME = c('HA'), DESCRIPTION = c('Age 75 years or older'),
-						 SERVICEDATE = as.Date(-Inf, origin = '1970-01-01'), MBSITEM = NA) %>%
+			mutate(MBSName = c('HA'), Description = c('Age 75 years or older'),
+						 ServiceDate = as.Date(-Inf, origin = '1970-01-01'), MBSItem = NA) %>%
 			unique()
 	})
 
@@ -197,15 +196,15 @@ cdm_datatable <- function(input, output, session,
 		a <- appointments_list() %>%
 			filter(InternalID %in% diabetes_list()) %>%
 			select(c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider')) %>%
-			mutate(MBSNAME = c('DiabetesSIP'), DESCRIPTION = c('History : Diabetes'),
-						 SERVICEDATE = as.Date(-Inf, origin = '1970-01-01'), MBSITEM = NA) %>%
+			mutate(MBSName = c('DiabetesSIP'), Description = c('History : Diabetes'),
+						 ServiceDate = as.Date(-Inf, origin = '1970-01-01'), MBSItem = NA) %>%
 			unique()
 		# invalid date set as -Inf, which looks like NA, but is not (is equal to -Inf)
 		# setting invalid date to NA is not good for later comparisons,
 		# where max(... , na.rm=TRUE) needs to be used
 
-		b <- a %>% mutate(MBSNAME = c('GPMP'))
-		# people with diabetes also qualify for GPMP. duplicate list with 'GPMP' MBSNAME
+		b <- a %>% mutate(MBSName = "GPMP")
+		# people with diabetes also qualify for GPMP. duplicate list with 'GPMP' MBSName
 		rbind(a, b)
 	})
 
@@ -216,15 +215,15 @@ cdm_datatable <- function(input, output, session,
 		a <- appointments_list() %>%
 		  filter(InternalID %in% asthma_list()) %>%
 			select(c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider')) %>%
-			mutate(MBSNAME = c('AsthmaSIP'), DESCRIPTION = c('History : Asthma'),
-						 SERVICEDATE = as.Date(-Inf, origin = '1970-01-01'), MBSITEM = NA) %>%
+			mutate(MBSName = c('AsthmaSIP'), Description = c('History : Asthma'),
+						 ServiceDate = as.Date(-Inf, origin = '1970-01-01'), MBSItem = NA) %>%
 			unique()
 		# invalid date set as -Inf, which looks like NA, but is not (is equal to -Inf)
 		# setting invalid date to NA is not good for later comparisons,
 		# where max(... , na.rm=TRUE) needs to be used
 
-		b <- a %>% mutate(MBSNAME = c('GPMP'))
-		# people with asthma also qualify for GPMP. duplicate list with 'GPMP' MBSNAME
+		b <- a %>% mutate(MBSName = c('GPMP'))
+		# people with asthma also qualify for GPMP. duplicate list with 'GPMP' MBSName
 		rbind(a, b)
 	})
 

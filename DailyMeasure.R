@@ -475,48 +475,50 @@ server <- function(input, output, session) {
     db$preventive_health <- emrpool() %>%
       # INTERNALID, ITEMID (e.g. not for Zostavax remindders)
       tbl(in_schema('dbo', 'PreventiveHealth')) %>%
-      select(c('INTERNALID', 'ITEMID'))
+      select(InternalID = INTERNALID, ITEMID)
 
     db$correspondenceIn <- emrpool() %>%
       # InternalID, CorrespondenceDate, Subject, Detail
       tbl(in_schema('dbo', 'BPS_CorrespondenceIn')) %>%
-      select(c('InternalID', 'CorrespondenceDate', 'Subject', 'Detail'))
+      select(InternalID, CorrespondenceDate, Subject, Detail)
 
     db$reportValues <- emrpool() %>%
       # InternalID, ReportDate, ResultName, LoincCode
       tbl(in_schema('dbo', 'BPS_ReportValues')) %>%
-      select(c('InternalID', 'ReportDate', 'ResultName', 'LoincCode'))
+      select(InternalID, ReportDate, ResultName, LoincCode)
 
     db$invoices <- emrpool() %>%
       # InternalID, INVOICEID, INVOICEDATE
       tbl(in_schema('dbo', 'INVOICES')) %>%
-      select(c('InternalID', 'INVOICEID', 'INVOICEDATE'))
+      select(InternalID, INVOICEID, INVOICEDATE)
 
     db$services <- emrpool() %>%
-      tbl(in_schema('dbo', 'BPS_SERVICES'))
+      tbl(in_schema('dbo', 'BPS_SERVICES')) %>%
+      select(InternalID = INTERNALID, ServiceDate = SERVICEDATE,
+             MBSItem = MBSITEM, Description = DESCRIPTION)
 
     db$history <- emrpool() %>%
       # InternalID, Year, Condition, ConditionID, Status
       tbl(in_schema('dbo', 'BPS_History')) %>%
-      select(c('InternalID', 'Year', 'Condition', 'ConditionID', 'Status'))
+      select(InternalID, Year, Condition, ConditionID, Status)
 
     db$observations <- emrpool() %>%
       tbl(in_schema("dbo", "OBSERVATIONS")) %>%
-      select(c("INTERNALID", "DATANAME", "DATACODE", "DATAVALUE", "OBSDATE"))
+      select(InternalID = INTERNALID, DATANAME, DATACODE, DATAVALUE, OBSDATE)
 
     db$currentrx <- emrpool() %>%
       tbl(in_schema("dbo", "CURRENTRX")) %>%
-      select(c("INTERNALID", "PRODUCTID", "DRUGNAME", "RXSTATUS"))
+      select(InternalID = INTERNALID, PRODUCTID, DRUGNAME, RXSTATUS)
     # RXSTATUS appears to be 1 if 'long-term' and 2 if 'short-term'
 
     db$obgyndetail <- emrpool() %>%
-      tbl(in_schema("dbo", "CURRENTRX")) %>%
-      select(c("INTERNALID", "NOMINALLMP", "LASTPAPDATE", "LASTPAPRESULT", "BREASTFEEDING",
-               "MammogramStatus", "LastMammogramDate", "MammogramResult"))
+      tbl(in_schema("dbo", "OBSGYNDETAIL")) %>%
+      select(InternalID = INTERNALID, NOMINALLMP, LASTPAPDATE, LASTPAPRESULT, BREASTFEEDING,
+             MammogramStatus, LastMammogramDate, MammogramResult)
 
     db$pregnancies <- emrpool() %>%
       tbl(in_schema("dbo", "PREGNANCIES")) %>%
-      select(c("INTERNALID", "EDCBYDATE", "ACTUALLMP", "NOMINALLMP", "ENDDATE"))
+      select(InternalID = INTERNALID, EDCBYDATE, ACTUALLMP, NOMINALLMP, ENDDATE)
 
     db$dbversion <- isolate(db$dbversion)+1
     print(paste("dbversion:", db$dbversion))
@@ -700,31 +702,31 @@ server <- function(input, output, session) {
   # collects ALL billings for patients who have displayed appointments
   appointments_billings <- reactive({
     appointments_list() %>%
-      left_join(db$services, by = c('InternalID' = 'INTERNALID'), copy=TRUE) %>%
+      left_join(db$services, by = "InternalID", copy=TRUE) %>%
       collect() %>%
-      mutate(SERVICEDATE = as.Date(substr(SERVICEDATE, 1, 10)))
+      mutate(ServiceDate = as.Date(substr(ServiceDate, 1, 10)))
   })
 
   # filter to billings which are done on the same day as displayed appointments
   appointments_billings_sameday <- reactive({
     appointments_billings() %>%
-      filter(SERVICEDATE == AppointmentDate) %>%
+      filter(ServiceDate == AppointmentDate) %>%
       # billings done on the same day as displayed appointments
-      select(c('InternalID', 'AppointmentDate', 'AppointmentTime',
-               'Provider', 'MBSITEM', 'DESCRIPTION')) %>%
+      select(InternalID, AppointmentDate, AppointmentTime,
+             Provider, MBSItem, Description) %>%
       # need to preserve ApppointmentTime and Provider
       # in the case where there are multiple apppointments
       # for the patient in the same time period/day and providers
-      mutate(MBSITEM =
-               semantic_button(MBSITEM,
+      mutate(MBSItem =
+               semantic_button(MBSItem,
                                colour = 'green',
                                popuphtml = paste0('<h4>', AppointmentDate,
                                                   "</h3><p><font size=\'+0\'>",
-                                                  DESCRIPTION, '</p>'))) %>%
+                                                  Description, '</p>'))) %>%
       # change MBSITEMS into fomantic/semantic tags
       group_by(InternalID, AppointmentDate, AppointmentTime, Provider) %>%
       # gathers item numbers on the same day into a single row
-      summarise(Billings = paste(MBSITEM, collapse = "")) %>%
+      summarise(Billings = paste(MBSItem, collapse = "")) %>%
       ungroup()
   })
 
@@ -944,7 +946,7 @@ server <- function(input, output, session) {
     appointments_filtered() %>% collect() %>%
       inner_join(db$observations %>%
                    filter(DATACODE == 9), # this is BMI. also in DATANAME, but different spellings/cases
-                 by = c("InternalID" = "INTERNALID"), copy = TRUE) %>%
+                 by = "InternalID", copy = TRUE) %>%
       filter(OBSDATE <= AppointmentDate) %>% # observation done before the appointment time
       group_by(InternalID, AppointmentDate, AppointmentTime) %>%
       slice(which.max(OBSDATE)) %>% # choose the observation with the most recent observation date
@@ -1025,7 +1027,7 @@ server <- function(input, output, session) {
     appointments_filtered() %>% collect() %>%
       inner_join(db$pregnancies %>%
                    filter(is.null(ENDDATE)),
-                 by = c("InternalID" = "INTERNALID"), copy = TRUE) %>%
+                 by = "InternalID", copy = TRUE) %>%
       filter((EDCBYDATE > AppointmentDate) & (EDCBYDATE < (AppointmentDate+months(9)))) %>%
       pull(InternalID) %>%
       unique()

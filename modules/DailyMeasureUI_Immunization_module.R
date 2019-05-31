@@ -390,7 +390,6 @@ vax_datatable <- function(input, output, session,
 	})
 
 	styled_vax_list <- reactive({
-		#if (!is.null(vax_list()) & !is.null(appointments_list())) {
 	  validate(
 	    need(appointments_list(), "No appointments in selected range"),
 	    need(vax_list(), "Choose at least one vaccination to display")
@@ -412,7 +411,6 @@ vax_datatable <- function(input, output, session,
 	                     dom = 'frltip', # no copy/print buttons
 	                     colnames = c('Vaccination' = 'vaxtag'))
 	  }
-#		}
 	})
 
 	output$vax_table <- renderDT({

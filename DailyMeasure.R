@@ -37,6 +37,7 @@ source("./modules/calculation_definitions.R")
 ##### UI modules
 source("./modules/DailyMeasureUImodules.R")
 source("./modules/DailyMeasureUI_Immunization_module.R")
+source("./modules/DailyMeasureUI_CancerScreen_module.R")
 source("./modules/DailyMeasureUI_CDM_module.R")
 
 ##### Define UI for application ######################
@@ -53,7 +54,7 @@ ui <- dashboardPagePlus(
     sidebarMenu(
       id = "sidebartabs",
       menuItem("Immunization", tabName = "immunization"),
-      menuItem("Bowel Cancer Screening", tabName = "fobt"),
+      menuItem("Cancer Screening", tabName = "cancerscreen"),
       menuItem("Billings", tabName = "billings"),
       menuItem("CDM items", tabName = "cdm"),
       menuItem("Appointments", tabName = "appointments"),
@@ -132,9 +133,9 @@ ui <- dashboardPagePlus(
               fluidRow(column(width = 12, align = "center", h2("Immunization"))),
               fluidRow(column(width = 12, vax_datatableUI("vax_dt")))
       ),
-      tabItem(tabName = "fobt",
-              fluidRow(column(width = 12, align = "center", h2("Bowel cancer screening"))),
-              fluidRow(column(width = 12, DTOutput("fobt_dt")))
+      tabItem(tabName = "cancerscreen",
+              fluidRow(column(width = 12, align = "center", h2("Cancer screening"))),
+              fluidRow(column(width = 12, cancerscreen_datatableUI("cancerscreen_dt")))
       ),
       tabItem(tabName = "billings",
               fluidRow(column(width = 12, align = "center", h2("Billings"))),
@@ -614,90 +615,9 @@ server <- function(input, output, session) {
   																chronicliverdisease_list, chronicrenaldisease_list, pregnant_list)
 
   # Bowel cancer screening
-  bowel_cancer_screen_terms <-
-    c("(VALUES('%FOB%'), ('%OCCULT%'), ('%FAECAL HUMAN HAEMOGLOBIN%'),
-       ('%OCB NATIONAL SCREENING%'), ('%FHB%'), ('%FAECAL BLOOD%'),
-       ('%FAECAL IMMUNOCHEMICAL TEST%'), ('%FAECAL HAEMOGLOBIN%'),
-       ('%COLONOSCOPY%'), ('%COLONOSCOPE%')) AS tests(fobtnames)")
 
-  fobt_investigation_query <-
-    paste('SELECT InternalID, Collected, TestName FROM dbo.BPS_Investigations
-           INNER JOIN', bowel_cancer_screen_terms,
-          'ON TestName LIKE tests.fobtnames')
-  # SQL code to find investigations which could be bowel cancer screening items
-
-  fobt_letter_subject_query <-
-    paste('SELECT InternalID, CorrespondenceDate, Subject FROM dbo.BPS_CorrespondenceIn
-           INNER JOIN', bowel_cancer_screen_terms,
-          'ON Subject LIKE tests.fobtnames')
-
-  fobt_letter_detail_query <-
-    paste('SELECT InternalID, CorrespondenceDate, Detail FROM dbo.BPS_CorrespondenceIn
-           INNER JOIN', bowel_cancer_screen_terms,
-          'ON Detail LIKE tests.fobtnames')
-
-  fobt_result_query <-
-    paste("SELECT InternalID, ReportDate, ResultName FROM dbo.BPS_ReportValues
-            WHERE LoincCode IN ('2335-8','27396-1','14563-1','14564-9','14565-6',
-                         	      '12503-9','12504-7','27401-9','27925-7','27926-5',
-	                              '57905-2','56490-6','56491-4','29771-3')")
-
-  screen_fobt_list <- reactive({
-    appointments_list() %>%
-      filter(Age >= 50 & Age <=75) # from age 50 to 75 years inclusive
-  })
-
-  screen_fobt_ix <- reactive({
-    left_join(screen_fobt_list(),
-              bind_rows(inner_join(screen_fobt_list(),
-                                   dbGetQuery(emrpool(), fobt_investigation_query) %>%
-                                     collect() %>%
-                                     rename(TestDate = Collected),
-                                   by = 'InternalID'),
-                        inner_join(screen_fobt_list(),
-                                   dbGetQuery(emrpool(), fobt_letter_subject_query) %>%
-                                     collect() %>%
-                                     rename(TestDate = CorrespondenceDate, TestName = Subject),
-                                   by = 'InternalID'),
-                        inner_join(screen_fobt_list(),
-                                   dbGetQuery(emrpool(), fobt_letter_detail_query) %>%
-                                     collect() %>%
-                                     rename(TestDate = CorrespondenceDate, TestName = Detail),
-                                   by = 'InternalID'),
-                        inner_join(screen_fobt_list(),
-                                   dbGetQuery(emrpool(), fobt_result_query) %>% collect() %>%
-                                     rename(TestDate = ReportDate, TestName = ResultName),
-                                   by = 'InternalID')
-              ) %>%
-                mutate(TestDate = as.Date(substr(TestDate, 1, 10))) %>%
-                # remove time from date
-                group_by(InternalID) %>%
-                # group by patient ID (need most recent investigation for each patient)
-                filter(TestDate == max(TestDate, na.rm = TRUE))
-              # only keep the latest(/recent) dated investigation
-    )
-  })
-
-  output$fobt_dt <- renderDT({
-    datatable_styled(screen_fobt_ix() %>%
-                       mutate(OutOfDateTest =
-                                case_when(is.na(TestDate) ~ 1,
-                                          # if no date (no detected test)
-                                          interval(TestDate, AppointmentDate)>years(2) ~ 2,
-                                          # if old
-                                          TRUE ~ 3)) %>%   # if up-to-date
-                       replace_na(list(TestName = 'FOBT')) %>%
-                       mutate(fobttag =
-                                semantic_tag(
-                                  TestName,
-                                  colour = c('red', 'yellow', 'green')[OutOfDateTest],
-                                  popuphtml = paste0("<h4>Date : ", TestDate, "</h4>"))) %>%
-                       select(c('Patient', 'AppointmentDate', 'AppointmentTime',
-                                'Provider', 'DOB', 'Age', 'fobttag')),
-                     escape = c(7),
-                     colnames = c('FOBT' = 'fobttag')
-    )
-  }, server = FALSE)
+  callModule(cancerscreen_datatable, "cancerscreen_dt",
+             appointments_list, emrpool)
 
   # collects ALL billings for patients who have displayed appointments
   appointments_billings <- reactive({

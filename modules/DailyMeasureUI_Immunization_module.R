@@ -4,26 +4,22 @@
 ##### Immunization modules ##########################################
 
 vax_datatableUI <- function(id) {
-	ns <- NS(id)
+  ns <- NS(id)
 
-	tagList(
-		fluidRow(
-			column(4,
-						 switchInput(
-						 	inputId = ns("printcopy_view"),
-						 	label = "<i class=\"fas fa-print\"></i> </i><i class=\"far fa-copy\"></i>  Print and Copy View",
-						 	labelWidth = "100%")
-			),
-			column(2, offset = 6, # note that total 'column' width = 12
-						 dropdown(
-						 	uiOutput(ns("vax_item_choice")),
-						 	icon = icon("gear"),
-						 	label = "Vaccination items shown"
-						 )
-			)
-		),
-		DTOutput(ns("vax_table"))
-	)
+  tagList(
+    fluidRow(
+      column(4,
+             switchInput(
+               inputId = ns("printcopy_view"),
+               label = "<i class=\"fas fa-print\"></i> </i><i class=\"far fa-copy\"></i>  Print and Copy View",
+               labelWidth = "100%")
+      ),
+      column(2, offset = 6, # note that total 'column' width = 12
+             uiOutput(ns("vax_item_choice"))
+      )
+    ),
+    DTOutput(ns("vax_table"))
+  )
 }
 
 zostavax_list <- function(appointments_list, db) {
@@ -81,14 +77,14 @@ zostavax_list <- function(appointments_list, db) {
 }
 
 influenza_list <- function(appointments_list, db,
-													 diabetes_list, asthma_list,
-													 atsi_list,
-													 malignancy_list, hiv_list,
-													 haemoglobinopathy_list, asplenic_list,
-													 transplant_list, cardiacdisease_list, trisomy21_list,
-													 bmi30_list, chroniclungdisease_list, neurologic_list,
-													 chronicliverdisease_list, chronicrenaldisease_list,
-													 pregnant_list) {
+                           diabetes_list, asthma_list,
+                           atsi_list,
+                           malignancy_list, hiv_list,
+                           haemoglobinopathy_list, asplenic_list,
+                           transplant_list, cardiacdisease_list, trisomy21_list,
+                           bmi30_list, chroniclungdisease_list, neurologic_list,
+                           chronicliverdisease_list, chronicrenaldisease_list,
+                           pregnant_list) {
   # return datatable of appointments where influenza is recommended (might already be given)
   #  Patient, InternalID, AppointmentDate, ApppointmentTime, Provider, DOB, Age
   #  vaxtag, vaxtag_print (these two are the 'semantic' tags and printable tags)
@@ -135,9 +131,9 @@ influenza_list <- function(appointments_list, db,
   l5 <- appointments_list() %>%
     mutate(AgeInMonths = calc_age_months(DOB, AppointmentDate)) %>%
     filter(AgeInMonths >= 6 & AgeInMonths < 60) %>%
-  	mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
-  				 Reason = "Age 6 months to 4 years inclusive") %>%
-  	select(-AgeInMonths)
+    mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+           Reason = "Age 6 months to 4 years inclusive") %>%
+    select(-AgeInMonths)
 
   lprematurity <- appointments_list() %>%
     # pre-term infants
@@ -156,14 +152,14 @@ influenza_list <- function(appointments_list, db,
            Reason = "Diabetes")
 
   latsi <- appointments_list() %>%
-  	filter(InternalID %in% atsi_list()) %>%
-  	mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
-  				 Reason = "Aboriginal or Torres Strait Islander")
+    filter(InternalID %in% atsi_list()) %>%
+    mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+           Reason = "Aboriginal or Torres Strait Islander")
 
   lasthma <- appointments_list() %>%
-  	filter(InternalID %in% asthma_list()) %>%
-  	mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
-  				 Reason = "Asthma")
+    filter(InternalID %in% asthma_list()) %>%
+    mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
+           Reason = "Asthma")
 
   lmalignancy <- appointments_list() %>%
     filter(InternalID %in% malignancy_list()) %>%
@@ -235,7 +231,7 @@ influenza_list <- function(appointments_list, db,
                            7651,7704)) %>%
                 # RXSTATUS == 1 (long-term medication), many aspirin productIDs!
                 pull(InternalID))
-           ) %>%
+    ) %>%
     mutate(GivenDate = as.Date(-Inf, origin = '1970-01-01'),
            Reason = "Child aged 6 months to 10 years on long-term aspirin") %>%
     select(c("Patient", "InternalID", "AppointmentDate", "AppointmentTime", "Provider",
@@ -296,7 +292,7 @@ influenza_list <- function(appointments_list, db,
                                            if_else(year(GivenDate) == year(AppointmentDate),
                                                    " ", " (DUE) ")),
                                    "(", Reason, ")"
-                                   )) # ?vax given this year
+                            )) # ?vax given this year
              )
     ) %>%
     select(c("Patient", "InternalID", "AppointmentDate", "AppointmentTime", "Provider",
@@ -306,114 +302,122 @@ influenza_list <- function(appointments_list, db,
 }
 
 vax_datatable <- function(input, output, session,
-													appointments_list, db,
-													diabetes_list, asthma_list,
-													atsi_list,
-													malignancy_list, hiv_list, haemoglobinopathy_list, asplenic_list,
-													transplant_list, cardiacdisease_list, trisomy21_list,
-													bmi30_list, chroniclungdisease_list, neurologic_list,
-													chronicliverdisease_list, chronicrenaldisease_list,
-													pregnant_list) {
-	# vaccinations done, pending or never done for appointment list
-	# input - input, output, session (as required by modules)
-	# input - appointments_list - reactive. same as appointments_filtered_time, but with DOB and Age added
-	# input - db - EMR database
+                          appointments_list, db,
+                          diabetes_list, asthma_list,
+                          atsi_list,
+                          malignancy_list, hiv_list, haemoglobinopathy_list, asplenic_list,
+                          transplant_list, cardiacdisease_list, trisomy21_list,
+                          bmi30_list, chroniclungdisease_list, neurologic_list,
+                          chronicliverdisease_list, chronicrenaldisease_list,
+                          pregnant_list) {
+  # vaccinations done, pending or never done for appointment list
+  # input - input, output, session (as required by modules)
+  # input - appointments_list - reactive. same as appointments_filtered_time, but with DOB and Age added
+  # input - db - EMR database
   # input - diabetes_list, asthma_list - condition lists
-	# input - atsi_list - Aboriginal or Torres Strait islander
+  # input - atsi_list - Aboriginal or Torres Strait islander
   # input - malignancy, hiv, haemoglobinopathy, asplenic - various immunocompromising conditions
   # input - transplant_list - those who have had transplants
-	# output - none
-	ns <- session$ns
+  # output - none
+  ns <- session$ns
 
-	# fomantic/semantic UI definitions
-	source("./modules/fomantic_definitions.R")
-	# age calculation functions
-	source("./modules/calculation_definitions.R")
+  # fomantic/semantic UI definitions
+  source("./modules/fomantic_definitions.R")
+  # age calculation functions
+  source("./modules/calculation_definitions.R")
 
-	vax_names <- c("Zostavax", "Influenza")
+  vax_names <- c("Zostavax", "Influenza")
 
-	output$vax_item_choice <- renderUI({
-	  checkboxGroupButtons(inputId = ns("vax_chosen"), label = "Vaccination items shown",
-	                       choices = vax_names, selected = vax_names,
-	                       # all choices initially selected
-	                       status = "primary",
-	                       checkIcon = list(yes = icon("ok", lib = "glyphicon")))
-	})
+  output$vax_item_choice <- renderUI({
+    dropdown(
+      inputid = "choice_dropdown",
+      checkboxGroupButtons(inputId = ns("vax_chosen"), label = "Vaccination items shown",
+                           choices = vax_names, selected = vax_names,
+                           # all choices initially selected
+                           status = "primary",
+                           checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
+      icon = icon("gear"),
+      label = "Vaccination items shown"
+    )
+  })
 
-	# filter to vax
+  observe({
+    print(paste0("vax chosen:", input$vax_chosen))
+  })
+  # filter to vax
 
-	vax_selected <- reactiveVal(vax_names)
-	# use instead of input$vax_chosen directly because
-	# input$vax_chosen is not defined until the dropdown button is selected!
-	observeEvent(input$vax_chosen, ignoreNULL = FALSE, ignoreInit = TRUE, {
-		# change value of vax_selected to t he value of input$vax_chosen
-		# cannot ignoreNULL because all vax could be de-selected
-		# ignoreInit because it is not chosen
-		vax_selected(input$vax_chosen)
-	})
+  vax_selected <- reactiveVal(vax_names)
+  # use instead of input$vax_chosen directly because
+  # input$vax_chosen is not defined until the dropdown button is selected!
+  observeEvent(input$vax_chosen, ignoreNULL = FALSE, ignoreInit = TRUE, {
+    # change value of vax_selected to t he value of input$vax_chosen
+    # cannot ignoreNULL because all vax could be de-selected
+    # ignoreInit because it is not chosen
+    vax_selected(input$vax_chosen)
+  })
 
-	vax_list <- reactiveVal(NULL)
+  vax_list <- reactiveVal(NULL)
 
-	observeEvent(c(appointments_list(), vax_selected()), {
-	  validate(
-	    need(appointments_list(), "No appointments in chosen range"),
-	    need(nrow(appointments_list())>0, "No appointments in chosen range")
-	  )
+  observeEvent(c(appointments_list(), vax_selected()), {
+    validate(
+      need(appointments_list(), "No appointments in chosen range"),
+      need(nrow(appointments_list())>0, "No appointments in chosen range")
+    )
 
-	  vlist <- NULL
-	  # Zostavax (herpes zoster 'shingles' vaccine)
-	  if ("Zostavax" %in% vax_selected())
-	  {vlist <- rbind(vlist, zostavax_list(appointments_list, db))}
-	  # influenza
-	  if ("Influenza" %in% vax_selected())
-	  {vlist <- rbind(vlist, influenza_list(appointments_list, db,
-	  																			diabetes_list, asthma_list,
-	  																			atsi_list,
-	  																			malignancy_list, hiv_list,
-	  																			haemoglobinopathy_list, asplenic_list,
-	  																			transplant_list, cardiacdisease_list, trisomy21_list,
-	  																			bmi30_list, chroniclungdisease_list, neurologic_list,
-	  																			chronicliverdisease_list, chronicrenaldisease_list,
-	  																			pregnant_list))}
+    vlist <- NULL
+    # Zostavax (herpes zoster 'shingles' vaccine)
+    if ("Zostavax" %in% vax_selected())
+    {vlist <- rbind(vlist, zostavax_list(appointments_list, db))}
+    # influenza
+    if ("Influenza" %in% vax_selected())
+    {vlist <- rbind(vlist, influenza_list(appointments_list, db,
+                                          diabetes_list, asthma_list,
+                                          atsi_list,
+                                          malignancy_list, hiv_list,
+                                          haemoglobinopathy_list, asplenic_list,
+                                          transplant_list, cardiacdisease_list, trisomy21_list,
+                                          bmi30_list, chroniclungdisease_list, neurologic_list,
+                                          chronicliverdisease_list, chronicrenaldisease_list,
+                                          pregnant_list))}
 
-	  if (is.null(vlist)) {
-	    vax_list(NULL)
-	  } else {
-	    vax_list(vlist %>%
-	               group_by(Patient, InternalID, AppointmentDate, AppointmentTime, Provider,
-	                        DOB, Age) %>%
-	               # gathers vaccination notifications on the same appointment into a single row
-	               summarise(vaxtag = paste(vaxtag, collapse = ""),
-	                         vaxtag_print = paste(vaxtag_print, collapse = ", ")) %>%
-	               ungroup())
-	  }
-	})
+    if (is.null(vlist)) {
+      vax_list(NULL)
+    } else {
+      vax_list(vlist %>%
+                 group_by(Patient, InternalID, AppointmentDate, AppointmentTime, Provider,
+                          DOB, Age) %>%
+                 # gathers vaccination notifications on the same appointment into a single row
+                 summarise(vaxtag = paste(vaxtag, collapse = ""),
+                           vaxtag_print = paste(vaxtag_print, collapse = ", ")) %>%
+                 ungroup())
+    }
+  })
 
-	styled_vax_list <- reactive({
-	  validate(
-	    need(appointments_list(), "No appointments in selected range"),
-	    need(vax_list(), "Choose at least one vaccination to display")
-	  )
-	  dummy <- vax_list()
+  styled_vax_list <- reactive({
+    validate(
+      need(appointments_list(), "No appointments in selected range"),
+      need(vax_list(), "Choose at least one vaccination to display")
+    )
+    dummy <- vax_list()
 
-	  if (input$printcopy_view == TRUE) {
-	    # printable/copyable view
-	    datatable_styled(vax_list() %>%
-	                       select(c('Patient', 'AppointmentDate', 'AppointmentTime',
-	                                'Provider', 'DOB', 'Age', 'vaxtag_print')),
-	                     colnames = c('Vaccination' = 'vaxtag_print'))
-	  } else {
-	    # fomantic/semantic tag view
-	    datatable_styled(vax_list() %>%
-	                       select(c('Patient', 'AppointmentDate', 'AppointmentTime',
-	                                'Provider', 'DOB', 'Age', 'vaxtag')),
-	                     escape = c(7),
-	                     dom = 'frltip', # no copy/print buttons
-	                     colnames = c('Vaccination' = 'vaxtag'))
-	  }
-	})
+    if (input$printcopy_view == TRUE) {
+      # printable/copyable view
+      datatable_styled(vax_list() %>%
+                         select(c('Patient', 'AppointmentDate', 'AppointmentTime',
+                                  'Provider', 'DOB', 'Age', 'vaxtag_print')),
+                       colnames = c('Vaccination' = 'vaxtag_print'))
+    } else {
+      # fomantic/semantic tag view
+      datatable_styled(vax_list() %>%
+                         select(c('Patient', 'AppointmentDate', 'AppointmentTime',
+                                  'Provider', 'DOB', 'Age', 'vaxtag')),
+                       escape = c(7),
+                       dom = 'frltip', # no copy/print buttons
+                       colnames = c('Vaccination' = 'vaxtag'))
+    }
+  })
 
-	output$vax_table <- renderDT({
-		styled_vax_list()
-	})
+  output$vax_table <- renderDT({
+    styled_vax_list()
+  })
 }

@@ -39,6 +39,8 @@ source("./modules/DailyMeasureUImodules.R")
 source("./modules/DailyMeasureUI_Immunization_module.R")
 source("./modules/DailyMeasureUI_CancerScreen_module.R")
 source("./modules/DailyMeasureUI_CDM_module.R")
+source("./modules/DailyMeasureUI_Billings_module.R")
+
 
 ##### Define UI for application ######################
 ui <- dashboardPagePlus(
@@ -65,6 +67,7 @@ ui <- dashboardPagePlus(
 
   # Sidebar with a slider input for number of bins
   rightsidebar = rightSidebar(
+    useShinyjs(), # this is needed to enable the 'click' of 'update_date' by 'Today'
     background = "dark",
     rightSidebarTabContent(
       id = 1,
@@ -139,7 +142,7 @@ ui <- dashboardPagePlus(
       ),
       tabItem(tabName = "billings",
               fluidRow(column(width = 12, align = "center", h2("Billings"))),
-              fluidRow(column(width = 12, DTOutput("billings_dt")))
+              fluidRow(column(width = 12, billings_datatableUI("billings_dt")))
       ),
       tabItem(tabName = "cdm",
               fluidRow(column(width = 12, align = "center", h2("Chronic Disease Management items"))),
@@ -619,7 +622,10 @@ server <- function(input, output, session) {
   callModule(cancerscreen_datatable, "cancerscreen_dt",
              appointments_list, emrpool)
 
+  # Billings for patients who have displayed appointments
+
   # collects ALL billings for patients who have displayed appointments
+  # used by billings view, and CDM billings view
   appointments_billings <- reactive({
     appointments_list() %>%
       left_join(db$services, by = "InternalID", copy=TRUE) %>%
@@ -627,39 +633,9 @@ server <- function(input, output, session) {
       mutate(ServiceDate = as.Date(substr(ServiceDate, 1, 10)))
   })
 
-  # filter to billings which are done on the same day as displayed appointments
-  appointments_billings_sameday <- reactive({
-    appointments_billings() %>%
-      filter(ServiceDate == AppointmentDate) %>%
-      # billings done on the same day as displayed appointments
-      select(InternalID, AppointmentDate, AppointmentTime,
-             Provider, MBSItem, Description) %>%
-      # need to preserve ApppointmentTime and Provider
-      # in the case where there are multiple apppointments
-      # for the patient in the same time period/day and providers
-      mutate(MBSItem =
-               semantic_button(MBSItem,
-                               colour = 'green',
-                               popuphtml = paste0('<h4>', AppointmentDate,
-                                                  "</h3><p><font size=\'+0\'>",
-                                                  Description, '</p>'))) %>%
-      # change MBSITEMS into fomantic/semantic tags
-      group_by(InternalID, AppointmentDate, AppointmentTime, Provider) %>%
-      # gathers item numbers on the same day into a single row
-      summarise(Billings = paste(MBSItem, collapse = "")) %>%
-      ungroup()
-  })
-
-  output$billings_dt <- renderDT({
-    datatable_styled(appointments_filtered_time() %>%
-                       left_join(appointments_billings_sameday(),
-                                 by = c('InternalID', 'AppointmentDate',
-                                        'AppointmentTime', 'Provider')) %>%
-                       select(c('Patient', 'AppointmentDate', 'AppointmentTime',
-                                'Provider', 'Status', 'Billings')),
-                     escape = c(6) # only interpret HTML for last column
-    )
-  }, server = TRUE)
+  # call the module to generate the table
+  callModule(billings_datatable, "billings_dt",
+             appointments_billings, db)
 
   # Appointment list
 

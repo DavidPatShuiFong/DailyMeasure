@@ -14,11 +14,7 @@ cdm_datatableUI <- function(id) {
 						 	labelWidth = "100%")
 			),
 			column(2, offset = 6, # note that total 'column' width = 12
-						 dropdown(
-						 	uiOutput(ns("cdm_item_choice")),
-						 	icon = icon("gear"),
-						 	label = "CDM items shown"
-						 )
+						 uiOutput(ns("cdm_item_choice"))
 			)
 		),
 		DTOutput(ns("cdm_table"))
@@ -55,128 +51,129 @@ cdm_datatable <- function(input, output, session,
 	cdm_item_names <- as.character(unique(cdm_item$name)) # de-factored
 
 	output$cdm_item_choice <- renderUI({
-		checkboxGroupButtons(inputId = ns("cdm_chosen"), label = "CDM items shown",
-												 choices = cdm_item_names, selected = cdm_item_names,
-												 # all choices initially selected
-												 status = "primary",
-												 checkIcon = list(yes = icon("ok", lib = "glyphicon")))
+		dropdown(
+			input_id = "choice_dropdown",
+			checkboxGroupButtons(inputId = ns("cdm_chosen"), label = "CDM items shown",
+													 choices = cdm_item_names, selected = cdm_item_names,
+													 # all choices initially selected
+													 status = "primary",
+													 checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
+			icon = icon("gear"),
+			label = "CDM items shown"
+		)
 	})
 
 	# filter to CDM item billed prior to (or on) the day of displayed appointments
 	# only show most recent billed item in each category
 
-	cdm_selected <- reactiveVal(cdm_item_names)
-	# use instead of input$cdm_chosen directly because
-	# input$cdm_chosen is not defined until the dropdown button is selected!
-	observeEvent(input$cdm_chosen, ignoreNULL = FALSE, ignoreInit = TRUE, {
-		# cannot ignoreNULL because all  items could be de-selected
-		# ignoreInit is true because input$cdm_chosen is not defined initially
-		cdm_selected(input$cdm_chosen)
-	})
 
-	appointments_billings_cdm <- reactiveVal(NULL)
+#	observeEvent(c(appointments_billings(), diabetes_list_cdm(), asthma_list_cdm(),
+#								 input$cdm_chosen), {
+	appointments_billings_cdm <- reactive({
+		validate(
+			need(appointments_billings(), "No billed appointments in chosen range"),
+			need(nrow(appointments_billings())>0, "No billed appointments in chosen range")
+		)
+		appointments <- appointments_billings() %>%
+			filter(MBSItem %in% cdm_item$code) %>%
+			# only chronic disease management items
+			filter(ServiceDate <= AppointmentDate) %>%
+			# only items billed before the appointment day
+			select(InternalID, AppointmentDate, AppointmentTime, Provider,
+						 ServiceDate, MBSItem, Description) %>%
+			mutate(MBSName = cdm_item$name[match(MBSItem, cdm_item$code)])
 
-	observeEvent(c(appointments_billings(), diabetes_list_cdm(), asthma_list_cdm(),
-								 cdm_selected()), {
-								 	appointments <- appointments_billings() %>%
-								 		filter(MBSItem %in% cdm_item$code) %>%
-								 		# only chronic disease management items
-								 		filter(ServiceDate <= AppointmentDate) %>%
-								 		# only items billed before the appointment day
-								 	  select(InternalID, AppointmentDate, AppointmentTime, Provider,
-								 	         ServiceDate, MBSItem, Description) %>%
-								 		mutate(MBSName = cdm_item$name[match(MBSItem, cdm_item$code)])
+		if ("GPMP R/V" %in% input$cdm_chosen) {
+			gpmprv <- appointments %>%
+				# GPMP R/V tags.
+				# unlike other items, this is on a 3 month schedule, and can follow
+				# an item 'other' than itself (e.g. it can follow a GPMP or TCA)
+				#
+				# only show if a GPMP R/V is due (greater than three months since gpmp or tca or gpmp r/v)
+				# or if GPMP R/V is the most recent of gpmp/tca/gpmp r/v
+				#
+				# green if 'up-to-date' (GPMP R/V is the most recent, and less than 3/months)
+				# yellow if 'done, but old' (GPMP R/V is the most recent, and more than 3/months)
+				# red if 'not done' (GPMP/TCA most recent, and more than three)
+				filter(MBSName %in% c("GPMP", "TCA", "GPMP R/V")) %>%
+				# r/v only applies if gpmp/tca or r/v already claimed
+				group_by(InternalID, AppointmentDate, AppointmentTime, Provider) %>%
+				# group by appointment
+				slice(which.max(ServiceDate)) %>%
+				ungroup() %>%
+				# (one) item with latest servicedate
+				filter((MBSName == "GPMP R/V") | interval(ServiceDate, AppointmentDate)>months(3)) %>%
+				# minimum 3-month gap since claiming previous GPMP/TCA,
+				# or most recent claim is a GPMP R/V
+				mutate(mbstag =
+							 	semantic_tag("GPMP R/V", # semantic/fomantic buttons
+							 							 colour =
+							 							 	if_else(MBSName %in% c("GPMP", "TCA"),
+							 							 					'red',
+							 							 					# no GPMP R/V since the last GPMP/TCA
+							 							 					if_else(interval(ServiceDate, AppointmentDate)<months(3),
+							 							 									# GPMP R/V. Less than or more than 3 months?
+							 							 									'green',
+							 							 									'yellow')),
+							 							 popuphtml =
+							 							 	paste0("<h4>Date : ", ServiceDate,
+							 							 				 "</h4><h6>Item : ", MBSItem,
+							 							 				 "</h6><p><font size=\'+0\'>", Description, "</p>")),
+							 mbstag_print = paste0("GPMP R/V", " ", # printable version of information
+							 											if_else(MBSName %in% c("GPMP", "TCA"),
+							 															paste0("(", MBSName, ": ", ServiceDate, ") Overdue"),
+							 															if_else(interval(ServiceDate, AppointmentDate)<months(3),
+							 																			paste0("(", ServiceDate, ")"),
+							 																			paste0("(", ServiceDate, ") Overdue"))
+							 											)
+							 )
+				)
+		} else {
+			gpmprv <- NULL
+		}
 
-								 	if ("GPMP R/V" %in% cdm_selected()) {
-								 		gpmprv <- appointments %>%
-								 			# GPMP R/V tags.
-								 			# unlike other items, this is on a 3 month schedule, and can follow
-								 			# an item 'other' than itself (e.g. it can follow a GPMP or TCA)
-								 			#
-								 			# only show if a GPMP R/V is due (greater than three months since gpmp or tca or gpmp r/v)
-								 			# or if GPMP R/V is the most recent of gpmp/tca/gpmp r/v
-								 			#
-								 			# green if 'up-to-date' (GPMP R/V is the most recent, and less than 3/months)
-								 			# yellow if 'done, but old' (GPMP R/V is the most recent, and more than 3/months)
-								 			# red if 'not done' (GPMP/TCA most recent, and more than three)
-								 			filter(MBSName %in% c("GPMP", "TCA", "GPMP R/V")) %>%
-								 			# r/v only applies if gpmp/tca or r/v already claimed
-								 			group_by(InternalID, AppointmentDate, AppointmentTime, Provider) %>%
-								 			# group by appointment
-								 			slice(which.max(ServiceDate)) %>%
-								 			ungroup() %>%
-								 			# (one) item with latest servicedate
-								 			filter((MBSName == "GPMP R/V") | interval(ServiceDate, AppointmentDate)>months(3)) %>%
-								 			# minimum 3-month gap since claiming previous GPMP/TCA,
-								 			# or most recent claim is a GPMP R/V
-								 			mutate(mbstag =
-								 						 	semantic_tag("GPMP R/V", # semantic/fomantic buttons
-								 						 							 colour =
-								 						 							 	if_else(MBSName %in% c("GPMP", "TCA"),
-								 						 							 					'red',
-								 						 							 					# no GPMP R/V since the last GPMP/TCA
-								 						 							 					if_else(interval(ServiceDate, AppointmentDate)<months(3),
-								 						 							 									# GPMP R/V. Less than or more than 3 months?
-								 						 							 									'green',
-								 						 							 									'yellow')),
-								 						 							 popuphtml =
-								 						 							 	paste0("<h4>Date : ", ServiceDate,
-								 						 							 				 "</h4><h6>Item : ", MBSItem,
-								 						 							 				 "</h6><p><font size=\'+0\'>", Description, "</p>")),
-								 						 mbstag_print = paste0("GPMP R/V", " ", # printable version of information
-								 						 											if_else(MBSName %in% c("GPMP", "TCA"),
-								 						 															paste0("(", MBSName, ": ", ServiceDate, ") Overdue"),
-								 						 															if_else(interval(ServiceDate, AppointmentDate)<months(3),
-								 						 																			paste0("(", ServiceDate, ")"),
-								 						 																			paste0("(", ServiceDate, ") Overdue"))
-								 						 											)
-								 						 )
-								 			)
-								 	} else {
-								 		gpmprv <- NULL
-								 	}
+		appointments <- appointments %>%
+			filter(!(MBSName == "GPMP R/V")) %>% # GPMP R/V will be added back in as a 'tagged' version
+			rbind(diabetes_list_cdm()) %>%
+			rbind(asthma_list_cdm()) %>%
+			rbind(aha75_list_cdm()) %>%
+			filter(MBSName %in% input$cdm_chosen) %>%
+			group_by(InternalID, AppointmentDate, AppointmentTime, Provider, MBSName) %>%
+			# group by patient, apppointment and CDM type (name)
+			filter(ServiceDate == max(ServiceDate, na.rm = TRUE)) %>%
+			# only keep most recent service
+			ungroup()
 
-								 	appointments <- appointments %>%
-								 		filter(!(MBSName == "GPMP R/V")) %>% # GPMP R/V will be added back in as a 'tagged' version
-								 		rbind(diabetes_list_cdm()) %>%
-								 		rbind(asthma_list_cdm()) %>%
-								 		rbind(aha75_list_cdm()) %>%
-								 		filter(MBSName %in% cdm_selected()) %>%
-								 		group_by(InternalID, AppointmentDate, AppointmentTime, Provider, MBSName) %>%
-								 		# group by patient, apppointment and CDM type (name)
-								 		filter(ServiceDate == max(ServiceDate, na.rm = TRUE)) %>%
-								 		# only keep most recent service
-								 		ungroup()
+		appointments <- appointments %>%
+			mutate(mbstag =
+						 	semantic_tag(MBSName, # semantic/fomantic buttons
+						 							 colour =
+						 							 	if_else(ServiceDate == -Inf,
+						 							 					'red',
+						 							 					# invalid date is '-Inf', means item not claimed yet
+						 							 					if_else(interval(ServiceDate, AppointmentDate)<years(1),
+						 							 									'green',
+						 							 									'yellow')),
+						 							 popuphtml =
+						 							 	paste0("<h4>Date : ", ServiceDate,
+						 							 				 "</h4><h6>Item : ", MBSItem,
+						 							 				 "</h6><p><font size=\'+0\'>", Description, "</p>")),
+						 mbstag_print = paste0(MBSName, " ", # printable version of information
+						 											if_else(ServiceDate == -Inf,
+						 															'',
+						 															paste0("(", ServiceDate, ")",
+						 																		 if_else(interval(ServiceDate, AppointmentDate)<years(1),
+						 																		 				"", " Overdue")))
+						 )
+			) %>%
+			rbind(gpmprv) %>% # add in GPMP reviews
+			group_by(InternalID, AppointmentDate, AppointmentTime, Provider) %>%
+			# gathers item numbers on the same day into a single row
+			summarise(cdm = paste(mbstag, collapse = ""),
+								cdm_print = paste(mbstag_print, collapse = ", ")) %>%
+			ungroup()
 
-								 	appointments <- appointments %>%
-								 		mutate(mbstag =
-								 					 	semantic_tag(MBSName, # semantic/fomantic buttons
-								 					 							 colour =
-								 					 							 	if_else(ServiceDate == -Inf,
-								 					 							 					'red',
-								 					 							 					# invalid date is '-Inf', means item not claimed yet
-								 					 							 					if_else(interval(ServiceDate, AppointmentDate)<years(1),
-								 					 							 									'green',
-								 					 							 									'yellow')),
-								 					 							 popuphtml =
-								 					 							 	paste0("<h4>Date : ", ServiceDate,
-								 					 							 				 "</h4><h6>Item : ", MBSItem,
-								 					 							 				 "</h6><p><font size=\'+0\'>", Description, "</p>")),
-								 					 mbstag_print = paste0(MBSName, " ", # printable version of information
-								 					 											if_else(ServiceDate == -Inf,
-								 					 															'',
-								 					 															paste0("(", ServiceDate, ")",
-								 					 																		 if_else(interval(ServiceDate, AppointmentDate)<years(1),
-								 					 																		 				"", " Overdue")))
-								 					 )
-								 		) %>%
-								 		rbind(gpmprv) %>% # add in GPMP reviews
-								 		group_by(InternalID, AppointmentDate, AppointmentTime, Provider) %>%
-								 		# gathers item numbers on the same day into a single row
-								 		summarise(cdm = paste(mbstag, collapse = ""),
-								 							cdm_print = paste(mbstag_print, collapse = ", ")) %>%
-								 		ungroup()
-								 	appointments_billings_cdm(appointments)
+		appointments
 	})
 
 	### AHA 75 (annual health assessment for those aged 75 years and above)

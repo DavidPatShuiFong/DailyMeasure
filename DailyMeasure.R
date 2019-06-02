@@ -47,20 +47,21 @@ ui <- dashboardPagePlus(
 
   header = dashboardHeaderPlus(
     enable_rightsidebar = TRUE,
-    rightSidebarIcon = "bars",
-    title = "Daily Measure",
+    rightSidebarIcon = "gears",
+    title = tagList(
+    	span(class = "logo-lg", "Daily Measure"),
+    			 icon = icon("heartbeat")),
     userOutput("user")
   ),
-
   sidebar = dashboardSidebar(
     sidebarMenu(
       id = "sidebartabs",
-      menuItem("Immunization", tabName = "immunization"),
-      menuItem("Cancer Screening", tabName = "cancerscreen"),
-      menuItem("Billings", tabName = "billings"),
-      menuItem("CDM items", tabName = "cdm"),
-      menuItem("Appointments", tabName = "appointments"),
-      menuItem("Configuration", tabName = "configuration"),
+      menuItem("Immunization", tabName = "immunization", icon = icon("syringe")),
+      menuItem("Cancer Screening", tabName = "cancerscreen", icon = icon("x-ray")),
+      menuItem("Billings", tabName = "billings", icon = icon("receipt")),
+      menuItem("CDM items", tabName = "cdm", icon = icon("file-medical-alt")),
+      menuItem("Appointments", tabName = "appointments", icon = icon("calendar-check")),
+      menuItem("Configuration", tabName = "configuration", icon = icon("wrench")),
       menuItem("Test", tabName = "test")
     )
   ),

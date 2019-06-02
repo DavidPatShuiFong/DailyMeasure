@@ -341,24 +341,10 @@ vax_datatable <- function(input, output, session,
     )
   })
 
-  observe({
-    print(paste0("vax chosen:", input$vax_chosen))
-  })
-  # filter to vax
-
-  vax_selected <- reactiveVal(vax_names)
-  # use instead of input$vax_chosen directly because
-  # input$vax_chosen is not defined until the dropdown button is selected!
-  observeEvent(input$vax_chosen, ignoreNULL = FALSE, ignoreInit = TRUE, {
-    # change value of vax_selected to t he value of input$vax_chosen
-    # cannot ignoreNULL because all vax could be de-selected
-    # ignoreInit because it is not chosen
-    vax_selected(input$vax_chosen)
-  })
-
   vax_list <- reactiveVal(NULL)
 
-  observeEvent(c(appointments_list(), vax_selected()), {
+  #observeEvent(c(appointments_list(), input$vax_chosen), {
+  vax_list <- reactive({
     validate(
       need(appointments_list(), "No appointments in chosen range"),
       need(nrow(appointments_list())>0, "No appointments in chosen range")
@@ -366,10 +352,10 @@ vax_datatable <- function(input, output, session,
 
     vlist <- NULL
     # Zostavax (herpes zoster 'shingles' vaccine)
-    if ("Zostavax" %in% vax_selected())
+    if ("Zostavax" %in% input$vax_chosen)
     {vlist <- rbind(vlist, zostavax_list(appointments_list, db))}
     # influenza
-    if ("Influenza" %in% vax_selected())
+    if ("Influenza" %in% input$vax_chosen)
     {vlist <- rbind(vlist, influenza_list(appointments_list, db,
                                           diabetes_list, asthma_list,
                                           atsi_list,
@@ -380,17 +366,16 @@ vax_datatable <- function(input, output, session,
                                           chronicliverdisease_list, chronicrenaldisease_list,
                                           pregnant_list))}
 
-    if (is.null(vlist)) {
-      vax_list(NULL)
-    } else {
-      vax_list(vlist %>%
+    if (!is.null(vlist)) {
+      vlist <- vlist %>%
                  group_by(Patient, InternalID, AppointmentDate, AppointmentTime, Provider,
                           DOB, Age) %>%
                  # gathers vaccination notifications on the same appointment into a single row
                  summarise(vaxtag = paste(vaxtag, collapse = ""),
                            vaxtag_print = paste(vaxtag_print, collapse = ", ")) %>%
-                 ungroup())
+                 ungroup()
     }
+    vlist
   })
 
   styled_vax_list <- reactive({

@@ -343,7 +343,6 @@ vax_datatable <- function(input, output, session,
 
   vax_list <- reactiveVal(NULL)
 
-  #observeEvent(c(appointments_list(), input$vax_chosen), {
   vax_list <- reactive({
     validate(
       need(appointments_list(), "No appointments in chosen range"),

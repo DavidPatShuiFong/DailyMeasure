@@ -40,7 +40,7 @@ source("./modules/DailyMeasureUI_Immunization_module.R")
 source("./modules/DailyMeasureUI_CancerScreen_module.R")
 source("./modules/DailyMeasureUI_CDM_module.R")
 source("./modules/DailyMeasureUI_Billings_module.R")
-
+source("./modules/DailyMeasureUI_Appointments_module.R")
 
 ##### Define UI for application ######################
 ui <- dashboardPagePlus(
@@ -150,7 +150,7 @@ ui <- dashboardPagePlus(
       ),
       tabItem(tabName = "appointments",
               fluidRow(column(width = 12, align = "center", h2("Appointments"))),
-              fluidRow(column(width = 12, DTOutput("appointments_dt")))
+              fluidRow(column(width = 12, appointments_datatableUI("appointments_dt")))
       ),
       tabItem(tabName = "configuration",
               fluidRow(
@@ -930,11 +930,9 @@ server <- function(input, output, session) {
   })
 
   # appointment list
-  output$appointments_dt <- renderDT({datatable_styled(
-    appointments_filtered_time() %>%
-      select(c('Patient', 'AppointmentDate', 'AppointmentTime', 'Provider', 'Status')))
-  },
-  server = FALSE)
+
+  callModule(appointments_datatable, "appointments_dt",
+  					 appointments_filtered_time)
 
   output$test_dt <-
     renderDT({datatable(data.frame(a=c(2,3,68),

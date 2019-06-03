@@ -11,15 +11,11 @@ billings_datatableUI <- function(id) {
 						 	label = "<i class=\"fas fa-print\"></i> </i><i class=\"far fa-copy\"></i>  Print and Copy View",
 						 	labelWidth = "100%")
 			)
-#			, column(2, offset = 6, # note that total 'column' width = 12
-#						 dropdown(
-#						 	uiOutput(ns("billing_choice")),
-#						 	icon = icon("gear"),
-#						 	label = "billings shown"
-#						 )
-#			)
 		),
-		DTOutput(ns("billings_table"))
+		withSpinner(DT::DTOutput(ns("billings_table")),
+		            type = 8,
+		            hide.element.when.recalculating = FALSE,
+		            proxy.height = NULL)
 	)
 }
 

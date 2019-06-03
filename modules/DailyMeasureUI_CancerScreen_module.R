@@ -15,7 +15,10 @@ cancerscreen_datatableUI <- function(id) {
 						 uiOutput(ns("cancerscreen_choice"))
 			)
 		),
-		DTOutput(ns("cancerscreen_table"))
+		withSpinner(DT::DTOutput(ns("cancerscreen_table")),
+		            type = 8,
+		            hide.element.when.recalculating = FALSE,
+		            proxy.height = NULL)
 	)
 }
 

@@ -18,7 +18,10 @@ vax_datatableUI <- function(id) {
              uiOutput(ns("vax_item_choice"))
       )
     ),
-    DTOutput(ns("vax_table"))
+    withSpinner(DT::DTOutput(ns("vax_table")),
+                type = 8,
+                hide.element.when.recalculating = FALSE,
+                proxy.height = NULL)
   )
 }
 

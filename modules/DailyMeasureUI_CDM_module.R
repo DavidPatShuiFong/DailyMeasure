@@ -17,7 +17,10 @@ cdm_datatableUI <- function(id) {
 						 uiOutput(ns("cdm_item_choice"))
 			)
 		),
-		DTOutput(ns("cdm_table"))
+		withSpinner(DT::DTOutput(ns("cdm_table")),
+		            type = 8,
+		            hide.element.when.recalculating = FALSE,
+		            proxy.height = NULL)
 	)
 }
 

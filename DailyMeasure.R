@@ -8,7 +8,11 @@ library(shinydashboard)
 library(shinydashboardPlus) # version 0.7.0+ required
 library(shinyWidgets)
 library(shinytoastr) # notifications
-library(shinyFiles) # file-picker. currently depends on development version 0.7.2
+library(shinyFiles) # file-picker. version 0.7.2+
+library(shinycssloaders) # loading animations
+ # custom version based on Gao Zheng's 'transparent' background version
+ # custom version installed with
+ # devtools::install_github('DavidPatShuiFong/shinycssloaders')
 
 library(tidyverse)
 library(dbplyr)  # database interaction for dplyr

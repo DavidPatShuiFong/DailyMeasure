@@ -4,8 +4,11 @@ appointments_datatableUI <- function(id) {
 	ns <- NS(id)
 
 	tagList(
-		# print-view only (no semantic/fomantic buttons)
-		DTOutput(ns("appointments_table"))
+	  # print-view only (no semantic/fomantic buttons)
+	  withSpinner(DT::DTOutput(ns("appointments_table")),
+	              type = 8,
+	              hide.element.when.recalculating = FALSE,
+	              proxy.height = NULL)
 	)
 }
 

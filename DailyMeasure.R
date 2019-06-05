@@ -51,7 +51,7 @@ ui <- dashboardPagePlus(
 
   header = dashboardHeaderPlus(
     enable_rightsidebar = TRUE,
-    rightSidebarIcon = "gears",
+    rightSidebarIcon = "calendar-alt",
     title = tagList(
     	span(class = "logo-lg", "Daily Measure"),
     			 icon = icon("heartbeat")),
@@ -60,13 +60,13 @@ ui <- dashboardPagePlus(
   sidebar = dashboardSidebar(
     sidebarMenu(
       id = "sidebartabs",
+      menuItem("Appointments", tabName = "appointments", icon = icon("calendar-check")),
       menuItem("Immunization", tabName = "immunization", icon = icon("syringe")),
       menuItem("Cancer Screening", tabName = "cancerscreen", icon = icon("x-ray")),
       menuItem("Billings", tabName = "billings", icon = icon("receipt")),
       menuItem("CDM items", tabName = "cdm", icon = icon("file-medical-alt")),
-      menuItem("Appointments", tabName = "appointments", icon = icon("calendar-check")),
-      menuItem("Configuration", tabName = "configuration", icon = icon("wrench")),
-      menuItem("Test", tabName = "test")
+      menuItem("Configuration", tabName = "configuration", icon = icon("wrench"))
+      # menuItem("Test", tabName = "test")
     )
   ),
 
@@ -77,7 +77,7 @@ ui <- dashboardPagePlus(
     rightSidebarTabContent(
       id = 1,
       title = "Appointment Details",
-      icon = "desktop",
+      icon = "users",
       active = TRUE,
 
       # appointment date range
@@ -137,6 +137,10 @@ ui <- dashboardPagePlus(
     ),
 
     tabItems(
+      tabItem(tabName = "appointments",
+              fluidRow(column(width = 12, align = "center", h2("Appointments"))),
+              fluidRow(column(width = 12, appointments_datatableUI("appointments_dt")))
+      ),
       tabItem(tabName = "immunization",
               fluidRow(column(width = 12, align = "center", h2("Immunization"))),
               fluidRow(column(width = 12, vax_datatableUI("vax_dt")))
@@ -152,10 +156,6 @@ ui <- dashboardPagePlus(
       tabItem(tabName = "cdm",
               fluidRow(column(width = 12, align = "center", h2("Chronic Disease Management items"))),
               fluidRow(column(width = 12, cdm_datatableUI("cdm_dt")))
-      ),
-      tabItem(tabName = "appointments",
-              fluidRow(column(width = 12, align = "center", h2("Appointments"))),
-              fluidRow(column(width = 12, appointments_datatableUI("appointments_dt")))
       ),
       tabItem(tabName = "configuration",
               fluidRow(

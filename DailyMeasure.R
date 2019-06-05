@@ -5,9 +5,14 @@
 library(shiny)
 library(shinyjs)
 library(shinydashboard)
-library(shinydashboardPlus) # version 0.6.0+ preferred (development version as of Feb/2019)
+library(shinydashboardPlus) # version 0.7.0+ required
 library(shinyWidgets)
-library(shinyFiles) # file-picker. currently depends on development version 0.7.2
+library(shinytoastr) # notifications
+library(shinyFiles) # file-picker. version 0.7.2+
+library(shinycssloaders) # loading animations
+ # custom version based on Gao Zheng's 'transparent' background version
+ # custom version installed with
+ # devtools::install_github('DavidPatShuiFong/shinycssloaders')
 
 library(tidyverse)
 library(dbplyr)  # database interaction for dplyr
@@ -28,579 +33,51 @@ library(DTedit)     # datatable edit wrapper.
 
 # function setup
 
-# fomantic (semantic.ui) string functions
-
-semantic_tag <- function(tag, colour="", popuptext = NA, popuphtml = NA) {
-  # returns a vector of tags. user-defined colour and popuptext (tooltip) or popuphtml (HTMl tooltip)
-  # note that 'data-variation' is only available in the fomantic version of semantic.ui
-  # as of writing, semantic.ui does not allow variation in text-size of javascript-free tags
-  paste0('<span class="huge ', colour, ' ui tag label"',
-         ifelse(!is.na(popuphtml),
-                paste0('data-variation="wide" data-position = "left center" data-html="',
-                       popuphtml,
-                       '"', sep=""),
-                ''),
-         '> ',
-         ifelse(!is.na(popuptext),
-                paste0('<span data-tooltip = "',
-                       popuptext,
-                       '" data-variation = "wide huge" data-position = "left center">', sep=""),
-                ''),
-         tag,
-         ifelse(!is.na(popuptext), '</span>', ''),
-         ' </span>', sep = "")
-  # paste0 is vectorized version of 'paste'
-}
-
-semantic_button <- function(button, colour="", popuptext = NA, popuphtml = NA) {
-  # returns a vector of buttons.
-  # user-defined colour and popuptext (tooltip) or popuphtml (HTML tooltip)
-  # note that 'data-variation' is only available in the fomantic version of semantic.ui
-  # as of writing, semantic.ui does not allow variation in text-size of javascript-free tags
-  paste0('<span class="huge ', colour, ' ui button"',
-         ifelse(!is.na(popuphtml),
-                paste0('data-variation="wide" data-position = "left center" data-html="',
-                       popuphtml,
-                       '"', sep=""),
-                ''),
-         '> ',
-         ifelse(!is.na(popuptext),
-                paste0('<span data-tooltip = "',
-                       popuptext,
-                       '" data-variation = "wide huge" data-position = "left center">', sep=""),
-                ''),
-         button,
-         ifelse(!is.na(popuptext), '</span>', ''),
-         ' </span>', sep = "")
-  # paste0 is vectorized version of 'paste'
-}
-
-## datatables functions and definitions
-
-semantic_popupJS <- c("window.onload = function() {$('.ui.button') .popup({on: 'hover'});
-                      $('.ui.tag.label') .popup({on: 'hover'})
-                      }")
-
-# (1) necessary for semantic/fomantic JS popups. included directly in datatables options
-# (2) provide padding for export/print buttons
-datatable_styled <- function(data, fillContainer = TRUE,
-                             extensions = c('Buttons', 'Scroller', 'Responsive'),
-                             dom = 'frltiBp',
-                             buttons = c('copyHtml5', 'csvHtml5', 'excel', 'pdf', 'print'),
-                             initComplete = JS(semantic_popupJS),
-                             paging = FALSE,
-                             scrollY = "60vh",
-                             # 60% of window height, otherwise will just a few rows in size
-                             ...) {
-  options <- list(dom = dom, buttons = buttons, initComplete = initComplete,
-                  paging = paging, scrollY = scrollY)
-  datatable(data, fillContainer = fillContainer, extensions = extensions, options = options, ... )
-}
-# by default, have export/print buttons, only render what is visible
-# javascript code to attach labels to semantic/fomantic JS popups
-# no pagination
-
-# 'helper' functions for calculation
-
-calc_age <- function(birthDate, refDate = Sys.Date()) {
-  # Calculate age at a given reference date
-  # Create an interval between the date of birth and the enrollment date;
-  # intervals are specific to the two dates. Periods give the actual length
-  # of time between those dates, so convert to period and extract the year.
-  # written by 'mmparker' https://gist.github.com/mmparker/7254445
-
-  period <- as.period(interval(birthDate, refDate),
-                      unit = "year")
-  period$year
-}
-
-hrmin <- function(t) {
-  # converts seconds to a 'time' starting from midnight
-  # t : value in seconds
-  # returns 24-hour time of form '14:15' (hh:mm)
-  td <- seconds_to_period(t)
-  sprintf('%02d:%02d', td@hour, td@minute)
-}
-
-##### servers - editable datatable module #######################################################
-
-servers_datatableUI <- function(id) {
-  ns <- NS(id)
-
-  tagList(
-    wellPanel(
-      uiOutput(ns("selection"))
-    ),
-    dteditUI(ns("servers"))
-  )
-}
-
-servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoice, emrpool, config_pool) {
-  # Practice locations/groups server part of module
-  # input : BPdatabase reactiveval, list of servers
-	# input : BPdatabaseChoice reactiveval, name of chosen server
-  # input : emrpool reactiveval, current Best Practice (electronic medical record 'EMR') database pool in use
-  # input : config_pool - reactiveval, access to configuration database
-  # returns server_list_change$count - increments with each GUI edit of server list
-  # change in server_list_change to prompt change in selectable filter list of locations
-  ns <- session$ns
-
-  servers_dt_viewcols <- c("id", "Name", "Address", "Database", "UserID", "dbPassword")
-  # columns viewed in DTedit when adding/editing/removing servers
-  # 'id' is likely not necessary for end-users
-  servers_dt_editcols <- servers_dt_viewcols[!servers_dt_viewcols %in% c("id")]
-
-  chosen_database <- reactiveVal(NULL) # ID of chosen database
-  servers_list_change <- reactiveVal(0)
-  
-  servername_list <- reactiveVal(append("None", isolate(BPdatabase()$Name)))
-  observeEvent(c(BPdatabase(), config_pool()), {
-    servername_list(BPdatabase()$Name)
-  })
-
-  output$selection <- renderUI({
-    selectInput(inputId = ns("server_chosen"), label = "Chosen Best Practice server",
-                choices = servername_list(), selected = isolate(BPdatabaseChoice()))
-  })
-
-  observeEvent(BPdatabaseChoice(), {
-    updateSelectInput(session, inputId = ns("server_chosen"), selected = BPdatabaseChoice())
-  })
-  
-  observeEvent(BPdatabase()$Name, {
-  	servername_list(append("None", BPdatabase()$Name))
-  })
-
-  observeEvent(input$server_chosen, {
-    chosen_database(input$server_chosen) # this will be the server 'Name', a character string
-    BPdatabaseChoice(input$server_chosen)
-    if (nrow(config_pool() %>% tbl("ServerChoice") %>% filter(id ==1) %>% collect())) {
-      # already an entry in the ServerChoice table
-      query <- "UPDATE ServerChoice SET Name = ? WHERE id = ?"
-      data_for_sql <- as.list.data.frame(c(input$server_chosen, 1))
-    } else {
-      # create a new entry
-      query <- "INSERT INTO ServerChoice (id, Name) VALUES (?, ?)"
-      data_for_sql <- as.list.data.frame(c(1, input$server_chosen))
-    }
-
-    connection <- poolCheckout(config_pool()) # can't write with the pool
-    rs <- dbSendQuery(connection, query) # parameterized query can handle apostrophes etc.
-    dbBind(rs, data_for_sql)
-    # for statements, rather than queries, we don't need to dbFetch(rs)
-    # update database
-    dbClearResult(rs)
-    poolReturn(connection)
-
-  })
-
-  ### callback definitions for DTedit
-  servers.insert.callback <- function(data, row) {
-    # adding a new server description
-    if (toupper(data[row,]$Name) %in% toupper(append(data[-row,]$Name, "None"))) {
-      # if the proposed server is the same as one that already exists
-      # (ignoring case)
-      stop("New server name cannot be the same as existing names, or 'None'")
-    } else if (str_length(data[row,]$Name) == 0 | str_length(data[row,]$Address) == 0 |
-               str_length(data[row,]$Database) == 0 | str_length(data[row,]$UserID) == 0 |
-               str_length(data[row,]$dbPassword) == 0) {
-      stop("All entries must be described")
-    } else {
-
-      newid <- max(c(as.data.frame(BPdatabase())$id, 0)) + 1
-      # initially, BPdatabase()$id might be an empty set, so need to append a '0'
-      data[row, ]$id <- newid
-
-      query <- "INSERT INTO Server (id, Name, Address, Database, UserID, dbPassword) VALUES (?, ?, ?, ?, ?, ?)"
-      data_for_sql <- as.list.data.frame(c(newid, data[row,]$Name, data[row,]$Address,
-                                           data[row,]$Database, data[row,]$UserID,
-                                           data[row,]$dbPassword))
-
-      connection <- poolCheckout(config_pool()) # can't write with the pool
-      rs <- dbSendQuery(connection, query) # parameterized query can handle apostrophes etc.
-      dbBind(rs, data_for_sql)
-      # for statements, rather than queries, we don't need to dbFetch(rs)
-      # update database
-      dbClearResult(rs)
-      poolReturn(connection)
-
-      BPdatabase(data) # update the dataframe in memory
-      servers_list_change(servers_list_change() + 1) # this value returned by module
-
-      return(BPdatabase())
-    }
-  }
-
-  servers.update.callback <- function(data, olddata, row) {
-    # change (update) a server description
-
-  	if (toupper(data[row,]$Name) %in% toupper(append(data[-row,]$Name, "None"))) {
-  		# if the proposed server is the same as one that already exists
-  		# (ignoring case)
-  		stop("New server name cannot be the same as existing names, or 'None'")
-    } else if (toupper(data[row,]$Name == "NONE")) {
-    	stop("New server name cannot be 'None'!")
-    } else if (str_length(data[row,]$Name) == 0 | str_length(data[row,]$Address) == 0 |
-               str_length(data[row,]$Database) == 0 | str_length(data[row,]$UserID) == 0 |
-               str_length(data[row,]$dbPassword) == 0) {
-      stop("All entries must be described")
-    } else {
-      query <- "UPDATE Server SET Name = ?, Address = ?, Database = ?, UserID = ?, dbPassword = ? WHERE id = ?"
-      data_for_sql <- as.list.data.frame(c(data[row,]$Name, data[row,]$Address,
-                                           data[row,]$Database, data[row,]$UserID,
-                                           data[row,]$dbPassword), newid)
-
-      connection <- poolCheckout(config_pool()) # can't write with the pool
-      rs <- dbSendQuery(connection, query) # update database
-      dbBind(rs, data_for_sql)
-      dbClearResult(rs)
-      poolReturn(connection)
-
-      BPdatabase(data)
-      servers_list_change(servers_list_change() + 1) # this value returned by module
-
-      return(BPdatabase())
-    }
-  }
-  servers.delete.callback <- function(data, row) {
-    # delete a server description
-    if (toupper(data[row,]$Name) == toupper(BPdatabaseChoice())) {
-      stop(paste0("Cannot remove '", data[row,]$Name, "', currently in use!"))
-    } else {
-      query <- "DELETE FROM Server WHERE id = ?"
-      data_for_sql <- as.list.data.frame(c(data[row,]$id))
-
-      connection <- poolCheckout(config_pool()) # can't write with the pool
-      rs <- dbSendQuery(connection, query) # update database
-      dbBind(rs, data_for_sql)
-      dbClearResult(rs)
-      poolReturn(connection)
-
-      BPdatabase(data[-c(row),])
-      servers_list_change(servers_list_change() + 1) # this value returned by module
-    }
-    return(BPdatabase())
-  }
-  # depends on modularized version of DTedit
-  servers_edited <- callModule(dtedit, "servers",
-                               thedataframe = BPdatabase, # pass a ReactiveVal
-                               view.cols = servers_dt_viewcols, # no need to show 'id' in future
-                               edit.cols = servers_dt_editcols,
-                               input.types = c(Name = 'textInput', Address = 'textInput',
-                                               Database = 'textInput', UserID = 'textInput',
-                                               dbPassword = 'textInput'),
-                               callback.update = servers.update.callback,
-                               callback.insert = servers.insert.callback,
-                               callback.delete = servers.delete.callback
-  )
-
-  return(list(
-  	count = reactive({servers_list_change()})
-  ))
-  # increments each time a callback changes BPdatabase()
-}
-
-##### locations - editable datatable module #######################################################
-
-locations_datatableUI <- function(id) {
-  ns <- NS(id)
-
-  tagList(
-    dteditUI(ns("locations"))
-  )
-}
-
-locations_datatable <- function(input, output, session, PracticeLocations, UserConfig, config_pool) {
-  # Practice locations/groups server part of module
-  # input : PracticeLocations() reactiveval, list of PracticeLocations
-  # input : Users - access to Users database. avoid deleting location currently in 'use' by user
-  # input : config_pool - reactiveval, access to configuration database
-  # returns location_list_change - increments with each GUI edit of location list
-  # change in location_list_change to prompt change in selectable filter list of locations
-
-  # callback functions for DTEdit
-  ## locations
-
-  locations_dt_viewcols <- c("id", "Name", "Description")
-  # columns viewed in DTedit when adding/editing/removing locations
-  # 'id' is likely not necessary for end-users
-
-  userlocations <- reactiveVal()
-  # list of user names
-  observeEvent(UserConfig(), {
-    userlocations(UserConfig()$Location %>% unlist(use.names = FALSE))
-    # extract from EMR database. note that this is NOT reactive to underlying change in EMR database
-    # can't exclude names already configured, because this is also used when
-    # editing a current user configuration
-  })
-
-  location_list_change <- reactiveVal(0)
-
-  ### callback definitions for DTedit location
-  locations.insert.callback <- function(data, row) {
-    # adding a new practice location
-    if (length(grep(toupper(data[row, ]$Name),
-                    toupper(as.data.frame(isolate(PracticeLocations()))$Name)))){
-      # if the proposed new name is the same as one that already exists
-      # (ignoring case). grep returns empty integer list if no match
-      stop("New practice location name cannot be the same as existing names")
-    } else if (is.null(data[row,]$Name)){
-      stop("New practice location name cannot be 'empty'!")
-    } else {
-
-      newid <- max(c(as.data.frame(PracticeLocations())$id, 0)) + 1
-      # initially, PracticeLocations$id might be an empty set, so need to append a '0'
-      data[row, ]$id <- newid
-
-      query <- "INSERT INTO Location (id, Name, Description) VALUES (?, ?, ?)"
-      data_for_sql <- as.list.data.frame(c(newid, data[row,]$Name, data[row,]$Description))
-
-      connection <- poolCheckout(config_pool()) # can't write with the pool
-      rs <- dbSendQuery(connection, query) # parameterized query can handle apostrophes etc.
-      dbBind(rs, data_for_sql)
-      # for statements, rather than queries, we don't need to dbFetch(rs)
-      # update database
-      dbClearResult(rs)
-      poolReturn(connection)
-
-      PracticeLocations(data) # update the dataframe in memory
-      location_list_change(location_list_change() + 1) # this value returned by module
-
-      return(PracticeLocations())
-    }
-  }
-
-  locations.update.callback <- function(data, olddata, row) {
-    # change (update) a practice location
-
-    if (length(grep(toupper(data[row, ]$Name),
-                    toupper(as.data.frame(isolate(PracticeLocations()))$Name)))){
-      # if the proposed new name is the same as one that already exists
-      # (ignoring case). grep returns empty integer list if no match
-      stop("New practice location name cannot be the same as existing names")
-    } else {
-      query <- "UPDATE Location SET Name = ?, Description = ? WHERE id = ?"
-      data_for_sql <- as.list.data.frame(c(data[row,]$Name, data[row,]$Description, data[row,]$id))
-
-      connection <- poolCheckout(config_pool()) # can't write with the pool
-      rs <- dbSendQuery(connection, query) # update database
-      dbBind(rs, data_for_sql)
-      dbClearResult(rs)
-      poolReturn(connection)
-
-      PracticeLocations(data)
-      location_list_change(location_list_change() + 1) # this value returned by module
-
-      return(PracticeLocations())
-    }
-  }
-  locations.delete.callback <- function(data, row) {
-    # delete a practice location
-    if (data[row,]$Name %in% userlocations()) {
-      stop(paste0("Cannot remove '", data[row,]$Name,
-                  "', this location is assigned to a user."))
-    } else {
-      query <- "DELETE FROM Location WHERE id = ?"
-      data_for_sql <- as.list.data.frame(c(data[row,]$id))
-
-      connection <- poolCheckout(config_pool()) # can't write with the pool
-      rs <- dbSendQuery(connection, query) # update database
-      dbBind(rs, data_for_sql)
-      dbClearResult(rs)
-      poolReturn(connection)
-
-      PracticeLocations(data[-c(row),])
-      location_list_change(location_list_change() + 1) # this value returned by module
-    }
-    return(PracticeLocations())
-  }
-
-  # depends on modularized version of DTedit
-  locations_edited <- callModule(dtedit, "locations",
-                                 thedataframe = PracticeLocations, # pass a ReactiveVal
-                                 view.cols = locations_dt_viewcols, # no need to show 'id' in future
-                                 edit.cols = c("Name", "Description"),
-                                 edit.label.cols = c('Practice Locations', 'Description'),
-                                 show.copy = FALSE,
-                                 input.types = c(Name = 'textInput', Description = 'textInput'),
-                                 callback.update = locations.update.callback,
-                                 callback.insert = locations.insert.callback,
-                                 callback.delete = locations.delete.callback
-  )
-
-  return(reactive({location_list_change()}))
-  # increments each time a callback changes PracticeLocations()
-}
-
-##### users config - editable datatable module ######################################################
-
-userconfig_datatableUI <- function(id) {
-  ns <- NS(id)
-
-  tagList(
-    dteditUI(ns("userconfigs"))
-  )
-}
-
-userconfig_datatable <- function(input, output, session, UserConfig, LocationNames, Users, config_pool) {
-  # User config, server part of module
-  # input : UserConfig() reactiveval, list of user config
-  # input : LocationNames - list of location names (not including ID or Description)
-  # input : Users - dataframe of users. This is a 'lazy' evaluation database reference
-  # input : config_pool - reactiveval, access to configuration database
-  # returns userconfig_list_change - increments with each GUI edit of userconfig list
-
-  # callback functions for DTEdit
-  ## locations
-
-  userconfig_dt_viewcols <- c("id", "Fullname", "AuthIdentity", "Location",
-                              "Attributes")
-  userconfig_dt_editcols <- userconfig_dt_viewcols[!userconfig_dt_viewcols %in% c("id")]
-  user_attribute_types <- c("Expert", "GlobalView", "Admin")
-  # columns viewed in DTedit when adding/editing/removing user config
-
-  usernames <- reactiveVal()
-  # list of user names
-  observeEvent(UserConfig(), {
-    if (!is.null(Users)) {
-      usernames(Users %>% select(Fullname) %>% collect() %>% unlist(use.names = FALSE))
-      # extract from EMR database. note that this is NOT reactive to underlying change in EMR database
-      # can't exclude names already configured, because this is also used when
-      # editing a current user configuration
-    }
-  })
-
-  userconfig_list_change <- reactiveVal(0)
-
-  ### callback definitions for DTedit userconfig
-  userconfig.insert.callback <- function(data, row) {
-    # adding a new user configuration
-
-    if (data[row,]$Fullname %in% data[-row,]$Fullname) {
-      # if the proposed new name is the same as one that is configured elsewhere
-      stop("This user is already configured")
-    } else {
-      newid <- max(c(as.data.frame(UserConfig())$id, 0)) + 1
-      # initially, UserConfig()$id might be an empty set, so need to append a '0'
-      data[row, ]$id <- newid
-
-      query <- "INSERT INTO Users (id, Fullname, AuthIdentity, Location, Attributes) VALUES ($id, $fn, $au, $lo, $at)"
-      data_for_sql <- list(id = newid, fn = data[row,]$Fullname, au = paste0(data[row,]$Authidentity, ""),
-                           # $Location and $Attribute could both have multiple (or no) entries
-                           lo = paste0(data[row,]$Location[[1]], collapse = ";"),
-                           at = paste0(data[row,]$Attributes[[1]], collapse = ";"))
-
-      connection <- poolCheckout(config_pool()) # can't write with the pool
-      rs <- dbSendQuery(connection, query) # parameterized query can handle apostrophes etc.
-      dbBind(rs, data_for_sql)
-      # for statements, rather than queries, we don't need to dbFetch(rs)
-      # update database
-      dbClearResult(rs)
-      poolReturn(connection)
-
-      UserConfig(data) # update the dataframe in memory
-      userconfig_list_change(userconfig_list_change() + 1) # this value returned by module
-
-      return(UserConfig())
-    }
-  }
-
-  userconfig.update.callback <- function(data, olddata, row) {
-    # change (update) a user configuration
-
-    if (data[row, ]$Fullname %in% data[-row,]$Fullname) {
-      # if the proposed new name is the same as one that is configured elsewhere
-      stop("This user is already configured")
-    } else {
-      query <- "UPDATE Users SET Fullname = ?, AuthIdentity = ?, Location = ?, Attributes = ? WHERE id = ?"
-      data_for_sql <- as.list(c(data[row,]$Fullname, paste0(data[row,]$AuthIdentity, ""),
-                                paste0(data[row,]$Location[[1]], collapse = ";"),
-                                paste0(data[row,]$Attributes[[1]], collapse = ";"),
-                                data[row,]$id))
-      connection <- poolCheckout(config_pool()) # can't write with the pool
-      rs <- dbSendQuery(connection, query) # update database
-      dbBind(rs, data_for_sql)
-      dbClearResult(rs)
-      poolReturn(connection)
-
-      UserConfig(data)
-      userconfig_list_change(userconfig_list_change() + 1) # this value returned by module
-
-      return(UserConfig())
-    }
-  }
-
-  userconfig.delete.callback <- function(data, row) {
-    # delete a user configuration
-
-    query <- "DELETE FROM Users WHERE id = ?"
-    data_for_sql <- as.list.data.frame(c(data[row,]$id))
-
-    connection <- poolCheckout(config_pool()) # can't write with the pool
-    rs <- dbSendQuery(connection, query) # update database
-    dbBind(rs, data_for_sql)
-    dbClearResult(rs)
-    poolReturn(connection)
-
-    UserConfig(data[-c(row),])
-    userconfig_list_change(userconfig_list_change() + 1) # this value returned by module
-
-    return(UserConfig())
-  }
-  # depends on modularized version of DTedit
-  userconfig_edited <- callModule(dtedit, "userconfigs",
-                                  thedataframe = UserConfig, # pass a ReactiveVal
-                                  view.cols = userconfig_dt_viewcols, # no need to show 'id' in future
-                                  edit.cols = userconfig_dt_editcols,
-                                  # edit.label.cols = ,
-                                  show.copy = FALSE,
-                                  input.types = c(Fullname = 'selectInputReactive',
-                                                  AuthIdentity = 'textInput',
-                                                  Location = 'selectInputMultipleReactive',
-                                                  Attributes = 'selectInputMultiple'),
-                                  input.choices = c(Location = 'LocationNames',
-                                                    Fullname = 'Fullname',
-                                                    Attributes = list(user_attribute_types)),
-                                  input.choices.reactive = list(Fullname = usernames,
-                                                                LocationNames = LocationNames),
-                                  callback.update = userconfig.update.callback,
-                                  callback.insert = userconfig.insert.callback,
-                                  callback.delete = userconfig.delete.callback
-  )
-
-  return(reactive({userconfig_list_change()}))
-  # increments each time a callback changes UserConfig
-}
+## fomantic/semantic definitions
+source("./modules/fomantic_definitions.R")
+## 'helper' functions for calculation
+source("./modules/calculation_definitions.R")
+
+##### UI modules
+source("./modules/DailyMeasureUImodules.R")
+source("./modules/DailyMeasureUI_Immunization_module.R")
+source("./modules/DailyMeasureUI_CancerScreen_module.R")
+source("./modules/DailyMeasureUI_CDM_module.R")
+source("./modules/DailyMeasureUI_Billings_module.R")
+source("./modules/DailyMeasureUI_Appointments_module.R")
 
 ##### Define UI for application ######################
 ui <- dashboardPagePlus(
 
   header = dashboardHeaderPlus(
     enable_rightsidebar = TRUE,
-    rightSidebarIcon = "bars",
-    title = "Daily Measure"
+    rightSidebarIcon = "calendar-alt",
+    title = tagList(
+    	span(class = "logo-lg", "Daily Measure"),
+    			 icon = icon("heartbeat")),
+    userOutput("user")
   ),
-
   sidebar = dashboardSidebar(
     sidebarMenu(
       id = "sidebartabs",
-      menuItem("Zostavax", tabName = "zostavax"),
-      menuItem("Bowel Cancer Screening", tabName = "fobt"),
-      menuItem("Billings", tabName = "billings"),
-      menuItem("CDM items", tabName = "cdm"),
-      menuItem("Appointments", tabName = "appointments"),
-      menuItem("Configuration", tabName = "configuration"),
-      menuItem("Test", tabName = "test")
+      menuItem("Appointments", tabName = "appointments", icon = icon("calendar-check")),
+      menuItem("Immunization", tabName = "immunization", icon = icon("syringe")),
+      menuItem("Cancer Screening", tabName = "cancerscreen", icon = icon("x-ray")),
+      menuItem("Billings", tabName = "billings", icon = icon("receipt")),
+      menuItem("CDM items", tabName = "cdm", icon = icon("file-medical-alt")),
+      menuItem("Configuration", tabName = "configuration", icon = icon("wrench"))
+      # menuItem("Test", tabName = "test")
     )
   ),
 
   # Sidebar with a slider input for number of bins
   rightsidebar = rightSidebar(
+    useShinyjs(), # this is needed to enable the 'click' of 'update_date' by 'Today'
     background = "dark",
     rightSidebarTabContent(
       id = 1,
       title = "Appointment Details",
-      icon = "desktop",
+      icon = "users",
       active = TRUE,
 
       # appointment date range
@@ -634,6 +111,8 @@ ui <- dashboardPagePlus(
   ),
 
   dashboardBody(
+    useSweetAlert(),
+    useToastr(),
     tags$head(
       # stylesheets from fomantic.ui (a fork of semantic.ui)
       # Note that this is a specially edited version of semantic.css that is provided with fomantic
@@ -658,25 +137,25 @@ ui <- dashboardPagePlus(
     ),
 
     tabItems(
-      tabItem(tabName = "zostavax",
-              fluidRow(column(width = 12, align = "center", h2("Zostavax"))),
-              fluidRow(column(width = 12, DTOutput("zostavax_dt")))
+      tabItem(tabName = "appointments",
+              fluidRow(column(width = 12, align = "center", h2("Appointments"))),
+              fluidRow(column(width = 12, appointments_datatableUI("appointments_dt")))
       ),
-      tabItem(tabName = "fobt",
-              fluidRow(column(width = 12, align = "center", h2("Bowel cancer screening"))),
-              fluidRow(column(width = 12, DTOutput("fobt_dt")))
+      tabItem(tabName = "immunization",
+              fluidRow(column(width = 12, align = "center", h2("Immunization"))),
+              fluidRow(column(width = 12, vax_datatableUI("vax_dt")))
+      ),
+      tabItem(tabName = "cancerscreen",
+              fluidRow(column(width = 12, align = "center", h2("Cancer screening"))),
+              fluidRow(column(width = 12, cancerscreen_datatableUI("cancerscreen_dt")))
       ),
       tabItem(tabName = "billings",
               fluidRow(column(width = 12, align = "center", h2("Billings"))),
-              fluidRow(column(width = 12, DTOutput("billings_dt")))
+              fluidRow(column(width = 12, billings_datatableUI("billings_dt")))
       ),
       tabItem(tabName = "cdm",
               fluidRow(column(width = 12, align = "center", h2("Chronic Disease Management items"))),
-              fluidRow(column(width = 12, DTOutput("cdm_dt")))
-      ),
-      tabItem(tabName = "appointments",
-              fluidRow(column(width = 12, align = "center", h2("Appointments"))),
-              fluidRow(column(width = 12, DTOutput("appointments_dt")))
+              fluidRow(column(width = 12, cdm_datatableUI("cdm_dt")))
       ),
       tabItem(tabName = "configuration",
               fluidRow(
@@ -886,8 +365,8 @@ server <- function(input, output, session) {
   })
 
   observeEvent(BPdatabaseChoice(), {
-    print("observed BPdatabaseChoice change")
-    
+  	print(paste("ChosenServerName:", BPdatabaseChoice()))
+
     # close existing database connection
     if (is.environment(emrpool())) {
       if (dbIsValid(emrpool())) {
@@ -900,16 +379,26 @@ server <- function(input, output, session) {
     } else if (!is.null(BPdatabaseChoice())) {
       server <- BPdatabase() %>% filter(Name == BPdatabaseChoice()) %>% collect()
       print("Initializing EMR database")
+      toastr_info("Opening link to Best Practice", closeButton = TRUE,
+                  position = "top-center", title = "Best Practice database")
       emrpool(tryCatch(dbPool(odbc::odbc(), driver = "SQL Server",
                               server = server$Address, database = server$Database,
                               uid = server$UserID, pwd = server$dbPassword),
-                       error = function(e) {NULL}
+                       error = function(e) {
+                         sendSweetAlert(
+                           session = session,
+                           title = "Error opening database",
+                           text = e,
+                           type = "error")
+                       }
       ))
+
     }
+
     if (!is.environment(emrpool()) || !dbIsValid(emrpool())) {
       # || 'short-circuits' the evaluation, so if not an environment,
       # then dbIsValid() is not evaluated (will return an error if emrpool() is NULL)
-      
+
       # either database not opened, or has just been closed
       db$users <- NULL
       db$patients <- NULL
@@ -923,17 +412,23 @@ server <- function(input, output, session) {
       db$services <- NULL
       db$history <- NULL
       clinician_choice_list(NULL)
+      BPdatabaseChoice("None") # set choice of database to 'None'
+    } else {
+      toastr_success("Linking to Best Practice database successful!",
+                     closeButton = TRUE,
+                     position = "top-center",
+                     title = "Best Practice database")
     }
   }, ignoreInit = TRUE)
 
   ### configuration database changes
 
   observeEvent(config_pool(), ignoreNULL = TRUE, {
-    BPdatabase(isolate(config_pool()) %>% tbl("Server") %>% collect())
-    BPdatabaseChoice((isolate(config_pool()) %>% tbl("ServerChoice") %>%
+    BPdatabase(config_pool() %>% tbl("Server") %>% collect())
+    BPdatabaseChoice((config_pool() %>% tbl("ServerChoice") %>%
                         filter(id == 1) %>% select("Name") %>% collect())[[1]])
-    PracticeLocations(isolate(config_pool()) %>% tbl("Location"))
-    UserConfig(isolate(config_pool()) %>% tbl("Users") %>%
+    PracticeLocations(config_pool() %>% tbl("Location"))
+    UserConfig(config_pool() %>% tbl("Users") %>%
                  # in UserConfig, there can be multiple Locations/Attributes per user
                  collect() %>% mutate(Location = str_split(Location, ";"),
                                       Attributes = str_split(Attributes, ";")))
@@ -980,33 +475,59 @@ server <- function(input, output, session) {
       tbl(in_schema('dbo', 'BPS_Immunisations')) %>%
       select(c('InternalID', 'GivenDate', 'VaccineName', 'VaccineID'))
 
+    db$vaccine_disease <- emrpool() %>%
+      # vaccineIDs linked to diseases
+      # e.g. diseasecode 7+30 are for influenza vaccines
+      tbl(in_schema("bpsdrugs.dbo", "VACCINE_DISEASE")) %>%
+      select("VACCINEID", "DISEASECODE")
+
     db$preventive_health <- emrpool() %>%
       # INTERNALID, ITEMID (e.g. not for Zostavax remindders)
       tbl(in_schema('dbo', 'PreventiveHealth')) %>%
-      select(c('INTERNALID', 'ITEMID'))
+      select(InternalID = INTERNALID, ITEMID)
 
     db$correspondenceIn <- emrpool() %>%
       # InternalID, CorrespondenceDate, Subject, Detail
       tbl(in_schema('dbo', 'BPS_CorrespondenceIn')) %>%
-      select(c('InternalID', 'CorrespondenceDate', 'Subject', 'Detail'))
+      select(InternalID, CorrespondenceDate, Subject, Detail)
 
     db$reportValues <- emrpool() %>%
       # InternalID, ReportDate, ResultName, LoincCode
       tbl(in_schema('dbo', 'BPS_ReportValues')) %>%
-      select(c('InternalID', 'ReportDate', 'ResultName', 'LoincCode'))
+      select(InternalID, ReportDate, ResultName, LoincCode)
 
     db$invoices <- emrpool() %>%
       # InternalID, INVOICEID, INVOICEDATE
       tbl(in_schema('dbo', 'INVOICES')) %>%
-      select(c('InternalID', 'INVOICEID', 'INVOICEDATE'))
+      select(InternalID, INVOICEID, INVOICEDATE)
 
     db$services <- emrpool() %>%
-      tbl(in_schema('dbo', 'BPS_SERVICES'))
+      tbl(in_schema('dbo', 'BPS_SERVICES')) %>%
+      select(InternalID = INTERNALID, ServiceDate = SERVICEDATE,
+             MBSItem = MBSITEM, Description = DESCRIPTION)
 
     db$history <- emrpool() %>%
       # InternalID, Year, Condition, ConditionID, Status
       tbl(in_schema('dbo', 'BPS_History')) %>%
-      select(c('InternalID', 'Year', 'Condition', 'ConditionID', 'Status'))
+      select(InternalID, Year, Condition, ConditionID, Status)
+
+    db$observations <- emrpool() %>%
+      tbl(in_schema("dbo", "OBSERVATIONS")) %>%
+      select(InternalID = INTERNALID, DATANAME, DATACODE, DATAVALUE, OBSDATE)
+
+    db$currentrx <- emrpool() %>%
+      tbl(in_schema("dbo", "CURRENTRX")) %>%
+      select(InternalID = INTERNALID, PRODUCTID, DRUGNAME, RXSTATUS)
+    # RXSTATUS appears to be 1 if 'long-term' and 2 if 'short-term'
+
+    db$obgyndetail <- emrpool() %>%
+      tbl(in_schema("dbo", "OBSGYNDETAIL")) %>%
+      select(InternalID = INTERNALID, NOMINALLMP, LASTPAPDATE, LASTPAPRESULT, BREASTFEEDING,
+             MammogramStatus, LastMammogramDate, MammogramResult)
+
+    db$pregnancies <- emrpool() %>%
+      tbl(in_schema("dbo", "PREGNANCIES")) %>%
+      select(InternalID = INTERNALID, EDCBYDATE, ACTUALLMP, NOMINALLMP, ENDDATE)
 
     db$dbversion <- isolate(db$dbversion)+1
     print(paste("dbversion:", db$dbversion))
@@ -1089,266 +610,44 @@ server <- function(input, output, session) {
     }
   })
 
-  # Zostavax functions
-  zostavax_vax_list <- reactive({
-    appointments_list() %>%
-      filter(Age >= 70 & Age <= 80) %>% # from age 70 to 80 years inclusive
-      left_join(db$immunizations %>%
-                  # those who have had the zostavax vaccine
-                  filter((VaccineName %LIKE% "%zostavax%") | (VaccineID == 103)),
-                copy = TRUE) %>%
-      left_join(db$preventive_health %>%
-                  # those who have been removed from the reminder system for Zostavax
-                  filter(ITEMID == 15), by = c('InternalID' = 'INTERNALID'),
-                copy = TRUE) %>%
-      collect() %>%
-      mutate(GivenDate = as.Date(substr(GivenDate, 1, 10))) %>%
-      mutate(GivenDate = if_else(GivenDate <= AppointmentDate, GivenDate, as.Date(NA))) %>%
-      # only include immunizations given up to date of appointment,
-      # if there are any immunizations at all
-      # note that 'if_else' is vectorize,
-      # demanding same datatype for TRUE/FALSE alternatives
-      # 'ifelse' does not preserve date type in this circumstance
-      mutate(zostavaxtag =
-               semantic_tag(paste0(' Zostavax '),
-                            colour =
-                              if_else(is.na(GivenDate),
-                                      if_else(is.na(ITEMID), c('red'), c('purple')),
-                                      c('green')),
-                            # red if not given, purple if removed from herpes zoster vax reminders
-                            # and green if has had the vax
-                            popuphtml =
-                              paste0("<h4>",
-                                     if_else(is.na(ITEMID),
-                                             paste0('Date : ', format(GivenDate)),
-                                             'Removed from herpes zoster immunization reminders'),
-                                     "</h4>")))
-  })
+  # Immunization functions
 
-  output$zostavax_dt <- renderDT({
-    datatable_styled(zostavax_vax_list() %>%
-                       select(c('Patient', 'AppointmentDate', 'AppointmentTime',
-                                'Provider', 'DOB', 'Age', 'zostavaxtag')),
-                     escape = c(7),
-                     colnames = c('Zostavax' = 'zostavaxtag'))
-  })
+  vax_table_results <- callModule(vax_datatable, "vax_dt",
+  																appointments_list, db,
+  																diabetes_list, asthma_list,
+  																atsi_list,
+  																malignancy_list, hiv_list,
+  																haemoglobinopathy_list, asplenic_list,
+  																transplant_list, cardiacdisease_list,
+  																trisomy21_list, bmi30_list, chroniclungdisease_list, neurologic_list,
+  																chronicliverdisease_list, chronicrenaldisease_list, pregnant_list)
 
   # Bowel cancer screening
-  bowel_cancer_screen_terms <-
-    c("(VALUES('%FOB%'), ('%OCCULT%'), ('%FAECAL HUMAN HAEMOGLOBIN%'),
-       ('%OCB NATIONAL SCREENING%'), ('%FHB%'), ('%FAECAL BLOOD%'),
-       ('%FAECAL IMMUNOCHEMICAL TEST%'), ('%FAECAL HAEMOGLOBIN%'),
-       ('%COLONOSCOPY%'), ('%COLONOSCOPE%')) AS tests(fobtnames)")
 
-  fobt_investigation_query <-
-    paste('SELECT InternalID, Collected, TestName FROM dbo.BPS_Investigations
-           INNER JOIN', bowel_cancer_screen_terms,
-          'ON TestName LIKE tests.fobtnames')
-  # SQL code to find investigations which could be bowel cancer screening items
+  callModule(cancerscreen_datatable, "cancerscreen_dt",
+             appointments_list, emrpool)
 
-  fobt_letter_subject_query <-
-    paste('SELECT InternalID, CorrespondenceDate, Subject FROM dbo.BPS_CorrespondenceIn
-           INNER JOIN', bowel_cancer_screen_terms,
-          'ON Subject LIKE tests.fobtnames')
-
-  fobt_letter_detail_query <-
-    paste('SELECT InternalID, CorrespondenceDate, Detail FROM dbo.BPS_CorrespondenceIn
-           INNER JOIN', bowel_cancer_screen_terms,
-          'ON Detail LIKE tests.fobtnames')
-
-  fobt_result_query <-
-    paste("SELECT InternalID, ReportDate, ResultName FROM dbo.BPS_ReportValues
-            WHERE LoincCode IN ('2335-8','27396-1','14563-1','14564-9','14565-6',
-                         	      '12503-9','12504-7','27401-9','27925-7','27926-5',
-	                              '57905-2','56490-6','56491-4','29771-3')")
-
-  screen_fobt_list <- reactive({
-    appointments_list() %>%
-      filter(Age >= 50 & Age <=75) # from age 50 to 75 years inclusive
-  })
-
-  screen_fobt_ix <- reactive({
-    left_join(screen_fobt_list(),
-              bind_rows(inner_join(screen_fobt_list(),
-                                   dbGetQuery(emrpool(), fobt_investigation_query) %>%
-                                     collect() %>%
-                                     rename(TestDate = Collected),
-                                   by = 'InternalID'),
-                        inner_join(screen_fobt_list(),
-                                   dbGetQuery(emrpool(), fobt_letter_subject_query) %>%
-                                     collect() %>%
-                                     rename(TestDate = CorrespondenceDate, TestName = Subject),
-                                   by = 'InternalID'),
-                        inner_join(screen_fobt_list(),
-                                   dbGetQuery(emrpool(), fobt_letter_detail_query) %>%
-                                     collect() %>%
-                                     rename(TestDate = CorrespondenceDate, TestName = Detail),
-                                   by = 'InternalID'),
-                        inner_join(screen_fobt_list(),
-                                   dbGetQuery(emrpool(), fobt_result_query) %>% collect() %>%
-                                     rename(TestDate = ReportDate, TestName = ResultName),
-                                   by = 'InternalID')
-              ) %>%
-                mutate(TestDate = as.Date(substr(TestDate, 1, 10))) %>%
-                # remove time from date
-                group_by(InternalID) %>%
-                # group by patient ID (need most recent investigation for each patient)
-                filter(TestDate == max(TestDate, na.rm = TRUE))
-              # only keep the latest(/recent) dated investigation
-    )
-  })
-
-  output$fobt_dt <- renderDT({
-    datatable_styled(screen_fobt_ix() %>%
-                       mutate(OutOfDateTest =
-                                case_when(is.na(TestDate) ~ 1,
-                                          # if no date (no detected test)
-                                          interval(TestDate, AppointmentDate)>years(2) ~ 2,
-                                          # if old
-                                          TRUE ~ 3)) %>%   # if up-to-date
-                       replace_na(list(TestName = 'FOBT')) %>%
-                       mutate(fobttag =
-                                semantic_tag(
-                                  TestName,
-                                  colour = c('red', 'yellow', 'green')[OutOfDateTest],
-                                  popuphtml = paste0("<h4>Date : ", TestDate, "</h4>"))) %>%
-                       select(c('Patient', 'AppointmentDate', 'AppointmentTime',
-                                'Provider', 'DOB', 'Age', 'fobttag')),
-                     escape = c(7),
-                     colnames = c('FOBT' = 'fobttag')
-    )
-  }, server = FALSE)
+  # Billings for patients who have displayed appointments
 
   # collects ALL billings for patients who have displayed appointments
+  # used by billings view, and CDM billings view
   appointments_billings <- reactive({
     appointments_list() %>%
-      left_join(db$services, by = c('InternalID' = 'INTERNALID'), copy=TRUE) %>%
+      left_join(db$services, by = "InternalID", copy=TRUE) %>%
       collect() %>%
-      mutate(SERVICEDATE = as.Date(substr(SERVICEDATE, 1, 10)))
+      mutate(ServiceDate = as.Date(substr(ServiceDate, 1, 10)))
   })
 
-  # filter to billings which are done on the same day as displayed appointments
-  appointments_billings_sameday <- reactive({
-    appointments_billings() %>%
-      filter(SERVICEDATE == AppointmentDate) %>%
-      # billings done on the same day as displayed appointments
-      select(c('InternalID', 'AppointmentDate', 'AppointmentTime',
-               'Provider', 'MBSITEM', 'DESCRIPTION')) %>%
-      # need to preserve ApppointmentTime and Provider
-      # in the case where there are multiple apppointments
-      # for the patient in the same time period/day and providers
-      mutate(MBSITEM =
-               semantic_button(MBSITEM,
-                               colour = 'green',
-                               popuphtml = paste0('<h4>', AppointmentDate,
-                                                  "</h3><p><font size=\'+0\'>",
-                                                  DESCRIPTION, '</p>'))) %>%
-      # change MBSITEMS into fomantic/semantic tags
-      group_by(InternalID, AppointmentDate, AppointmentTime, Provider) %>%
-      # gathers item numbers on the same day into a single row
-      summarise(Billings = paste(MBSITEM, collapse = "")) %>%
-      ungroup()
-  })
-
-  output$billings_dt <- renderDT({
-    datatable_styled(appointments_filtered_time() %>%
-                       left_join(appointments_billings_sameday(),
-                                 by = c('InternalID', 'AppointmentDate',
-                                        'AppointmentTime', 'Provider')) %>%
-                       select(c('Patient', 'AppointmentDate', 'AppointmentTime',
-                                'Provider', 'Status', 'Billings')),
-                     escape = c(6) # only interpret HTML for last column
-    )
-  }, server = TRUE)
-
-  # CDM items
-
-  cdm_item <- data.frame(
-    code = c(721, 723, 732, 703, 705, 707, 2517, 2521, 2525, 2546, 2552, 2558, 2700, 2701, 2715, 2717),
-    name = c('GPMP', 'TCA', 'GPMP R/V', 'HA', 'HA', 'HA', 'DiabetesSIP', 'DiabetesSIP', 'DiabetesSIP',
-             'AsthmaSIP', 'AsthmaSIP', 'AsthmaSIP', 'MHCP', 'MHCP', 'MHCP', 'MHCP')
-  )
-
-  # filter to CDM item billed prior to (or on) the day of displayed appointments
-  # only show most recent billed item in each category
-
-  appointments_billings_cdm <- reactive({
-    appointments_billings() %>%
-      filter(MBSITEM %in% cdm_item$code) %>% # only chronic disease management items
-      filter(SERVICEDATE <= AppointmentDate) %>% # only items billed before the appointment day
-      select(c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider',
-               'SERVICEDATE', 'MBSITEM', 'DESCRIPTION')) %>%
-      mutate(MBSNAME = cdm_item$name[match(MBSITEM, cdm_item$code)]) %>%
-      rbind(diabetes_list_cdm()) %>%
-      group_by(InternalID, AppointmentDate, AppointmentTime, Provider, MBSNAME) %>%
-      # group by patient, apppointment and CDM type (name)
-      filter(SERVICEDATE == max(SERVICEDATE, na.rm = TRUE)) %>% # only keep most recent service
-      ungroup() %>%
-      mutate(mbstag =
-               semantic_tag(MBSNAME,
-                            colour =
-                              if_else(SERVICEDATE == -Inf,
-                                      'red', # invalid date is '-Inf', means item not claimed yet
-                                      if_else(interval(SERVICEDATE, AppointmentDate)<=years(1),
-                                              'green',
-                                              'yellow')),
-                            popuphtml =
-                              paste0("<h4>Date : ", SERVICEDATE,
-                                     "</h4><h6>Item : ", MBSITEM,
-                                     "</h6><p><font size=\'+0\'>", DESCRIPTION, "</p>")
-               )) %>%
-      group_by(InternalID, AppointmentDate, AppointmentTime, Provider) %>%
-      # gathers item numbers on the same day into a single row
-      summarise(cdm = paste(mbstag, collapse = "")) %>%
-      ungroup()
-  })
-
-  output$cdm_dt <- renderDT({
-    datatable_styled(appointments_filtered_time() %>%
-                       inner_join(appointments_billings_cdm(),
-                                  by = c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider')) %>%
-                       select(c('Patient', 'AppointmentDate', 'AppointmentTime', 'Provider', 'cdm')),
-                     colnames = c('Patient', 'Appointment Date', 'Appointment Time', 'Provider', 'CDM items'),
-                     escape = c(5)) # only interpret HTML for last column
-  },
-  server = TRUE)
-
-  # Diabetes
-
-  # Best Practice Diabetes code
-  diabetes_codes <- c(3, 775, 776, 778, 774, 7840, 11998)
-
-  # Returns InternalID
-  diabetes_list <- reactive({
-    appointments_filtered() %>%
-      inner_join(db$history %>%
-                   filter(ConditionID %in% diabetes_codes),
-                 by = c('InternalID')) %>%
-      select('InternalID')
-  })
-
-  diabetes_list_cdm <- reactive({
-    a <- appointments_list() %>%
-      inner_join(diabetes_list(), by = 'InternalID', copy = TRUE) %>%
-      select(c('InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider')) %>%
-      mutate(MBSNAME = c('DiabetesSIP'), DESCRIPTION = c('History : Diabetes'),
-             SERVICEDATE = as.Date(-Inf, origin = '1970-01-01'), MBSITEM = NA) %>%
-      unique()
-    # invalid date set as -Inf, which looks like NA, but is not (is equal to -Inf)
-    # setting invalid date to NA is not good for later comparisons,
-    # where max(... , na.rm=TRUE) needs to be used
-
-    b <- a %>% mutate(MBSNAME = c('GPMP'))
-    # people with diabetes also qualify for GPMP. duplicate list with 'GPMP' MBSNAME
-    rbind(a, b)
-  })
+  # call the module to generate the table
+  callModule(billings_datatable, "billings_dt",
+             appointments_billings, db)
 
   # Appointment list
 
   appointments_filtered <- reactive({
     # find appointments with chosen date range and providers
     validate (
-      need(input$clinicians, 'Choose at least one clinician appointment to view'),
+      need(input$clinicians, 'Choose at least one clinician\'s appointment to view'),
       need(date_a(), 'Invalid date range'),
       need(date_b(), 'Invalid date range')
     )
@@ -1379,11 +678,266 @@ server <- function(input, output, session) {
       mutate(Age = calc_age(DOB, AppointmentDate))
   })
 
-  output$appointments_dt <- renderDT({datatable_styled(
-    appointments_filtered_time() %>%
-      select(c('Patient', 'AppointmentDate', 'AppointmentTime', 'Provider', 'Status')))
-  },
-  server = FALSE)
+  # chronic disease management table
+  cdm_table_results <- callModule(cdm_datatable, "cdm_dt",
+                                  appointments_billings, appointments_filtered,
+                                  appointments_filtered_time, appointments_list,
+  																diabetes_list, asthma_list,
+                                  db$history)
+
+  ### Diabetes sub-code
+
+  diabetes_list <- reactive({
+  	# Best Practice Diabetes code
+  	diabetes_codes <- c(3, 775, 776, 778, 774, 7840, 11998)
+
+  	# Returns vector of InternalID of patients who have diabetes
+  	appointments_filtered() %>%
+  		inner_join(db$history %>%
+  							 	filter(ConditionID %in% diabetes_codes),
+  							 by = c('InternalID')) %>%
+  		pull(InternalID) %>%
+  	  unique()
+  })
+
+  ### Asthma sub-code
+
+  asthma_list <- reactive({
+  	# Best Practice Asthma code
+  	asthma_codes <- c(281, 285, 283, 284, 282)
+
+  	# Returns vector of InternalID of patients who have asthma
+  	appointments_filtered() %>%
+  		inner_join(db$history %>%
+  							 	filter(ConditionID %in% asthma_codes),
+  							 by = c('InternalID')) %>%
+  		pull(InternalID) %>%
+  	  unique()
+  })
+
+  atsi_list <- reactive({
+  	# Best Practice Aboriginal or Torres Strait Islander codes
+  	atsi_codes <- c("Aboriginal", "Torres Strait Islander",
+  									"Aboriginal/Torres Strait Islander")
+
+  	# returns vector of InternalID of patients who are
+  	# Aboriginal or Torres Strait Islander as recorded in patient into
+  	appointments_filtered() %>%
+  		inner_join(db$patients %>%
+  							 	filter(Ethnicity %in% atsi_codes),
+  							 by = c("InternalID")) %>%
+  		pull(InternalID) %>%
+  		unique()
+  })
+
+  malignancy_list <- reactive({
+    # Best Practice codes including for many cancers, carcinomas, lymphomas, leukaemias
+    malignancy_codes <- c(463, 478, 485, 7845, 449, 6075, 453, 456, 473, 490, 11927,
+                          445, 444, 446, 447, 448, 451, 457, 458, 459, 460, 462, 469, 454,
+                          472, 474, 477, 480, 481, 482, 486, 487, 488, 489, 11911, 491,
+                          492, 9391, 7751, 483, 8027, 470, 471, 476, 8261, 2475, 6835,
+                          6827, 6817, 6818, 6813, 6824, 6830, 6820, 6822, 6819, 6815, 6828,
+                          6826, 6821, 6833, 6831, 6823, 6834, 6825, 6832, 6829, 6814, 3221,
+                          4975, 2273, 2287, 4976, 5604, 5599, 5602, 5600, 5609, 5601, 5603,
+                          5608, 5607, 329, 2350, 2222, 5054, 2223, 6541, 2224, 2225, 2226,
+                          6003, 5480, 2230, 452, 3215, 7005, 2173, 2174, 2175, 2176, 2177,
+                          2178, 2179, 1440)
+
+    # returns vector of InternalID of patients who
+    # have a recorded malignancy
+    appointments_filtered() %>%
+      inner_join(db$history %>%
+                   filter(ConditionID %in% malignancy_codes),
+                 by = c("InternalID")) %>%
+      pull(InternalID) %>%
+      unique()
+  })
+
+  hiv_list <- reactive({
+    # Best Practice codes for HIV
+    hiv_codes <- c(1727)
+
+    # returns vector of InternalID of patients who
+    # have HIV
+    appointments_filtered() %>%
+      inner_join(db$history %>%
+                   filter(ConditionID %in% hiv_codes),
+                 by = c("InternalID")) %>%
+      pull(InternalID) %>%
+      unique()
+  })
+
+  haemoglobinopathy_list <- reactive({
+    # Best Practice codes for haemoglobinopathy
+    haemoglobinopathy_codes <- c(205, 208, 209, 210)
+
+    # returns vector of InternalID of patients who
+    # have haemoglobinopathy
+    appointments_filtered() %>%
+      inner_join(db$history %>%
+                   filter(ConditionID %in% haemoglobinopathy_codes),
+                 by = c("InternalID")) %>%
+      pull(InternalID) %>%
+      unique()
+  })
+
+  asplenic_list <- reactive({
+    # Best Practice codes for asplenia
+    asplenic_codes <- c(3958, 5805, 6493, 3959)
+
+    # returns vector of InternalID of patients who
+    # are asplenic
+    appointments_filtered() %>%
+      inner_join(db$history %>%
+                   filter(ConditionID %in% asplenic_codes),
+                 by = c("InternalID")) %>%
+      pull(InternalID) %>%
+      unique()
+  })
+
+  transplant_list <- reactive({
+    # Best Practice codes for transplants (not corneal or hair)
+    transplant_codes <- c(4160, 3691, 3814, 3826, 12026, 3765, 3989)
+    # bone marrow, heart, liver, lung, pancreas, renal, thymus
+
+    # returns vector of InternalID of patients who
+    # have had transplants
+    appointments_filtered() %>%
+      inner_join(db$history %>%
+                   filter(ConditionID %in% transplant_codes),
+                 by = c("InternalID")) %>%
+      pull(InternalID) %>%
+      unique()
+  })
+
+  cardiacdisease_list <- reactive({
+    # Best Practice codes for cardiac disease
+    transplant_codes <- c(7810, 226, 227, 228, 2376, 2377, 2378, 2379, 2380, 2381,
+                          2382, 3576, 3577, 3578, 3579, 1534, 2556, 6847, 7847,
+                          1347, 2376, 2377, 2378, 2379, 2380, 2381, 2382, 7847, 6847, 2556)
+    # cyanotic congenital heart disease, ischaemic heart disease, AMI and congestive failure
+
+    # returns vector of InternalID of patients who
+    # have had cardiac disease
+    appointments_filtered() %>%
+      inner_join(db$history %>%
+                   filter(ConditionID %in% transplant_codes),
+                 by = c("InternalID")) %>%
+      pull(InternalID) %>%
+      unique()
+  })
+
+  trisomy21_list <- reactive({
+    # Best Practice codes for trisomy 21
+    trisomy21_codes <- c(836)
+
+    # returns vector of InternalID of patients who
+    # have trisomy 21
+    appointments_filtered() %>%
+      inner_join(db$history %>%
+                   filter(ConditionID %in% trisomy21_codes),
+                 by = c("InternalID")) %>%
+      pull(InternalID) %>%
+      unique()
+  })
+
+  bmi30_list <- reactive({
+    # returns vector of InternalID of patients who
+    # have bmi 30 or more (obesity)
+    appointments_filtered() %>% collect() %>%
+      inner_join(db$observations %>%
+                   filter(DATACODE == 9), # this is BMI. also in DATANAME, but different spellings/cases
+                 by = "InternalID", copy = TRUE) %>%
+      filter(OBSDATE <= AppointmentDate) %>% # observation done before the appointment time
+      group_by(InternalID, AppointmentDate, AppointmentTime) %>%
+      slice(which.max(OBSDATE)) %>% # choose the observation with the most recent observation date
+      # unfortunately, as the code stands, this generates a vector which is not appointment date specific
+      # if a range of appointment dates has been chosen
+      ungroup() %>%
+      filter(DATAVALUE >= 30) %>% # those with BMI >= 30
+      pull(InternalID) %>%
+      unique()
+  })
+
+  chroniclungdisease_list <- reactive({
+    # Best Practice codes for trisomy 21
+    cld_codes <- c(598, 4740, 414, 702)
+    # returns vector of InternalID of patients who
+    # have lung disease such as bronchiectasis, cystic fibrosis, COPD/COAD
+    # asthma is in a separate list
+
+    appointments_filtered() %>%
+      inner_join(db$history %>%
+                   filter(ConditionID %in% cld_codes),
+                 by = c("InternalID")) %>%
+      pull(InternalID) %>%
+      unique()
+  })
+
+  neurologic_list <- reactive({
+    # Best Practice codes for neurology
+    neuro_codes <- c(2351, 963, 965, 966, 968, 969, 971, 6604,
+                   2022, 2630, 3093)
+    # multiple sclerosis, epilepsy, spinal cord injury, paraplegia, quadriplegia
+
+    # returns vector of InternalID of patients who
+    # have neurologic disease
+    appointments_filtered() %>%
+      inner_join(db$history %>%
+                   filter(ConditionID %in% neuro_codes),
+                 by = c("InternalID")) %>%
+      pull(InternalID) %>%
+      unique()
+  })
+
+  chronicliverdisease_list <- reactive({
+    # Best Practice codes for chronic liver disease
+    cld_codes <- c(11763, 584, 81)
+    # liver disease (BP doesn't have 'chronic liver disease'!), cirrhosis, alcoholism
+
+    # returns vector of InternalID of patients who
+    # have chronic liver disease
+    appointments_filtered() %>%
+      inner_join(db$history %>%
+                   filter(ConditionID %in% cld_codes),
+                 by = c("InternalID")) %>%
+      pull(InternalID) %>%
+      unique()
+  })
+
+  chronicrenaldisease_list <- reactive({
+    # Best Practice codes for chronic liver disease
+    crf_codes <- c(662, 258, 3132, 662, 2486, 2487, 6379, 2489, 7469, 1274,
+                   7502, 7503, 7504, 7505, 7506, 2882)
+    # chronic renal failure, renal impairment, dialysis
+
+    # returns vector of InternalID of patients who
+    # have chronic renal disease
+    appointments_filtered() %>%
+      inner_join(db$history %>%
+                   filter(ConditionID %in% crf_codes),
+                 by = c("InternalID")) %>%
+      pull(InternalID) %>%
+      unique()
+  })
+
+  pregnant_list <- reactive({
+    # returns vector of InternalID of patients who
+    # are pregnant
+
+    appointments_filtered() %>% collect() %>%
+      inner_join(db$pregnancies %>%
+                   filter(is.null(ENDDATE)),
+                 by = "InternalID", copy = TRUE) %>%
+      filter((EDCBYDATE > AppointmentDate) & (EDCBYDATE < (AppointmentDate+months(9)))) %>%
+      pull(InternalID) %>%
+      unique()
+  })
+
+  # appointment list
+
+  callModule(appointments_datatable, "appointments_dt",
+  					 appointments_filtered_time)
 
   output$test_dt <-
     renderDT({datatable(data.frame(a=c(2,3,68),
@@ -1446,10 +1000,6 @@ server <- function(input, output, session) {
     server_list_names(BPdatabase() %>% select(Name) %>% collect() %>% unlist(use.names = FALSE))
   })
 
-  observeEvent(BPdatabaseChoice(), {
-    print(paste("ChosenServerName:", BPdatabaseChoice()))
-  }, ignoreInit = TRUE)
-
   # location configuration tab
   location_list_change <- callModule(locations_datatable, "locations_dt",
                                      PracticeLocations, UserConfig, config_pool)
@@ -1466,7 +1016,35 @@ server <- function(input, output, session) {
   })
 
   userconfig_change <- callModule(userconfig_datatable, "userconfig_dt",
-                                  UserConfig, location_list_names, db$users, config_pool)
+                                  UserConfig, location_list_names, db, config_pool)
+
+  output$user <- renderUser({
+    dashboardUser(
+      name = UserConfig()$Fullname[UserConfig()$AuthIdentity == Sys.info()[["user"]]],
+      src = "./assets/icons/user-avatar.svg", # note the lack of "./www/..."
+      subtitle = Sys.info()[["user"]],
+      fluidRow(
+      	dashboardUserItem(
+      		width = 6,
+      		descriptionBlock(
+      			text = paste0(
+      				unlist(UserConfig()$Location[UserConfig()$AuthIdentity == Sys.info()[["user"]]]),
+      				collapse = ", "),
+      			right_border = TRUE,
+      			margin_bottom = TRUE)
+      	),
+      	dashboardUserItem(
+      		width = 6,
+      		descriptionBlock(
+      			text = paste0(
+      				unlist(UserConfig()$Attributes[UserConfig()$AuthIdentity == Sys.info()[["user"]]]),
+      				collapse = ", "),
+      			right_border = FALSE,
+      			margin_bottom = TRUE)
+      	)
+      )
+    )
+  })
 
 }
 

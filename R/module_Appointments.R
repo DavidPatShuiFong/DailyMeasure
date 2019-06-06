@@ -1,7 +1,10 @@
+#' Appointments module
+
 ##### Appointments module ##########################################
 
 appointments_datatableUI <- function(id) {
-	ns <- NS(id)
+
+	ns <- shiny::NS(id)
 
 	tagList(
 	  # print-view only (no semantic/fomantic buttons)

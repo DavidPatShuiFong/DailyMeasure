@@ -8,10 +8,11 @@ appointments_datatableUI <- function(id) {
 
 	tagList(
 	  # print-view only (no semantic/fomantic buttons)
-	  withSpinner(DT::DTOutput(ns("appointments_table")),
-	              type = 8,
-	              hide.element.when.recalculating = FALSE,
-	              proxy.height = NULL)
+	  shinycssloaders::withSpinner(
+	    DT::DTOutput(ns("appointments_table")),
+	    type = 8,
+	    hide.element.when.recalculating = FALSE,
+	    proxy.height = NULL)
 	)
 }
 
@@ -30,7 +31,7 @@ appointments_datatable <- function(input, output, session,
 	# fomantic/semantic UI definitions not required
 
 	# appointment list
-	output$appointments_dt <- renderDT({datatable_styled(
+	output$appointments_dt <- DT::renderDT({datatable_styled(
 		appointments_filtered_time() %>%
 			select(c('Patient', 'AppointmentDate', 'AppointmentTime', 'Provider', 'Status')))
 	},
@@ -47,7 +48,7 @@ appointments_datatable <- function(input, output, session,
 										 				 Provider, Status))
 	})
 
-	output$appointments_table <- renderDT({
+	output$appointments_table <- DT::renderDT({
 	  styled_appointments_list()
 	})
 }

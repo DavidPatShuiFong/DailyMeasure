@@ -4,13 +4,8 @@
 #' launches the DailyMeasure app
 #' @return shiny application object
 #'
-#' @import shiny
-#' @importFrom DT dataTableOutput renderDataTable dataTableProxy replaceData DTOutput
-#' @importFrom shinydashboard dashboardSidebar sidebarMenu menuItem dashboardBody tabItems tabItem
-#' @importFrom shinydashboardPlus dashboardPagePlus dashboardHeaderPlus userOutput
-#' @importFrom shinyWidgets useSweetAlert
-#' @importFrom shinytoastr useToastr
-#' @importFrom shinycssloaders withSpinner
+#' @import shiny tidyverse dbplyr
+#' @importFrom shinydashboard menuItem tabItems tabItem
 #'
 #' @export
 launchApp <- function () {

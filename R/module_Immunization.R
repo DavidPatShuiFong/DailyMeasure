@@ -1,4 +1,6 @@
-#! Immunization module
+#' @source fomantic_definitions.R calculation_definitions.R
+NULL
+# requires fomantic/semantic definitions and date calculations
 
 ##### information modules ###############################################################
 
@@ -10,7 +12,7 @@ vax_datatableUI <- function(id) {
   tagList(
     fluidRow(
       column(4,
-             switchInput(
+             shinyWidgets::switchInput(
                inputId = ns("printcopy_view"),
                label = "<i class=\"fas fa-print\"></i> </i><i class=\"far fa-copy\"></i>  Print and Copy View",
                labelWidth = "100%")
@@ -19,10 +21,11 @@ vax_datatableUI <- function(id) {
              uiOutput(ns("vax_item_choice"))
       )
     ),
-    withSpinner(DT::DTOutput(ns("vax_table")),
-                type = 8,
-                hide.element.when.recalculating = FALSE,
-                proxy.height = NULL)
+    shinycssloaders::withSpinner(
+      DT::DTOutput(ns("vax_table")),
+      type = 8,
+      hide.element.when.recalculating = FALSE,
+      proxy.height = NULL)
   )
 }
 
@@ -269,34 +272,37 @@ influenza_list <- function(appointments_list, db,
               copy = TRUE) %>%
     collect() %>%
     mutate(vaxtag =
-             semantic_tag(paste0(' Influenza '),
-                          colour =
-                            if_else(is.na(GivenDate) |
-                                      (GivenDate == as.Date(-Inf, origin = '1970-01-01')),
-                                    if_else(is.na(ITEMID),
-                                            c('red'), c('purple')),
-                                    if_else(year(GivenDate) == year(AppointmentDate),
-                                            c('green'), c("yellow"))),
-                          # red if not given, purple if removed from flu vax reminders
-                          # and green if has had the vax this year. yellow if 'old' vax
-                          popuphtml =
-                            paste0("<h4>",
-                                   if_else(is.na(ITEMID),
-                                           as.character(Reason), # co-erce to character (it could be empty)
-                                           'Removed from influenza immunization reminders'),
-                                   "</h4>")),
+             semantic_tag(
+               paste0(' Influenza '),
+               colour =
+                 if_else(is.na(GivenDate) |
+                           (GivenDate == as.Date(-Inf, origin = '1970-01-01')),
+                         if_else(is.na(ITEMID),
+                                 c('red'), c('purple')),
+                         if_else(lubridate::year(GivenDate) == lubridate::year(AppointmentDate),
+                                 c('green'), c("yellow"))),
+               # red if not given, purple if removed from flu vax reminders
+               # and green if has had the vax this year. yellow if 'old' vax
+               popuphtml =
+                 paste0("<h4>",
+                        if_else(is.na(ITEMID),
+                                as.character(Reason), # co-erce to character (it could be empty)
+                                'Removed from influenza immunization reminders'),
+                        "</h4>")),
            vaxtag_print =
              paste0("Influenza", " ", # printable version of information
-                    if_else(is.na(GivenDate),
-                            if_else(is.na(ITEMID),
-                                    paste0("(", as.character(Reason), ")"),
-                                    "(Removed from influenza immunization reminders)"),
-                            paste0(if_else(is.na(GivenDate) | (GivenDate == -Inf), # no previous vax
-                                           " (DUE) ",
-                                           if_else(year(GivenDate) == year(AppointmentDate),
-                                                   " ", " (DUE) ")),
-                                   "(", Reason, ")"
-                            )) # ?vax given this year
+                    if_else(
+                      is.na(GivenDate),
+                      if_else(is.na(ITEMID),
+                              paste0("(", as.character(Reason), ")"),
+                              "(Removed from influenza immunization reminders)"),
+                      paste0(if_else(
+                        is.na(GivenDate) | (GivenDate == -Inf), # no previous vax
+                        " (DUE) ",
+                        if_else(lubridate::year(GivenDate) == lubridate::year(AppointmentDate),
+                                " ", " (DUE) ")),
+                        "(", Reason, ")"
+                      )) # ?vax given this year
              )
     ) %>%
     select(c("Patient", "InternalID", "AppointmentDate", "AppointmentTime", "Provider",
@@ -328,13 +334,14 @@ vax_datatable <- function(input, output, session,
   vax_names <- c("Zostavax", "Influenza")
 
   output$vax_item_choice <- renderUI({
-    dropdown(
+    shinyWidgets::dropdown(
       inputid = "choice_dropdown",
-      checkboxGroupButtons(inputId = ns("vax_chosen"), label = "Vaccination items shown",
-                           choices = vax_names, selected = vax_names,
-                           # all choices initially selected
-                           status = "primary",
-                           checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
+      shinyWidgets::checkboxGroupButtons(
+        inputId = ns("vax_chosen"), label = "Vaccination items shown",
+        choices = vax_names, selected = vax_names,
+        # all choices initially selected
+        status = "primary",
+        checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
       icon = icon("gear"),
       label = "Vaccination items shown"
     )
@@ -400,7 +407,7 @@ vax_datatable <- function(input, output, session,
     }
   })
 
-  output$vax_table <- renderDT({
+  output$vax_table <- DT::renderDT({
     styled_vax_list()
   })
 }

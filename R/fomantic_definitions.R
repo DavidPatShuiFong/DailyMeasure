@@ -57,14 +57,14 @@ datatable_styled <- function(data, fillContainer = TRUE,
                              extensions = c('Buttons', 'Scroller', 'Responsive'),
                              dom = 'frltiBp',
                              buttons = c('copyHtml5', 'csvHtml5', 'excel', 'pdf', 'print'),
-                             initComplete = JS(semantic_popupJS),
+                             initComplete = DT::JS(semantic_popupJS),
                              paging = FALSE,
                              scrollY = "60vh",
                              # 60% of window height, otherwise will just a few rows in size
                              ...) {
   options <- list(dom = dom, buttons = buttons, initComplete = initComplete,
                   paging = paging, scrollY = scrollY)
-  datatable(data, fillContainer = fillContainer, extensions = extensions, options = options, ... )
+  DT::datatable(data, fillContainer = fillContainer, extensions = extensions, options = options, ... )
 }
 # by default, have export/print buttons, only render what is visible
 # javascript code to attach labels to semantic/fomantic JS popups

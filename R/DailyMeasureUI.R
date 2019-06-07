@@ -1,23 +1,24 @@
 #' @include module_Appointments.R module_Immunization.R module_CancerScreen.R
 #' @include module_Billings.R module_CDM.R module_Configuration.R
 NULL
+# requires all moduleUI definitions to be defined
 
 #' Shiny app UI object
 
 ##### Define UI for application ######################
 # create the shiny application user interface
-DailyMeasureUI <- dashboardPagePlus(
+DailyMeasureUI <- shinydashboardPlus::dashboardPagePlus(
 
-  header = dashboardHeaderPlus(
+  header = shinydashboardPlus::dashboardHeaderPlus(
     enable_rightsidebar = TRUE,
     rightSidebarIcon = "calendar-alt",
     title = tagList(
       span(class = "logo-lg", "Daily Measure"),
       icon = icon("heartbeat")),
-    userOutput("user")
+    shinydashboardPlus::userOutput("user")
   ),
-  sidebar = dashboardSidebar(
-    sidebarMenu(
+  sidebar = shinydashboard::dashboardSidebar(
+    shinydashboard::sidebarMenu(
       id = "sidebartabs",
       menuItem("Appointments", tabName = "appointments", icon = icon("calendar-check")),
       menuItem("Immunization", tabName = "immunization", icon = icon("syringe")),
@@ -30,10 +31,10 @@ DailyMeasureUI <- dashboardPagePlus(
   ),
 
   # Sidebar with a slider input for number of bins
-  rightsidebar = rightSidebar(
-    useShinyjs(), # this is needed to enable the 'click' of 'update_date' by 'Today'
+  rightsidebar = shinydashboardPlus::rightSidebar(
+    shinyjs::useShinyjs(), # this is needed to enable the 'click' of 'update_date' by 'Today'
     background = "dark",
-    rightSidebarTabContent(
+    shinydashboardPlus::rightSidebarTabContent(
       id = 1,
       title = "Appointment Details",
       icon = "users",
@@ -69,7 +70,7 @@ DailyMeasureUI <- dashboardPagePlus(
     )
   ),
 
-  dashboardBody(
+  shinydashboard::dashboardBody(
     shinyWidgets::useSweetAlert(),
     shinytoastr::useToastr(),
     tags$head(
@@ -118,7 +119,7 @@ DailyMeasureUI <- dashboardPagePlus(
       ),
       tabItem(tabName = "configuration",
               fluidRow(
-                tabBox(
+                shinydashboard::tabBox(
                   id = "tab_config",
                   title = "Configuration",
                   width = 12,
@@ -133,7 +134,7 @@ DailyMeasureUI <- dashboardPagePlus(
                              textOutput('configuration_file_details') # location of sqlite configuration file
                            ),
                            wellPanel(
-                             shinyFilesButton(
+                             shinyFiles::shinyFilesButton(
                                'choose_configuration_file',
                                label = 'Choose configuration file',
                                title = "Choose configuration file (must end in '.sqlite')",
@@ -169,7 +170,7 @@ DailyMeasureUI <- dashboardPagePlus(
               )),
       tabItem(tabName = "test",
               fluidRow(column(width = 12, align = "center", h2("Test frame"))),
-              fluidRow(column(width = 12, DTOutput("test_dt")))
+              fluidRow(column(width = 12, DT::DTOutput("test_dt")))
       )
     )
   )

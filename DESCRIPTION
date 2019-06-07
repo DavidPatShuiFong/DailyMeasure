@@ -12,7 +12,10 @@ License: (C) David Fong. All rights reserved. License: file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.1.1
-Depends: 
+Depends:
+ tidyverse,
+ dbplyr
+Imports: 
  shiny,
  shinyjs,
  shinydashboard,
@@ -21,7 +24,6 @@ Depends:
  shinytoastr, 
  shinyFiles (>= 0.7.2),
  shinycssloaders,
- tidyverse,
  dbplyr,
  DBI,  
  odbc,
@@ -42,6 +44,7 @@ Collate:
     'DailyMeasure.R'
     'DailyMeasureServer.R'
     'module_Configuration.R'
+    'fomantic_definitions.R'
     'module_CDM.R'
     'module_Billings.R'
     'module_CancerScreen.R'
@@ -49,4 +52,3 @@ Collate:
     'module_Appointments.R'
     'DailyMeasureUI.R'
     'calculation_definitions.R'
-    'fomantic_definitions.R'

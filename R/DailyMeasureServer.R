@@ -7,57 +7,67 @@ DailyMeasureServer <- function(input, output, session) {
 
 	##### Configuration file ######################################################
 
-	if (is.yaml.file('./DailyMeasure_cfg.yaml')) {
+	if (configr::is.yaml.file('./DailyMeasure_cfg.yaml')) {
 		# if config file exists and is a YAML-type file
-		local_config <- read.config("./DailyMeasure_cfg.yaml") #  config in local location
+		local_config <- configr::read.config("./DailyMeasure_cfg.yaml")
+		# config in local location
 	} else {
 		# local config file does not exist. possibly first-run
 		local_config <- list()
 		local_config$config_file <- c("./DailyMeasure_cfg.sqlite")
 		# main configuration file, could be set to 'common location'
 		# write the (minimalist) local config file
-		write.config(local_config, file.path = "./DailyMeasure_cfg.yaml", write.type = "yaml")
+		configr::write.config(
+		  local_config,
+		  file.path = "./DailyMeasure_cfg.yaml",
+		  write.type = "yaml"
+		  )
 	}
-	print(paste0("Local config:", local_config))
 
   # local_config <- reactiveValues(config_file = character())
   config_pool <- reactiveVal()
   configuration_file_path <- reactiveVal()
-  BPdatabase <- reactiveVal(value = data.frame(id = integer(),
-                                               Name = character(),
-                                               Address = character(),
-                                               Database = character(),
-                                               UserID = character(),
-                                               dbPassword = character(),
-                                               stringsAsFactors = FALSE))
+  BPdatabase <- reactiveVal(
+    value = data.frame(id = integer(),
+                       Name = character(),
+                       Address = character(),
+                       Database = character(),
+                       UserID = character(),
+                       dbPassword = character(),
+                       stringsAsFactors = FALSE))
   BPdatabaseChoice <- reactiveVal(value = character())
   # database choice will be the same as the 'Name' of the chosen entry in BPdatabase
-  PracticeLocations <- reactiveVal(value = data.frame(id = integer(),
-                                                      Name = character(),
-                                                      Description = character(),
-                                                      stringsAsFactors = FALSE))
+  PracticeLocations <- reactiveVal(
+    value = data.frame(id = integer(),
+                       Name = character(),
+                       Description = character(),
+                       stringsAsFactors = FALSE))
   # id needed for editing this dataframe later
   # need default value for practice location filter interface initialization
-  UserConfig <- reactiveVal(value = data.frame(id = integer(),
-                                               Fullname = character(), AuthIdentity = character(),
-                                               Location = character(),
-                                               Attributes = character(),
-                                               stringsAsFactors = FALSE))
+  UserConfig <- reactiveVal(
+    value = data.frame(id = integer(),
+                       Fullname = character(), AuthIdentity = character(),
+                       Location = character(),
+                       Attributes = character(),
+                       stringsAsFactors = FALSE))
 
   configuration_file_path(local_config$config_file)
 
   observeEvent(configuration_file_path(), ignoreNULL = TRUE, {
     if (file.exists(isolate(configuration_file_path()))) {
       # open config database file
-      config_pool(tryCatch(dbPool(RSQLite::SQLite(),
-                                  dbname = isolate(configuration_file_path())),
-                           error = function(e) {NULL}))
+      config_pool(tryCatch(pool::dbPool(
+        RSQLite::SQLite(),
+        dbname = isolate(configuration_file_path())),
+        error = function(e) {NULL}))
     } else {
-      # if the config database doesn't exist, then create it (note create = TRUE option)
-      config_pool(tryCatch(dbPool(RSQLite::SQLite(),
-                                  dbname = isolate(configuration_file_path()),
-                                  create = TRUE),
-                           error = function(e) {NULL}))
+      # if the config database doesn't exist,
+      # then create it (note create = TRUE option)
+      config_pool(tryCatch(pool::dbPool(
+        RSQLite::SQLite(),
+        dbname = isolate(configuration_file_path()),
+        create = TRUE),
+        error = function(e) {NULL}))
     }
 
     initialize_data_table <- function(config_pool, tablename, variable_list) {
@@ -73,7 +83,7 @@ DailyMeasureServer <- function(input, output, session) {
       #
       # returns - nothing
 
-      tablenames <- config_pool() %>% dbListTables()
+      tablenames <- config_pool() %>% DBI::dbListTables()
 
       if (tablename %in% tablenames) {
         # if table exists in config_pool database
@@ -101,7 +111,7 @@ DailyMeasureServer <- function(input, output, session) {
         }
       }
       if (changed == TRUE) {
-        dbWriteTable(config_pool(), tablename, data, overwrite = TRUE)
+        DBI::dbWriteTable(config_pool(), tablename, data, overwrite = TRUE)
       }
 
     }
@@ -142,7 +152,8 @@ DailyMeasureServer <- function(input, output, session) {
     # if emrpool is initialized to a database,
     # then initialize tables
     if (is.environment(emrpool())) { # emrpool has been defined at least once
-      if (dbIsValid(emrpool())) {  # and is still a valid database object (e.g. not disconnected)
+      if (DBI::dbIsValid(emrpool())) {
+        # and is still a valid database object (e.g. not disconnected)
         print("Re-initializing databases")
         initialize_tables(emrpool) # if pool is successfully initialized
       }
@@ -154,9 +165,9 @@ DailyMeasureServer <- function(input, output, session) {
 
     # close existing database connection
     if (is.environment(emrpool())) {
-      if (dbIsValid(emrpool())) {
+      if (DBI::dbIsValid(emrpool())) {
         # if emrpool() is defined as a database, then close it
-        poolClose(emrpool())
+        pool::poolClose(emrpool())
       }
     }
     if (BPdatabaseChoice() == "None") {
@@ -164,23 +175,25 @@ DailyMeasureServer <- function(input, output, session) {
     } else if (!is.null(BPdatabaseChoice())) {
       server <- BPdatabase() %>% filter(Name == BPdatabaseChoice()) %>% collect()
       print("Initializing EMR database")
-      toastr_info("Opening link to Best Practice", closeButton = TRUE,
-                  position = "top-center", title = "Best Practice database")
-      emrpool(tryCatch(dbPool(odbc::odbc(), driver = "SQL Server",
-                              server = server$Address, database = server$Database,
-                              uid = server$UserID, pwd = server$dbPassword),
-                       error = function(e) {
-                         sendSweetAlert(
-                           session = session,
-                           title = "Error opening database",
-                           text = e,
-                           type = "error")
-                       }
+      shinytoastr::toastr_info(
+        "Opening link to Best Practice", closeButton = TRUE,
+        position = "top-center", title = "Best Practice database")
+      emrpool(tryCatch(pool::dbPool(
+        odbc::odbc(), driver = "SQL Server",
+        server = server$Address, database = server$Database,
+        uid = server$UserID, pwd = server$dbPassword),
+        error = function(e) {
+          shinyWidgets::sendSweetAlert(
+            session = session,
+            title = "Error opening database",
+            text = e,
+            type = "error")
+        }
       ))
 
     }
 
-    if (!is.environment(emrpool()) || !dbIsValid(emrpool())) {
+    if (!is.environment(emrpool()) || !DBI::dbIsValid(emrpool())) {
       # || 'short-circuits' the evaluation, so if not an environment,
       # then dbIsValid() is not evaluated (will return an error if emrpool() is NULL)
 
@@ -199,10 +212,11 @@ DailyMeasureServer <- function(input, output, session) {
       clinician_choice_list(NULL)
       BPdatabaseChoice("None") # set choice of database to 'None'
     } else {
-      toastr_success("Linking to Best Practice database successful!",
-                     closeButton = TRUE,
-                     position = "top-center",
-                     title = "Best Practice database")
+      shinytoastr::toastr_success(
+        "Linking to Best Practice database successful!",
+        closeButton = TRUE,
+        position = "top-center",
+        title = "Best Practice database")
     }
   }, ignoreInit = TRUE)
 
@@ -725,20 +739,22 @@ DailyMeasureServer <- function(input, output, session) {
              appointments_filtered_time)
 
   output$test_dt <-
-    renderDT({datatable(data.frame(a=c(2,3,68),
-                                   b=c('<span class="huge green positive ui tag label"><span data-tooltip="check me" data-variation="huge">
+    DT::renderDT({
+      DT::datatable(
+        data.frame(a=c(2,3,68),
+                   b=c('<span class="huge green positive ui tag label"><span data-tooltip="check me" data-variation="huge">
                                        721
                                        </span></span>
                                        <span class="huge green positive ui tag label">723</span><span class="ui tag label">10990</span>',
-                                       '<div class="huge ui negative button" data-tooltip="waiting ... "><i class="wheelchair loading icon"></i>
+                       '<div class="huge ui negative button" data-tooltip="waiting ... "><i class="wheelchair loading icon"></i>
                                        2715</div>',
-                                       '<div class="huge ui button positive" data-variation="wide" data-html="<h1>
+                       '<div class="huge ui button positive" data-variation="wide" data-html="<h1>
                                        Cheese factory
                                        </h1><font size=\'+0\'><b>Lots and lots</b> of information. make sure everything is <ins>complete</ins> on year after ... 12/Jan/2019</font>">GPMP</div>'
-                                   )),
-                        options = list(initComplete = JS(semantic_popupJS)),
-                        escape = FALSE,
-                        fillContainer = FALSE)})
+                   )),
+        options = list(initComplete = DT::JS(semantic_popupJS)),
+        escape = FALSE,
+        fillContainer = FALSE)})
 
 
   # configuration file location tab
@@ -747,12 +763,13 @@ DailyMeasureServer <- function(input, output, session) {
     paste('Configuration file location: "', configuration_file_path(), '"')
   })
 
-  volumes <- c(getVolumes()(), base = '.', home = Sys.getenv("USERPROFILE"))
+  volumes <- c(shinyFiles::getVolumes()(), base = '.', home = Sys.getenv("USERPROFILE"))
 
-  shinyFileChoose(input, id = 'choose_configuration_file',
-                  session = session,
-                  roots = volumes,
-                  filetypes = c('sqlite') # only files ending in '.sqlite'
+  shinyFiles::shinyFileChoose(
+    input, id = 'choose_configuration_file',
+    session = session,
+    roots = volumes,
+    filetypes = c('sqlite') # only files ending in '.sqlite'
   )
 
   observeEvent(ignoreNULL = TRUE,input$choose_configuration_file, {
@@ -803,24 +820,24 @@ DailyMeasureServer <- function(input, output, session) {
   userconfig_change <- callModule(userconfig_datatable, "userconfig_dt",
                                   UserConfig, location_list_names, db, config_pool)
 
-  output$user <- renderUser({
-    dashboardUser(
+  output$user <- shinydashboardPlus::renderUser({
+    shinydashboardPlus::dashboardUser(
       name = UserConfig()$Fullname[UserConfig()$AuthIdentity == Sys.info()[["user"]]],
       src = "./assets/icons/user-avatar.svg", # note the lack of "./www/..."
       subtitle = Sys.info()[["user"]],
       fluidRow(
-        dashboardUserItem(
+        shinydashboardPlus::dashboardUserItem(
           width = 6,
-          descriptionBlock(
+          shinydashboardPlus::descriptionBlock(
             text = paste0(
               unlist(UserConfig()$Location[UserConfig()$AuthIdentity == Sys.info()[["user"]]]),
               collapse = ", "),
             right_border = TRUE,
             margin_bottom = TRUE)
         ),
-        dashboardUserItem(
+        shinydashboardPlus::dashboardUserItem(
           width = 6,
-          descriptionBlock(
+          shinydashboardPlus::descriptionBlock(
             text = paste0(
               unlist(UserConfig()$Attributes[UserConfig()$AuthIdentity == Sys.info()[["user"]]]),
               collapse = ", "),

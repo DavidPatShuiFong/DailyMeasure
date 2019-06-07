@@ -7,9 +7,9 @@ calc_age <- function(birthDate, refDate = Sys.Date()) {
 	# of time between those dates, so convert to period and extract the year.
 	# written by 'mmparker' https://gist.github.com/mmparker/7254445
 
-	period <- as.period(interval(birthDate, refDate),
-											unit = "year")
-	period$year
+  period <- lubridate::as.period(lubridate::interval(birthDate, refDate),
+                                 unit = "year")
+  period$year
 }
 
 calc_age_months <- function(birthDate, refDate = Sys.Date()) {
@@ -19,8 +19,8 @@ calc_age_months <- function(birthDate, refDate = Sys.Date()) {
 	# of time between those dates, so convert to period and extract the month.
 	# based on code written by 'mmparker' https://gist.github.com/mmparker/7254445
 
-	period <- as.period(interval(birthDate, refDate),
-											unit = "month")
+  period <- lubridate::as.period(lubridate::interval(birthDate, refDate),
+                                 unit = "month")
 	period$month
 }
 
@@ -28,6 +28,6 @@ hrmin <- function(t) {
 	# converts seconds to a 'time' starting from midnight
 	# t : value in seconds
 	# returns 24-hour time of form '14:15' (hh:mm)
-	td <- seconds_to_period(t)
+	td <- lubridate::seconds_to_period(t)
 	sprintf('%02d:%02d', td@hour, td@minute)
 }

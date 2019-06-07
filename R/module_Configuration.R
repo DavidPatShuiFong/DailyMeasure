@@ -9,7 +9,7 @@ servers_datatableUI <- function(id) {
 		wellPanel(
 			uiOutput(ns("selection"))
 		),
-		dteditUI(ns("servers"))
+		DTedit::dteditUI(ns("servers"))
 	)
 }
 
@@ -50,7 +50,8 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 	})
 
 	observeEvent(input$server_chosen, {
-		chosen_database(input$server_chosen) # this will be the server 'Name', a character string
+		chosen_database(input$server_chosen)
+	  # this will be the server 'Name', a character string
 		BPdatabaseChoice(input$server_chosen)
 		if (nrow(config_pool() %>% tbl("ServerChoice") %>% filter(id ==1) %>% collect())) {
 			# already an entry in the ServerChoice table
@@ -62,13 +63,14 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 			data_for_sql <- as.list.data.frame(c(1, input$server_chosen))
 		}
 
-		connection <- poolCheckout(config_pool()) # can't write with the pool
-		rs <- dbSendQuery(connection, query) # parameterized query can handle apostrophes etc.
-		dbBind(rs, data_for_sql)
+		connection <- pool::poolCheckout(config_pool()) # can't write with the pool
+		rs <- DBI::dbSendQuery(connection, query)
+		# parameterized query can handle apostrophes etc.
+		DBI::dbBind(rs, data_for_sql)
 		# for statements, rather than queries, we don't need to dbFetch(rs)
 		# update database
-		dbClearResult(rs)
-		poolReturn(connection)
+		DBI::dbClearResult(rs)
+		pool::poolReturn(connection)
 
 	})
 
@@ -94,16 +96,18 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 																					 data[row,]$Database, data[row,]$UserID,
 																					 data[row,]$dbPassword))
 
-			connection <- poolCheckout(config_pool()) # can't write with the pool
-			rs <- dbSendQuery(connection, query) # parameterized query can handle apostrophes etc.
-			dbBind(rs, data_for_sql)
+			connection <- pool::poolCheckout(config_pool()) # can't write with the pool
+			rs <- DBI::dbSendQuery(connection, query)
+			# parameterized query can handle apostrophes etc.
+			DBI::dbBind(rs, data_for_sql)
 			# for statements, rather than queries, we don't need to dbFetch(rs)
 			# update database
-			dbClearResult(rs)
-			poolReturn(connection)
+			DBI::dbClearResult(rs)
+			pool::poolReturn(connection)
 
 			BPdatabase(data) # update the dataframe in memory
-			servers_list_change(servers_list_change() + 1) # this value returned by module
+			servers_list_change(servers_list_change() + 1)
+			# this value returned by module
 
 			return(BPdatabase())
 		}
@@ -130,11 +134,11 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 																					 data[row,]$Database, data[row,]$UserID,
 																					 data[row,]$dbPassword, data[row,]$id))
 
-			connection <- poolCheckout(config_pool()) # can't write with the pool
-			rs <- dbSendQuery(connection, query) # update database
-			dbBind(rs, data_for_sql)
-			dbClearResult(rs)
-			poolReturn(connection)
+			connection <- pool::poolCheckout(config_pool()) # can't write with the pool
+			rs <- DBI::dbSendQuery(connection, query) # update database
+			DBI::dbBind(rs, data_for_sql)
+			DBI::dbClearResult(rs)
+			pool::poolReturn(connection)
 
 			BPdatabase(data)
 			servers_list_change(servers_list_change() + 1) # this value returned by module
@@ -150,11 +154,11 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 			query <- "DELETE FROM Server WHERE id = ?"
 			data_for_sql <- as.list.data.frame(c(data[row,]$id))
 
-			connection <- poolCheckout(config_pool()) # can't write with the pool
-			rs <- dbSendQuery(connection, query) # update database
-			dbBind(rs, data_for_sql)
-			dbClearResult(rs)
-			poolReturn(connection)
+			connection <- pool::poolCheckout(config_pool()) # can't write with the pool
+			rs <- DBI::dbSendQuery(connection, query) # update database
+			DBI::dbBind(rs, data_for_sql)
+			DBI::dbClearResult(rs)
+			pool::poolReturn(connection)
 
 			BPdatabase(data[-c(row),])
 			servers_list_change(servers_list_change() + 1) # this value returned by module
@@ -162,7 +166,7 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 		return(BPdatabase())
 	}
 	# depends on modularized version of DTedit
-	servers_edited <- callModule(dtedit, "servers",
+	servers_edited <- callModule(DTedit::dtedit, "servers",
 															 thedataframe = BPdatabase, # pass a ReactiveVal
 															 view.cols = servers_dt_viewcols, # no need to show 'id' in future
 															 edit.cols = servers_dt_editcols,
@@ -186,7 +190,7 @@ locations_datatableUI <- function(id) {
 	ns <- NS(id)
 
 	tagList(
-		dteditUI(ns("locations"))
+		DTedit::dteditUI(ns("locations"))
 	)
 }
 
@@ -229,22 +233,25 @@ locations_datatable <- function(input, output, session, PracticeLocations, UserC
 		} else {
 
 			newid <- max(c(as.data.frame(PracticeLocations())$id, 0)) + 1
-			# initially, PracticeLocations$id might be an empty set, so need to append a '0'
+			# initially, PracticeLocations$id might be an empty set
+			# so need to append a '0'
 			data[row, ]$id <- newid
 
 			query <- "INSERT INTO Location (id, Name, Description) VALUES (?, ?, ?)"
 			data_for_sql <- as.list.data.frame(c(newid, data[row,]$Name, data[row,]$Description))
 
-			connection <- poolCheckout(config_pool()) # can't write with the pool
-			rs <- dbSendQuery(connection, query) # parameterized query can handle apostrophes etc.
-			dbBind(rs, data_for_sql)
+			connection <- pool::poolCheckout(config_pool()) # can't write with the pool
+			rs <- DBI::dbSendQuery(connection, query)
+			# parameterized query can handle apostrophes etc.
+			DBI::dbBind(rs, data_for_sql)
 			# for statements, rather than queries, we don't need to dbFetch(rs)
 			# update database
-			dbClearResult(rs)
-			poolReturn(connection)
+			DBI::dbClearResult(rs)
+			pool::poolReturn(connection)
 
 			PracticeLocations(data) # update the dataframe in memory
-			location_list_change(location_list_change() + 1) # this value returned by module
+			location_list_change(location_list_change() + 1)
+			# this value returned by module
 
 			return(PracticeLocations())
 		}
@@ -262,14 +269,15 @@ locations_datatable <- function(input, output, session, PracticeLocations, UserC
 			query <- "UPDATE Location SET Name = ?, Description = ? WHERE id = ?"
 			data_for_sql <- as.list.data.frame(c(data[row,]$Name, data[row,]$Description, data[row,]$id))
 
-			connection <- poolCheckout(config_pool()) # can't write with the pool
-			rs <- dbSendQuery(connection, query) # update database
-			dbBind(rs, data_for_sql)
-			dbClearResult(rs)
-			poolReturn(connection)
+			connection <- pool::poolCheckout(config_pool()) # can't write with the pool
+			rs <- DBI::dbSendQuery(connection, query) # update database
+			DBI::dbBind(rs, data_for_sql)
+			DBI::dbClearResult(rs)
+			pool::poolReturn(connection)
 
 			PracticeLocations(data)
-			location_list_change(location_list_change() + 1) # this value returned by module
+			location_list_change(location_list_change() + 1)
+			# this value returned by module
 
 			return(PracticeLocations())
 		}
@@ -283,11 +291,12 @@ locations_datatable <- function(input, output, session, PracticeLocations, UserC
 			query <- "DELETE FROM Location WHERE id = ?"
 			data_for_sql <- as.list.data.frame(c(data[row,]$id))
 
-			connection <- poolCheckout(config_pool()) # can't write with the pool
-			rs <- dbSendQuery(connection, query) # update database
-			dbBind(rs, data_for_sql)
-			dbClearResult(rs)
-			poolReturn(connection)
+			connection <- pool::poolCheckout(config_pool())
+			# can't write with the pool
+			rs <- DBI::dbSendQuery(connection, query) # update database
+			DBI::dbBind(rs, data_for_sql)
+			DBI::dbClearResult(rs)
+			pool::poolReturn(connection)
 
 			PracticeLocations(data[-c(row),])
 			location_list_change(location_list_change() + 1) # this value returned by module
@@ -296,7 +305,7 @@ locations_datatable <- function(input, output, session, PracticeLocations, UserC
 	}
 
 	# depends on modularized version of DTedit
-	locations_edited <- callModule(dtedit, "locations",
+	locations_edited <- callModule(DTedit::dtedit, "locations",
 																 thedataframe = PracticeLocations, # pass a ReactiveVal
 																 view.cols = locations_dt_viewcols, # no need to show 'id' in future
 																 edit.cols = c("Name", "Description"),
@@ -318,7 +327,7 @@ userconfig_datatableUI <- function(id) {
 	ns <- NS(id)
 
 	tagList(
-		dteditUI(ns("userconfigs"))
+		DTedit::dteditUI(ns("userconfigs"))
 	)
 }
 
@@ -345,7 +354,8 @@ userconfig_datatable <- function(input, output, session, UserConfig, LocationNam
 	observeEvent(db$dbversion, {
 		if (!is.null(db$users)) {
 			usernames(db$users %>% select(Fullname) %>% collect() %>% unlist(use.names = FALSE))
-			# extract from EMR database. note that this is NOT reactive to underlying change in EMR database
+			# extract from EMR database. note that this is NOT reactive to
+		  # underlying change in EMR database
 			# can't exclude names already configured, because this is also used when
 			# editing a current user configuration
 		}
@@ -370,16 +380,18 @@ userconfig_datatable <- function(input, output, session, UserConfig, LocationNam
 													 # $Location and $Attribute could both have multiple (or no) entries
 													 lo = paste0(data[row,]$Location[[1]], "", collapse = ";"),
 													 at = paste0(data[row,]$Attributes[[1]], "", collapse = ";"))
-			connection <- poolCheckout(config_pool()) # can't write with the pool
-			rs <- dbSendQuery(connection, query) # parameterized query can handle apostrophes etc.
-			dbBind(rs, data_for_sql)
+			connection <- pool::poolCheckout(config_pool()) # can't write with the pool
+			rs <- DBI::dbSendQuery(connection, query)
+			# parameterized query can handle apostrophes etc.
+			DBI::dbBind(rs, data_for_sql)
 			# for statements, rather than queries, we don't need to dbFetch(rs)
 			# update database
-			dbClearResult(rs)
-			poolReturn(connection)
+			DBI::dbClearResult(rs)
+			pool::poolReturn(connection)
 
 			UserConfig(data) # update the dataframe in memory
-			userconfig_list_change(userconfig_list_change() + 1) # this value returned by module
+			userconfig_list_change(userconfig_list_change() + 1)
+			# this value returned by module
 
 			return(UserConfig())
 		}
@@ -398,14 +410,16 @@ userconfig_datatable <- function(input, output, session, UserConfig, LocationNam
 																paste0(data[row,]$Attributes[[1]], "", collapse = ";"),
 																data[row,]$id))
 			# note extra "" within paste0 is required in the case of empty data
-			connection <- poolCheckout(config_pool()) # can't write with the pool
-			rs <- dbSendQuery(connection, query) # update database
-			dbBind(rs, data_for_sql)
-			dbClearResult(rs)
-			poolReturn(connection)
+			connection <- pool::poolCheckout(config_pool())
+			# can't write with the pool
+			rs <- DBI::dbSendQuery(connection, query) # update database
+			DBI::dbBind(rs, data_for_sql)
+			DBI::dbClearResult(rs)
+			pool::poolReturn(connection)
 
 			UserConfig(data)
-			userconfig_list_change(userconfig_list_change() + 1) # this value returned by module
+			userconfig_list_change(userconfig_list_change() + 1)
+			# this value returned by module
 
 			return(UserConfig())
 		}
@@ -417,19 +431,20 @@ userconfig_datatable <- function(input, output, session, UserConfig, LocationNam
 		query <- "DELETE FROM Users WHERE id = ?"
 		data_for_sql <- as.list.data.frame(c(data[row,]$id))
 
-		connection <- poolCheckout(config_pool()) # can't write with the pool
-		rs <- dbSendQuery(connection, query) # update database
-		dbBind(rs, data_for_sql)
-		dbClearResult(rs)
-		poolReturn(connection)
+		connection <- pool::poolCheckout(config_pool()) # can't write with the pool
+		rs <- DBI::dbSendQuery(connection, query) # update database
+		DBI::dbBind(rs, data_for_sql)
+		DBI::dbClearResult(rs)
+		pool::poolReturn(connection)
 
 		UserConfig(data[-c(row),])
-		userconfig_list_change(userconfig_list_change() + 1) # this value returned by module
+		userconfig_list_change(userconfig_list_change() + 1)
+		# this value returned by module
 
 		return(UserConfig())
 	}
 	# depends on modularized version of DTedit
-	userconfig_edited <- callModule(dtedit, "userconfigs",
+	userconfig_edited <- callModule(DTedit::dtedit, "userconfigs",
 																	thedataframe = UserConfig, # pass a ReactiveVal
 																	view.cols = userconfig_dt_viewcols, # no need to show 'id' in future
 																	edit.cols = userconfig_dt_editcols,

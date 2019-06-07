@@ -38,3 +38,15 @@ ImportComments:
  DTedit - datatable edit wrapper.
  substantially based on jbryer/DTedit
  install with devtools::install_github('DavidPatShuiFong/DTedit')
+Collate: 
+    'DailyMeasure.R'
+    'DailyMeasureServer.R'
+    'module_Configuration.R'
+    'module_CDM.R'
+    'module_Billings.R'
+    'module_CancerScreen.R'
+    'module_Immunization.R'
+    'module_Appointments.R'
+    'DailyMeasureUI.R'
+    'calculation_definitions.R'
+    'fomantic_definitions.R'

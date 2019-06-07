@@ -1,3 +1,7 @@
+#' @include module_Appointments.R module_Immunization.R module_CancerScreen.R
+#' @include module_Billings.R module_CDM.R module_Configuration.R
+NULL
+
 #' Shiny app UI object
 
 ##### Define UI for application ######################

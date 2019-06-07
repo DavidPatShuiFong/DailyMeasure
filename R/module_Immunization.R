@@ -325,11 +325,6 @@ vax_datatable <- function(input, output, session,
   # output - none
   ns <- session$ns
 
-  # fomantic/semantic UI definitions
-  source("./modules/fomantic_definitions.R")
-  # age calculation functions
-  source("./modules/calculation_definitions.R")
-
   vax_names <- c("Zostavax", "Influenza")
 
   output$vax_item_choice <- renderUI({

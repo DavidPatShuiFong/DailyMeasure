@@ -35,9 +35,6 @@ billings_datatable <- function(input, output, session,
 	# output - none
 	ns <- session$ns
 
-	# fomantic/semantic UI definitions
-	source("./modules/fomantic_definitions.R")
-
 	# MBS (medicare benefits schedule) item numbers for CDM
 
 	# billings_names <- ""

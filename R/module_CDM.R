@@ -41,9 +41,6 @@ cdm_datatable <- function(input, output, session,
 	# output - none
 	ns <- session$ns
 
-	# fomantic/semantic UI definitions
-	source("./modules/fomantic_definitions.R")
-
 	# MBS (medicare benefits schedule) item numbers for CDM
 	cdm_item <- data.frame(
 		code = c(721, 723, 732, 703, 705, 707, 2517, 2521, 2525, 2546, 2552, 2558, 2700, 2701, 2715, 2717),

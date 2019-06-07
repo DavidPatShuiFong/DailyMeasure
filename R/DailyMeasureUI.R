@@ -83,13 +83,13 @@ DailyMeasureUI <- function() {
 				# However, I have removed a lot of margin/padding/font re-definition
 				# that is included in the header,
 				# which disturbs the layout of shiny/flexdashboard
-				tags$link(rel = "stylesheet", type = "text/css", href = "./fomantic_components.css"),
+				includeCSS(system.file('www', 'fomantic_components.css', package = "DailyMeasure")),
 				# defining additional fomantic JS popup initialization in the header does not work.
 				# Popup initialization does work inside DataTables
 				# use of 'full' fomantic.js interferes with the popups from DTedit
 				# minimum JS required for JS popups is popup.js and transition.js
-				tags$script(src = "./popup.js"),
-				tags$script(src = "./transition.js"),
+				includeScript(system.file('www', 'popup.js', package = 'DailyMeasure')),
+				includeScript(system.file('www', 'transition.js', package = 'DailyMeasure')),
 				# Pushes the export/save buttons for datatables to the right
 				# and provide padding on the top
 				tags$style(HTML(".dataTables_wrapper .dt-buttons { float:none;

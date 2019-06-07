@@ -57,7 +57,7 @@ datatable_styled <- function(data, fillContainer = TRUE,
                              extensions = c('Buttons', 'Scroller', 'Responsive'),
                              dom = 'frltiBp',
                              buttons = c('copyHtml5', 'csvHtml5', 'excel', 'pdf', 'print'),
-                             initComplete = htmlwidgets::JS(semantic_popupJS),
+                             initComplete = DT::JS(semantic_popupJS),
                              paging = FALSE,
                              scrollY = "60vh",
                              # 60% of window height, otherwise will just a few rows in size

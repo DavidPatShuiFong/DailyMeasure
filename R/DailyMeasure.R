@@ -11,6 +11,6 @@
 launchApp <- function () {
 
   ##### Run the application ###########################################
-  shinyApp(ui = DailyMeasureUI, server = DailyMeasureServer)
+  shinyApp(ui = DailyMeasureUI(), server = DailyMeasureServer)
 
 }

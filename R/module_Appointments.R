@@ -40,7 +40,8 @@ appointments_datatable <- function(input, output, session,
 
 	styled_appointments_list <- reactive({
 	  validate(
-	    need(appointments_filtered_time(), "No appointments in selected range")
+	    need(appointments_filtered_time(), "No appointments in selected range"),
+	    need(nrow(appointments_filtered_time()) > 0, "No appointments in selected range")
 	  )
 
 		datatable_styled(appointments_filtered_time() %>%

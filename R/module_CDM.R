@@ -1,14 +1,19 @@
-##### information modules ###############################################################
-
 ##### CDM (chronic disease management) modules ##########################################
 
+#' Chronic Disease Management (CDM) module - UI function
+#'
+#' Display CDM status and opportunities within selected range of dates and providers
+#'
+#' @param id module ID (used in conjunction with 'callModule')
+#'
+#' @return Shiny user interface element
 cdm_datatableUI <- function(id) {
 	ns <- NS(id)
 
 	tagList(
 		fluidRow(
 			column(4,
-						 switchInput(
+						 shinyWidgets::switchInput(
 						 	inputId = ns("printcopy_view"),
 						 	label = "<i class=\"fas fa-print\"></i> </i><i class=\"far fa-copy\"></i>  Print and Copy View",
 						 	labelWidth = "100%")
@@ -17,32 +22,40 @@ cdm_datatableUI <- function(id) {
 						 uiOutput(ns("cdm_item_choice"))
 			)
 		),
-		withSpinner(DT::DTOutput(ns("cdm_table")),
-		            type = 8,
-		            hide.element.when.recalculating = FALSE,
-		            proxy.height = NULL)
+		shinycssloaders::withSpinner(
+		  DT::DTOutput(ns("cdm_table")),
+		  type = 8,
+		  hide.element.when.recalculating = FALSE,
+		  proxy.height = NULL)
 	)
 }
 
+#' Chronic disease management list module - server
+#'
+#' chronic disease management items claimed, pending or unclaimed for appointment list
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param appointments_billings reactive. joining appointments and billings
+#' @param appointments_filtered reactive
+#' @param appointments_filtered_time reactive. filtered appointments list
+#' @param appointments_list reactive. same as appointments_filtered_time, but with DOB and Age added
+#' @param diabetes_list vector of diabetic patients with appointments
+#' @param asthma_list vector of asthma patients with apponitments
+#' @param dbhistory table of history items, lazy evaluation
+#' @param appointments_filtered_time reactive list of appointments attached to all billings
+#' @param db access to database tables from Best Practice EMR
+#'
+#' @include fomantic_definitions.R
+#'
+#' @return none
 cdm_datatable <- function(input, output, session,
 													appointments_billings, appointments_filtered,
 													appointments_filtered_time, appointments_list,
 													diabetes_list, asthma_list,
 													dbHistory) {
-	# chronic disease management items claimed, pending or unclaimed for appointment list
-	# input - input, output, session (as required by modules)
-	# input - appointments_billings - reactive. joining appointments and billings
-	# input - appointments_filtered - reactive
-	# input - appointments_filtered_time - reactive. filtered appointments list
-	# input - appointments_list - reactive. same as appointments_filtered_time, but with DOB and Age added
-	# input - diabetes_list - vector of diabetic patients with appointments
-	# input - asthma_list - vector of asthma patients with apponitments
-	# input - dbhistory - table of history items, lazy evaluation
-	# output - none
 	ns <- session$ns
-
-	# fomantic/semantic UI definitions
-	source("./modules/fomantic_definitions.R")
 
 	# MBS (medicare benefits schedule) item numbers for CDM
 	cdm_item <- data.frame(
@@ -54,13 +67,14 @@ cdm_datatable <- function(input, output, session,
 	cdm_item_names <- as.character(unique(cdm_item$name)) # de-factored
 
 	output$cdm_item_choice <- renderUI({
-		dropdown(
+		shinyWidgets::dropdown(
 			input_id = "choice_dropdown",
-			checkboxGroupButtons(inputId = ns("cdm_chosen"), label = "CDM items shown",
-													 choices = cdm_item_names, selected = cdm_item_names,
-													 # all choices initially selected
-													 status = "primary",
-													 checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
+			shinyWidgets::checkboxGroupButtons(
+			  inputId = ns("cdm_chosen"), label = "CDM items shown",
+			  choices = cdm_item_names, selected = cdm_item_names,
+			  # all choices initially selected
+			  status = "primary",
+			  checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
 			icon = icon("gear"),
 			label = "CDM items shown"
 		)
@@ -105,7 +119,7 @@ cdm_datatable <- function(input, output, session,
 				slice(which.max(ServiceDate)) %>%
 				ungroup() %>%
 				# (one) item with latest servicedate
-				filter((MBSName == "GPMP R/V") | interval(ServiceDate, AppointmentDate)>months(3)) %>%
+				filter((MBSName == "GPMP R/V") | lubridate::interval(ServiceDate, AppointmentDate)>months(3)) %>%
 				# minimum 3-month gap since claiming previous GPMP/TCA,
 				# or most recent claim is a GPMP R/V
 				mutate(mbstag =
@@ -114,7 +128,7 @@ cdm_datatable <- function(input, output, session,
 							 							 	if_else(MBSName %in% c("GPMP", "TCA"),
 							 							 					'red',
 							 							 					# no GPMP R/V since the last GPMP/TCA
-							 							 					if_else(interval(ServiceDate, AppointmentDate)<months(3),
+							 							 					if_else(lubridate::interval(ServiceDate, AppointmentDate)<months(3),
 							 							 									# GPMP R/V. Less than or more than 3 months?
 							 							 									'green',
 							 							 									'yellow')),
@@ -125,7 +139,7 @@ cdm_datatable <- function(input, output, session,
 							 mbstag_print = paste0("GPMP R/V", " ", # printable version of information
 							 											if_else(MBSName %in% c("GPMP", "TCA"),
 							 															paste0("(", MBSName, ": ", ServiceDate, ") Overdue"),
-							 															if_else(interval(ServiceDate, AppointmentDate)<months(3),
+							 															if_else(lubridate::interval(ServiceDate, AppointmentDate)<months(3),
 							 																			paste0("(", ServiceDate, ")"),
 							 																			paste0("(", ServiceDate, ") Overdue"))
 							 											)
@@ -151,25 +165,30 @@ cdm_datatable <- function(input, output, session,
 			mutate(mbstag =
 						 	semantic_tag(MBSName, # semantic/fomantic buttons
 						 							 colour =
-						 							 	if_else(ServiceDate == -Inf,
-						 							 					'red',
-						 							 					# invalid date is '-Inf', means item not claimed yet
-						 							 					if_else(interval(ServiceDate, AppointmentDate)<years(1),
-						 							 									'green',
-						 							 									'yellow')),
+						 							 	if_else(
+						 							 	  ServiceDate == -Inf,
+						 							 	  'red',
+						 							 	  # invalid date is '-Inf', means item not claimed yet
+						 							 	  if_else(
+						 							 	    lubridate::interval(ServiceDate, AppointmentDate)<lubridate::years(1),
+						 							 	    'green',
+						 							 	    'yellow')),
 						 							 popuphtml =
-						 							 	paste0("<h4>Date : ", ServiceDate,
-						 							 				 "</h4><h6>Item : ", MBSItem,
-						 							 				 "</h6><p><font size=\'+0\'>", Description, "</p>")),
-						 mbstag_print = paste0(MBSName, " ", # printable version of information
-						 											if_else(ServiceDate == -Inf,
-						 															'',
-						 															paste0("(", ServiceDate, ")",
-						 																		 if_else(interval(ServiceDate, AppointmentDate)<years(1),
-						 																		 				"", " Overdue")))
-						 )
+						 							   paste0("<h4>Date : ", ServiceDate,
+						 							          "</h4><h6>Item : ", MBSItem,
+						 							          "</h6><p><font size=\'+0\'>", Description, "</p>")),
+						 	mbstag_print = paste0(MBSName, " ", # printable version of information
+						 	                      if_else(
+						 	                        ServiceDate == -Inf,
+						 	                        '',
+						 	                        paste0("(", ServiceDate, ")",
+						 	                               if_else(
+						 	                                 lubridate::interval(ServiceDate, AppointmentDate)<lubridate::years(1),
+						 	                                 "",
+						 	                                 " Overdue")))
+						 	)
 			) %>%
-			rbind(gpmprv) %>% # add in GPMP reviews
+		  rbind(gpmprv) %>% # add in GPMP reviews
 			group_by(InternalID, AppointmentDate, AppointmentTime, Provider) %>%
 			# gathers item numbers on the same day into a single row
 			summarise(cdm = paste(mbstag, collapse = ""),
@@ -251,7 +270,7 @@ cdm_datatable <- function(input, output, session,
 		}
 	})
 
-	output$cdm_table <- renderDT({
+	output$cdm_table <- DT::renderDT({
 		cdm_styled_datatable()
 	},
 	server = TRUE)

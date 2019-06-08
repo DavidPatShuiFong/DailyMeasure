@@ -1,0 +1,53 @@
+Package: DailyMeasure
+Type: Package
+Title: Case-finds from patient appointment list
+Version: 0.2.1
+Author: David Fong
+Maintainer: David Fong <vkelim@bigpond.com>
+Description: R Shiny application looking through Electronic Medical Record's (EMR)
+ patient appointment lists. The EMR used is 'Best Practice'.
+ Finds and displays information about intervention, care planning and health
+ assessment opportunities.
+License: (C) David Fong. All rights reserved. License: file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.1
+Depends:
+ tidyverse,
+ dbplyr
+Imports: 
+ shiny,
+ shinyjs,
+ shinydashboard,
+ shinydashboardPlus (>= 0.7.0),
+ shinyWidgets,
+ shinytoastr, 
+ shinyFiles (>= 0.7.2),
+ shinycssloaders,
+ DBI,  
+ odbc,
+ RSQLite,
+ pool,  
+ configr,  
+ DT,       
+ lubridate,
+ DTedit
+ImportComments:
+ shinycssloaders - loading animations
+ custom version based on Gao Zheng's 'transparent' background version
+ installed with devtools::install_github('DavidPatShuiFong/shinycssloaders')
+ DTedit - datatable edit wrapper.
+ substantially based on jbryer/DTedit
+ install with devtools::install_github('DavidPatShuiFong/DTedit')
+Collate: 
+    'DailyMeasure.R'
+    'DailyMeasureServer.R'
+    'module_Configuration.R'
+    'fomantic_definitions.R'
+    'module_CDM.R'
+    'module_Billings.R'
+    'module_CancerScreen.R'
+    'calculation_definitions.R'
+    'module_Immunization.R'
+    'module_Appointments.R'
+    'DailyMeasureUI.R'

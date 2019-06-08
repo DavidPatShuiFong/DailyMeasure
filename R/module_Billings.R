@@ -1,62 +1,54 @@
 ##### Billings module ##########################################
 
+#' Appointments module - UI function
+#'
+#' Display appointments within selected range of dates and providers
+#'
+#' @param id module ID (used in conjunction with 'callModule')
+#'
+#' @return Shiny user interface element
 billings_datatableUI <- function(id) {
 	ns <- NS(id)
 
 	tagList(
 		fluidRow(
 			column(4,
-						 switchInput(
+						 shinyWidgets::switchInput(
 						 	inputId = ns("printcopy_view"),
 						 	label = "<i class=\"fas fa-print\"></i> </i><i class=\"far fa-copy\"></i>  Print and Copy View",
 						 	labelWidth = "100%")
 			)
 		),
-		withSpinner(DT::DTOutput(ns("billings_table")),
-		            type = 8,
-		            hide.element.when.recalculating = FALSE,
-		            proxy.height = NULL)
+		shinycssloaders::withSpinner(
+		  DT::DTOutput(ns("billings_table")),
+		  type = 8,
+		  hide.element.when.recalculating = FALSE,
+		  proxy.height = NULL)
 	)
 }
 
-##### billing sub-functions ######
+##### server side ##########################################
 
-##### server side #######
-
+#' appointment list module - server
+#'
+#' list of appointments and billings
+#' within selected range of dates and providers
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param appointments_filtered_time reactive list of appointments attached to all billings
+#' @param db access to database tables from Best Practice EMR
+#'
+#' @include fomantic_definitions.R
+#'
+#' @return none
+#'
 billings_datatable <- function(input, output, session,
                                appointments_billings, db) {
-  # billings items claimed
-  # input - input, output, session (as required by modules)
-  # input - appointments_billings - reactive list of appointments attached to all billings
-  # input - access to database tables from Best Practice EMR
-  # input - calling_input (reactive) and menuitemtabname (string)
-  #  - 'input' of calling environment. is billings tab currently chosen? or just selected?
-  # input - inputupdatedate (reactive button) and clinician_choice_list (reactiveVal)
-	# output - none
 	ns <- session$ns
 
-	# fomantic/semantic UI definitions
-	source("./modules/fomantic_definitions.R")
-
 	# MBS (medicare benefits schedule) item numbers for CDM
-
-	# billings_names <- ""
-	#	output$billings_choice <- renderUI({
-	#	  checkboxGroupButtons(inputId = ns("billings_chosen"), label = "billings shown",
-	#	                       choices = cancerscreen_names, selected = billings_names,
-	#	                       # all choices initially selected
-	#	                       status = "primary",
-	#	                       checkIcon = list(yes = icon("ok", lib = "glyphicon")))
-	#	})
-
-	# billings_selected <- reactiveVal(billings_names)
-	# use instead of input$billings_chosen directly because
-	# input$billings_chosen is not defined until the dropdown button is selected!
-	#observeEvent(input$billings_chosen, ignoreNULL = FALSE, ignoreInit = TRUE, {
-		# cannot ignoreNULL because all  items could be de-selected
-		# ignoreInit is true because input$cancerscreen_chosen is not defined initially
-	#	billings_selected(input$billings_chosen)
-	#})
 
 	# filter to billings which are done on the same day as displayed appointments
 	appointments_billings_sameday <- reactive({
@@ -154,7 +146,7 @@ billings_datatable <- function(input, output, session,
 	#	               }
 	#	})
 
-	output$billings_table <- renderDT({
+	output$billings_table <- DT::renderDT({
 	  styled_billings_list()
 	})
 }

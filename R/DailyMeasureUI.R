@@ -1,12 +1,10 @@
+#' Shiny app UI object
+#' create the shiny application user interface
+#'
 #' @include module_Appointments.R module_Immunization.R module_CancerScreen.R
 #' @include module_Billings.R module_CDM.R module_Configuration.R
-NULL
-# requires all moduleUI definitions to be defined
-
-#' Shiny app UI object
-
-##### Define UI for application ######################
-# create the shiny application user interface
+#' requires all moduleUI definitions to be defined
+#'
 DailyMeasureUI <- function() {
 	shinydashboardPlus::dashboardPagePlus(
 

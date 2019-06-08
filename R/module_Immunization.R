@@ -1,4 +1,4 @@
-#' @source fomantic_definitions.R calculation_definitions.R
+#' @include fomantic_definitions.R calculation_definitions.R
 NULL
 # requires fomantic/semantic definitions and date calculations
 

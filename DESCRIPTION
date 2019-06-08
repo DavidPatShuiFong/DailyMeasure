@@ -24,7 +24,6 @@ Imports:
  shinytoastr, 
  shinyFiles (>= 0.7.2),
  shinycssloaders,
- dbplyr,
  DBI,  
  odbc,
  RSQLite,
@@ -48,7 +47,7 @@ Collate:
     'module_CDM.R'
     'module_Billings.R'
     'module_CancerScreen.R'
+    'calculation_definitions.R'
     'module_Immunization.R'
     'module_Appointments.R'
     'DailyMeasureUI.R'
-    'calculation_definitions.R'

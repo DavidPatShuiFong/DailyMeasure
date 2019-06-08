@@ -1,7 +1,12 @@
-#' Appointments module
-
 ##### Appointments module ##########################################
 
+#' Appointments module - UI function
+#'
+#' Display appointments within selected range of dates and providers
+#'
+#' @param id module ID (used in conjunction with 'callModule')
+#'
+#' @return Shiny user interface element
 appointments_datatableUI <- function(id) {
 
 	ns <- shiny::NS(id)
@@ -16,16 +21,20 @@ appointments_datatableUI <- function(id) {
 	)
 }
 
-##### appointments sub-functions ######
+##### server side #####################
 
-##### server side #######
-
+#' appointment list module - server
+#'
+#' list of appointments within selected range of dates and providers
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param appointments_filtered_time - reactive list of appointments
+#'
+#' @return none
 appointments_datatable <- function(input, output, session,
                                appointments_filtered_time) {
-  # billings items claimed
-  # input - input, output, session (as required by modules)
-  # input - appointments_filtered_time - reactive list of appointments
-	# output - none
 	ns <- session$ns
 
 	# fomantic/semantic UI definitions not required

@@ -10,6 +10,14 @@ datatable_styled(data, fillContainer = TRUE, extensions = c("Buttons",
   initComplete = DT::JS(semantic_popupJS), paging = FALSE,
   scrollY = "60vh", ...)
 }
+\arguments{
+\item{initComplete}{by default, execute JS code to enable semantic popups}
+
+\item{paging}{set to FALSE, otherwise hard to 'print'/copy a whole table}
+}
+\value{
+DT datatable object
+}
 \description{
 by default, have export/print buttons, only render what is visible.
 javascript code to attach labels to semantic/fomantic JS popups.

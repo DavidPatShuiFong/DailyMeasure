@@ -1,28 +1,31 @@
-#' Shiny app server function
-
 ##### Define server logic #####################################################
+
+#' Shiny app server function
+#'
+#' @return None
+#'
 DailyMeasureServer <- function(input, output, session) {
 
   # read config files
 
-	##### Configuration file ######################################################
+  ##### Configuration file ######################################################
 
-	if (configr::is.yaml.file('./DailyMeasure_cfg.yaml')) {
-		# if config file exists and is a YAML-type file
-		local_config <- configr::read.config("./DailyMeasure_cfg.yaml")
-		# config in local location
-	} else {
-		# local config file does not exist. possibly first-run
-		local_config <- list()
-		local_config$config_file <- c("./DailyMeasure_cfg.sqlite")
-		# main configuration file, could be set to 'common location'
-		# write the (minimalist) local config file
-		configr::write.config(
-		  local_config,
-		  file.path = "./DailyMeasure_cfg.yaml",
-		  write.type = "yaml"
-		  )
-	}
+  if (configr::is.yaml.file('./DailyMeasure_cfg.yaml')) {
+    # if config file exists and is a YAML-type file
+    local_config <- configr::read.config("./DailyMeasure_cfg.yaml")
+    # config in local location
+  } else {
+    # local config file does not exist. possibly first-run
+    local_config <- list()
+    local_config$config_file <- c("./DailyMeasure_cfg.sqlite")
+    # main configuration file, could be set to 'common location'
+    # write the (minimalist) local config file
+    configr::write.config(
+      local_config,
+      file.path = "./DailyMeasure_cfg.yaml",
+      write.type = "yaml"
+    )
+  }
 
   # local_config <- reactiveValues(config_file = character())
   config_pool <- reactiveVal()
@@ -183,11 +186,17 @@ DailyMeasureServer <- function(input, output, session) {
         server = server$Address, database = server$Database,
         uid = server$UserID, pwd = server$dbPassword),
         error = function(e) {
-          shinyWidgets::sendSweetAlert(
-            session = session,
-            title = "Error opening database",
-            text = e,
-            type = "error")
+          shinytoastr::toastr_error(
+            paste0(e), title = "Error opening Best Practice database",
+            closeButton = TRUE, position = "top-center",
+            timeOut = 0) # stays open until clicked
+          # SweetAlert from shinyWidgets not working as of June/2019
+          # (including in shinyWidget's gallery)
+          # shinyWidgets::sendSweetAlert(
+          #  session = session,
+          #  title = "Error opening database",
+          #  text = e,
+          #  type = "error")
         }
       ))
 
@@ -220,6 +229,30 @@ DailyMeasureServer <- function(input, output, session) {
     }
   }, ignoreInit = TRUE)
 
+  UserFullConfig <- reactiveVal(NULL)
+  # contains user names attached to configuration information
+  # contains ALL user names
+  # UserConfig() contains just names who have been configured
+
+  observeEvent(c(db$users, UserConfig()), ignoreNULL = FALSE, {
+    if (is.null(db$users)) {
+      UserFullConfig(NULL)
+    } else {
+      UserFullConfig(db$users %>% collect() %>%
+                       # forces database to be read
+                       # (instead of subsequent 'lazy' read)
+                       # collect() required for mutation and left_join
+                       mutate(Title = trimws(Title),
+                              Firstname = trimws(Firstname),
+                              Surname = trimws(Surname)) %>%
+                       mutate(Fullname =
+                                paste(Title, Firstname, Surname, sep = ' ')) %>%
+                       # include 'Fullname'
+                       left_join(UserConfig(), by = 'Fullname'))
+      # add user details including practice locations
+    }
+  })
+
   ### configuration database changes
 
   observeEvent(config_pool(), ignoreNULL = TRUE, {
@@ -245,13 +278,11 @@ DailyMeasureServer <- function(input, output, session) {
   initialize_tables <- function(emrpool) {
 
     db$users <- emrpool() %>%
+      # this is a function! a collect() is later called prior to mutate/join,
+      # (as a result is no longer a 'lazy eval') and cannot be evaluated just once.
       # output - Fullname, UserID, Surname, Firstname, LocationName, Title, ProviderNo
       tbl(in_schema('dbo', 'BPS_Users')) %>%
-      select(c('UserID', 'Surname', 'Firstname', 'LocationName', 'Title', 'ProviderNo')) %>%
-      collect() %>%     # forces database to be read (instead of subsequent 'lazy' read)
-      mutate(Title = trimws(Title), Firstname = trimws(Firstname), Surname = trimws(Surname)) %>%
-      mutate(Fullname = paste(Title, Firstname, Surname, sep = ' ')) %>%
-      left_join(UserConfig(), by = 'Fullname')   # add user details including practice locations
+      select(c('UserID', 'Surname', 'Firstname', 'LocationName', 'Title', 'ProviderNo'))
 
     db$patients <- emrpool() %>%
       tbl(in_schema('dbo', 'BPS_Patients'))
@@ -379,12 +410,13 @@ DailyMeasureServer <- function(input, output, session) {
       if (!is.null(input$location)) { # only if initialized
         clinician_choice_list(
           if (isolate(input$location) == 'All') {
-            db$users$Fullname
+            UserFullConfig()$Fullname
           }
           else {
-            subset(db$users, Location == input$location)$Fullname
-            # initially, $Location might include a lot of NA,
-            # so db$users[db$users$Location == input$location,] will also return NAs
+            subset(UserConfig()$Fullname,
+                   sapply(UserConfig()$Location,
+                          function (y) input$location %in% y))
+            # initially, $Location might include a lot of NA
           }
         )
         # note that 'ifelse' only returns result in the same 'shape' as the comparison statement
@@ -818,7 +850,8 @@ DailyMeasureServer <- function(input, output, session) {
   })
 
   userconfig_change <- callModule(userconfig_datatable, "userconfig_dt",
-                                  UserConfig, location_list_names, db, config_pool)
+                                  UserConfig, UserFullConfig,
+                                  location_list_names, db, config_pool)
 
   output$user <- shinydashboardPlus::renderUser({
     shinydashboardPlus::dashboardUser(

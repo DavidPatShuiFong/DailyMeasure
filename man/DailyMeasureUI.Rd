@@ -2,12 +2,13 @@
 % Please edit documentation in R/DailyMeasureUI.R
 \name{DailyMeasureUI}
 \alias{DailyMeasureUI}
-\title{Shiny app UI object
-create the shiny application user interface}
+\title{Shiny app UI object}
 \usage{
 DailyMeasureUI()
 }
+\value{
+dashboardPagePlus object
+}
 \description{
-Shiny app UI object
-create the shiny application user interface
+Creates the shiny application user interface
 }

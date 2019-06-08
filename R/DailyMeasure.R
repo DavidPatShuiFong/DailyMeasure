@@ -2,13 +2,13 @@
 #' (C) David Fong, 2019
 #'
 #' launches the DailyMeasure app
-#' @return shiny application object
+#' @return None
 #'
 #' @import shiny tidyverse dbplyr
 #' @importFrom shinydashboard menuItem tabItems tabItem
 #'
 #' @export
-launchApp <- function () {
+DailyMeasure <- function () {
 
   ##### Run the application ###########################################
   shinyApp(ui = DailyMeasureUI(), server = DailyMeasureServer)

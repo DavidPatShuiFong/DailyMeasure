@@ -1,9 +1,12 @@
-#' @include fomantic_definitions.R
-NULL
-# requires fomantic/semantic definitions
-
 ##### CDM (chronic disease management) modules ##########################################
 
+#' Chronic Disease Management (CDM) module - UI function
+#'
+#' Display CDM status and opportunities within selected range of dates and providers
+#'
+#' @param id module ID (used in conjunction with 'callModule')
+#'
+#' @return Shiny user interface element
 cdm_datatableUI <- function(id) {
 	ns <- NS(id)
 
@@ -27,21 +30,31 @@ cdm_datatableUI <- function(id) {
 	)
 }
 
+#' Chronic disease management list module - server
+#'
+#' chronic disease management items claimed, pending or unclaimed for appointment list
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param appointments_billings reactive. joining appointments and billings
+#' @param appointments_filtered reactive
+#' @param appointments_filtered_time reactive. filtered appointments list
+#' @param appointments_list reactive. same as appointments_filtered_time, but with DOB and Age added
+#' @param diabetes_list vector of diabetic patients with appointments
+#' @param asthma_list vector of asthma patients with apponitments
+#' @param dbhistory table of history items, lazy evaluation
+#' @param appointments_filtered_time reactive list of appointments attached to all billings
+#' @param db access to database tables from Best Practice EMR
+#'
+#' @include fomantic_definitions.R
+#'
+#' @return none
 cdm_datatable <- function(input, output, session,
 													appointments_billings, appointments_filtered,
 													appointments_filtered_time, appointments_list,
 													diabetes_list, asthma_list,
 													dbHistory) {
-	# chronic disease management items claimed, pending or unclaimed for appointment list
-	# input - input, output, session (as required by modules)
-	# input - appointments_billings - reactive. joining appointments and billings
-	# input - appointments_filtered - reactive
-	# input - appointments_filtered_time - reactive. filtered appointments list
-	# input - appointments_list - reactive. same as appointments_filtered_time, but with DOB and Age added
-	# input - diabetes_list - vector of diabetic patients with appointments
-	# input - asthma_list - vector of asthma patients with apponitments
-	# input - dbhistory - table of history items, lazy evaluation
-	# output - none
 	ns <- session$ns
 
 	# MBS (medicare benefits schedule) item numbers for CDM

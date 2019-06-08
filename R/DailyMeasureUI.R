@@ -1,9 +1,12 @@
 #' Shiny app UI object
-#' create the shiny application user interface
+#'
+#' Creates the shiny application user interface
 #'
 #' @include module_Appointments.R module_Immunization.R module_CancerScreen.R
 #' @include module_Billings.R module_CDM.R module_Configuration.R
 #' requires all moduleUI definitions to be defined
+#'
+#' @return dashboardPagePlus object
 #'
 DailyMeasureUI <- function() {
 	shinydashboardPlus::dashboardPagePlus(

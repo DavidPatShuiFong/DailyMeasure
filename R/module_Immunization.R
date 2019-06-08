@@ -1,11 +1,12 @@
-#' @include fomantic_definitions.R calculation_definitions.R
-NULL
-# requires fomantic/semantic definitions and date calculations
-
-##### information modules ###############################################################
-
 ##### Immunization modules ##########################################
 
+#' immunization module - UI function
+#'
+#' Display immunization opportunities within selected range of dates and providers
+#'
+#' @param id module ID (used in conjunction with 'callModule')
+#'
+#' @return Shiny user interface element
 vax_datatableUI <- function(id) {
   ns <- NS(id)
 
@@ -311,6 +312,28 @@ influenza_list <- function(appointments_list, db,
   return(l)
 }
 
+#' immunization module - UI function
+#'
+#' vaccinations done, pending or never done for appointment list
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param appointments_list reactive. same as appointments_filtered_time, but with DOB and Age added
+#' @param db access to database tables from Best Practice EMR
+#' @param diabetes_list condition list
+#' @param asthma_list condition list
+#' @param atsi_list Aboriginal or Torres Strait islander
+#' @param malignancy patients with malignancy
+#' @param hiv patients with HIV
+#' @param haemoglobinopathy patients with blood conditions
+#' @param asplenic various immunocompromising conditions
+#' @param transplant_list those who have had transplants
+#'
+#' @include fomantic_definitions.R calculation_definitions.R
+#'
+#' @return none
+#'
 vax_datatable <- function(input, output, session,
                           appointments_list, db,
                           diabetes_list, asthma_list,
@@ -320,15 +343,6 @@ vax_datatable <- function(input, output, session,
                           bmi30_list, chroniclungdisease_list, neurologic_list,
                           chronicliverdisease_list, chronicrenaldisease_list,
                           pregnant_list) {
-  # vaccinations done, pending or never done for appointment list
-  # input - input, output, session (as required by modules)
-  # input - appointments_list - reactive. same as appointments_filtered_time, but with DOB and Age added
-  # input - db - EMR database
-  # input - diabetes_list, asthma_list - condition lists
-  # input - atsi_list - Aboriginal or Torres Strait islander
-  # input - malignancy, hiv, haemoglobinopathy, asplenic - various immunocompromising conditions
-  # input - transplant_list - those who have had transplants
-  # output - none
   ns <- session$ns
 
   vax_names <- c("Zostavax", "Influenza")

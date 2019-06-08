@@ -1,9 +1,13 @@
-#' @include fomantic_definitions.R
-NULL
-# requires fomantic/semantic definitions
-
 ##### cancer screening modules ##########################################
 
+#' Cancer screen User Interface module
+#'
+#' Datatable with list of patients and cancer screening opportunities.
+#' Includes 'printable' toggle, and selectable cancer screening dropdown.
+#'
+#' @param id module ID (used in conjunction with 'callModule')
+#'
+#' @return Shiny user interface element
 cancerscreen_datatableUI <- function(id) {
 	ns <- NS(id)
 
@@ -60,10 +64,14 @@ fobt_result_query <-
                          	      '12503-9','12504-7','27401-9','27925-7','27926-5',
 	                              '57905-2','56490-6','56491-4','29771-3')")
 
+#' Bowel cancer screening list
+#'
+#' @param appointments_list reactive, list of appointments to search
+#' @param emrpool accesss to Best Practice (EMR) database
+#'
+#' @return list of appointments (with patient details)
+#'
 fobt_list <- function(appointments_list, emrpool) {
-	# Bowel cancer screening
-	# input - appointments_list - reactive, list of appointments
-	# input - emrpool - accesss to Best Practice (EMR) database
 
 	screen_fobt_list <-appointments_list() %>%
 		filter(Age >= 50 & Age <=75) # from age 50 to 75 years inclusive
@@ -124,12 +132,23 @@ fobt_list <- function(appointments_list, emrpool) {
 
 ##### server side #######
 
+#' Cancer screening module server
+#'
+#' Chronic disease management items claimed, pending or unclaimed for appointment list
+#'
+#' @param input (as required by modules)
+#' @param output (as required by modules)
+#' @param session (as required by modules)
+#' @param appointments_list reactive list of appointments to search
+#' @param emrpool reactive access to Electronic Medical Record database
+#'
+#' @return None
+#'
+#' @include fomantic_definitions.R
+#' requires fomantic/semantic definitions
 cancerscreen_datatable <- function(input, output, session,
 																	 appointments_list, emrpool) {
-	# chronic disease management items claimed, pending or unclaimed for appointment list
-	# input - input, output, session (as required by modules)
-	# input - appointments_list - reactive\
-	# output - none
+
 	ns <- session$ns
 
 	# MBS (medicare benefits schedule) item numbers for CDM

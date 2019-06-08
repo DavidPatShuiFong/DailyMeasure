@@ -1,9 +1,12 @@
-#' @include fomantic_definitions.R
-NULL
-# requires fomantic/semantic definitions
-
 ##### Billings module ##########################################
 
+#' Appointments module - UI function
+#'
+#' Display appointments within selected range of dates and providers
+#'
+#' @param id module ID (used in conjunction with 'callModule')
+#'
+#' @return Shiny user interface element
 billings_datatableUI <- function(id) {
 	ns <- NS(id)
 
@@ -24,20 +27,25 @@ billings_datatableUI <- function(id) {
 	)
 }
 
-##### billing sub-functions ######
+##### server side ##########################################
 
-##### server side #######
-
+#' appointment list module - server
+#'
+#' list of appointments and billings
+#' within selected range of dates and providers
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param appointments_filtered_time reactive list of appointments attached to all billings
+#' @param db access to database tables from Best Practice EMR
+#'
+#' @include fomantic_definitions.R
+#'
+#' @return none
+#'
 billings_datatable <- function(input, output, session,
                                appointments_billings, db) {
-  # billings items claimed
-  # input - input, output, session (as required by modules)
-  # input - appointments_billings - reactive list of appointments attached to all billings
-  # input - access to database tables from Best Practice EMR
-  # input - calling_input (reactive) and menuitemtabname (string)
-  #  - 'input' of calling environment. is billings tab currently chosen? or just selected?
-  # input - inputupdatedate (reactive button) and clinician_choice_list (reactiveVal)
-	# output - none
 	ns <- session$ns
 
 	# MBS (medicare benefits schedule) item numbers for CDM

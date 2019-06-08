@@ -6,6 +6,9 @@
 \usage{
 DailyMeasureServer(input, output, session)
 }
+\value{
+None
+}
 \description{
 Shiny app server function
 }

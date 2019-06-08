@@ -6,9 +6,18 @@
 \usage{
 semantic_button(button, colour = "", popuptext = NA, popuphtml = NA)
 }
-\description{
-return vector of buttons
+\arguments{
+\item{button}{list of buttons contents}
+
+\item{colour}{list of colours}
+
+\item{popuptext}{list of popup texts}
+
+\item{popuphtml}{(alternative) list of popup html}
 }
-\details{
+\value{
+vector of semantic/fomantic buttons
+}
+\description{
 user-defined colour and popuptext (tooltip) or popuphtml (HTML tooltip)
 }

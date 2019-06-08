@@ -2,9 +2,14 @@
 
 #' Create semantic/fomantic tags with attached tooltips (text and HTML)
 #'
-#' Returns a vector of semantic/fomantic tags.
-#'
 #' User-defined colour and popuptext (tooltip) or popuphtml (HTMl tooltip)
+#'
+#' @param tag list of tag contents
+#' @param colour list of colours
+#' @param popuptext list of popuptexts
+#' @param popuphtml (alternative) list of popup html
+#'
+#' @return vector of semantic/fomantic tags
 semantic_tag <- function(tag, colour="", popuptext = NA, popuphtml = NA) {
 	#
 	paste0('<span class="huge ', colour, ' ui tag label"',
@@ -31,9 +36,14 @@ semantic_tag <- function(tag, colour="", popuptext = NA, popuphtml = NA) {
 
 #' Create semantic/fomantic buttons with attached tooltips (text and HTML)
 #'
-#' return vector of buttons
-#'
 #' user-defined colour and popuptext (tooltip) or popuphtml (HTML tooltip)
+#'
+#' @param button list of buttons contents
+#' @param colour list of colours
+#' @param popuptext list of popup texts
+#' @param popuphtml (alternative) list of popup html
+#'
+#' @return vector of semantic/fomantic buttons
 semantic_button <- function(button, colour="", popuptext = NA, popuphtml = NA) {
 	paste0('<span class="huge ', colour, ' ui button"',
 				 ifelse(!is.na(popuphtml),
@@ -73,6 +83,11 @@ semantic_popupJS <- c("window.onload = function() {$('.ui.button') .popup({on: '
 #' by default, have export/print buttons, only render what is visible.
 #' javascript code to attach labels to semantic/fomantic JS popups.
 #' no pagination.
+#'
+#' @param initComplete by default, execute JS code to enable semantic popups
+#' @param paging set to FALSE, otherwise hard to 'print'/copy a whole table
+#'
+#' @return DT datatable object
 datatable_styled <- function(data, fillContainer = TRUE,
 														 extensions = c('Buttons', 'Scroller', 'Responsive'),
 														 dom = 'frltiBp',

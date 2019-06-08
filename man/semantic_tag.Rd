@@ -6,9 +6,18 @@
 \usage{
 semantic_tag(tag, colour = "", popuptext = NA, popuphtml = NA)
 }
-\description{
-Returns a vector of semantic/fomantic tags.
+\arguments{
+\item{tag}{list of tag contents}
+
+\item{colour}{list of colours}
+
+\item{popuptext}{list of popuptexts}
+
+\item{popuphtml}{(alternative) list of popup html}
 }
-\details{
+\value{
+vector of semantic/fomantic tags
+}
+\description{
 User-defined colour and popuptext (tooltip) or popuphtml (HTMl tooltip)
 }

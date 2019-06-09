@@ -1,12 +1,20 @@
 ##### cancer screening modules ##########################################
 
+#' Cancer screen User Interface module
+#'
+#' Datatable with list of patients and cancer screening opportunities.
+#' Includes 'printable' toggle, and selectable cancer screening dropdown.
+#'
+#' @param id module ID (used in conjunction with 'callModule')
+#'
+#' @return Shiny user interface element
 cancerscreen_datatableUI <- function(id) {
 	ns <- NS(id)
 
 	tagList(
 		fluidRow(
 			column(4,
-						 switchInput(
+						 shinyWidgets::switchInput(
 						 	inputId = ns("printcopy_view"),
 						 	label = "<i class=\"fas fa-print\"></i> </i><i class=\"far fa-copy\"></i>  Print and Copy View",
 						 	labelWidth = "100%")
@@ -15,10 +23,11 @@ cancerscreen_datatableUI <- function(id) {
 						 uiOutput(ns("cancerscreen_choice"))
 			)
 		),
-		withSpinner(DT::DTOutput(ns("cancerscreen_table")),
-		            type = 8,
-		            hide.element.when.recalculating = FALSE,
-		            proxy.height = NULL)
+		shinycssloaders::withSpinner(
+		  DT::DTOutput(ns("cancerscreen_table")),
+		  type = 8,
+		  hide.element.when.recalculating = FALSE,
+		  proxy.height = NULL)
 	)
 }
 
@@ -55,10 +64,14 @@ fobt_result_query <-
                          	      '12503-9','12504-7','27401-9','27925-7','27926-5',
 	                              '57905-2','56490-6','56491-4','29771-3')")
 
+#' Bowel cancer screening list
+#'
+#' @param appointments_list reactive, list of appointments to search
+#' @param emrpool accesss to Best Practice (EMR) database
+#'
+#' @return list of appointments (with patient details)
+#'
 fobt_list <- function(appointments_list, emrpool) {
-	# Bowel cancer screening
-	# input - appointments_list - reactive, list of appointments
-	# input - emrpool - accesss to Best Practice (EMR) database
 
 	screen_fobt_list <-appointments_list() %>%
 		filter(Age >= 50 & Age <=75) # from age 50 to 75 years inclusive
@@ -66,24 +79,24 @@ fobt_list <- function(appointments_list, emrpool) {
 	screen_fobt_ix <-
 		left_join(screen_fobt_list,
 							bind_rows(inner_join(screen_fobt_list,
-																	 dbGetQuery(emrpool(), fobt_investigation_query) %>%
-																	 	collect() %>%
-																	 	rename(TestDate = Collected),
+							                     DBI::dbGetQuery(emrpool(), fobt_investigation_query) %>%
+							                       collect() %>%
+							                       rename(TestDate = Collected),
+							                     by = 'InternalID'),
+												inner_join(screen_fobt_list,
+																	 DBI::dbGetQuery(emrpool(), fobt_letter_subject_query) %>%
+																	   collect() %>%
+																	   rename(TestDate = CorrespondenceDate, TestName = Subject),
 																	 by = 'InternalID'),
 												inner_join(screen_fobt_list,
-																	 dbGetQuery(emrpool(), fobt_letter_subject_query) %>%
-																	 	collect() %>%
-																	 	rename(TestDate = CorrespondenceDate, TestName = Subject),
+												           DBI::dbGetQuery(emrpool(), fobt_letter_detail_query) %>%
+												             collect() %>%
+												             rename(TestDate = CorrespondenceDate, TestName = Detail),
 																	 by = 'InternalID'),
 												inner_join(screen_fobt_list,
-																	 dbGetQuery(emrpool(), fobt_letter_detail_query) %>%
-																	 	collect() %>%
-																	 	rename(TestDate = CorrespondenceDate, TestName = Detail),
-																	 by = 'InternalID'),
-												inner_join(screen_fobt_list,
-																	 dbGetQuery(emrpool(), fobt_result_query) %>% collect() %>%
-																	 	rename(TestDate = ReportDate, TestName = ResultName),
-																	 by = 'InternalID')
+												           DBI::dbGetQuery(emrpool(), fobt_result_query) %>% collect() %>%
+												             rename(TestDate = ReportDate, TestName = ResultName),
+												           by = 'InternalID')
 							) %>%
 								mutate(TestDate = as.Date(substr(TestDate, 1, 10))) %>%
 								# remove time from date
@@ -94,7 +107,7 @@ fobt_list <- function(appointments_list, emrpool) {
 		mutate(OutOfDateTest =
 					 	case_when(is.na(TestDate) ~ 1,
 					 						# if no date (no detected test)
-					 						interval(TestDate, AppointmentDate)>years(2) ~ 2,
+					 						lubridate::interval(TestDate, AppointmentDate)>lubridate::years(2) ~ 2,
 					 						# if old
 					 						TRUE ~ 3)) %>%   # if up-to-date
 		replace_na(list(TestName = 'FOBT')) %>%
@@ -119,31 +132,40 @@ fobt_list <- function(appointments_list, emrpool) {
 
 ##### server side #######
 
+#' Cancer screening module server
+#'
+#' Chronic disease management items claimed, pending or unclaimed for appointment list
+#'
+#' @param input (as required by modules)
+#' @param output (as required by modules)
+#' @param session (as required by modules)
+#' @param appointments_list reactive list of appointments to search
+#' @param emrpool reactive access to Electronic Medical Record database
+#'
+#' @return None
+#'
+#' @include fomantic_definitions.R
+#' requires fomantic/semantic definitions
 cancerscreen_datatable <- function(input, output, session,
 																	 appointments_list, emrpool) {
-	# chronic disease management items claimed, pending or unclaimed for appointment list
-	# input - input, output, session (as required by modules)
-	# input - appointments_list - reactive\
-	# output - none
-	ns <- session$ns
 
-	# fomantic/semantic UI definitions
-	source("./modules/fomantic_definitions.R")
+	ns <- session$ns
 
 	# MBS (medicare benefits schedule) item numbers for CDM
 	cancerscreen_names <- c("Bowel cancer")
 
 	output$cancerscreen_choice <- renderUI({
-		dropdown(
+		shinyWidgets::dropdown(
 			# placing the drop-down in the render UI (as opposed to module UI)
 			# allows input$cancerscreen_chosen to be defined at time of rendering
 			# (otherwise, it is not defined until the drop-down is actually opened!)
 			inputid = "choice_dropdown",
-			checkboxGroupButtons(inputId = ns("cancerscreen_chosen"), label = "Cancer Screen items shown",
-													 choices = cancerscreen_names, selected = cancerscreen_names,
-													 # all choices initially selected
-													 status = "primary",
-													 checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
+			shinyWidgets::checkboxGroupButtons(
+			  inputId = ns("cancerscreen_chosen"), label = "Cancer Screen items shown",
+			  choices = cancerscreen_names, selected = cancerscreen_names,
+			  # all choices initially selected
+			  status = "primary",
+			  checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
 			icon = icon("gear"),
 			label = "Cancer screening shown"
 		)
@@ -198,7 +220,7 @@ cancerscreen_datatable <- function(input, output, session,
 		}
 	})
 
-	output$cancerscreen_table <- renderDT({
+	output$cancerscreen_table <- DT::renderDT({
 		styled_cancerscreen_list()
 	})
 }

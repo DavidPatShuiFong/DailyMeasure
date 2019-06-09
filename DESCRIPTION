@@ -32,7 +32,7 @@ Imports:
  RSQLite,
  pool,  
  configr,  
- DT,       
+ DT (>= 0.5.3),       
  lubridate,
  DTedit,
  stringr

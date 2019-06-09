@@ -40,10 +40,10 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
   # change in server_list_change to prompt change in selectable filter list of locations
   ns <- session$ns
 
-  servers_dt_viewcols <- c("id", "Name", "Address", "Database", "UserID", "dbPassword")
+  servers_dt_viewcols <- c("id", "Name", "Address", "Database", "UserID")
   # columns viewed in DTedit when adding/editing/removing servers
   # 'id' is likely not necessary for end-users
-  servers_dt_editcols <- servers_dt_viewcols[!servers_dt_viewcols %in% c("id")]
+  servers_dt_editcols <- c("Name", "Address", "Database", "UserID", "dbPassword")
 
   chosen_database <- reactiveVal(NULL) # ID of chosen database
   servers_list_change <- reactiveVal(0)

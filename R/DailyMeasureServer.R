@@ -269,8 +269,8 @@ DailyMeasureServer <- function(input, output, session) {
     PracticeLocations(config_pool() %>% tbl("Location"))
     UserConfig(config_pool() %>% tbl("Users") %>%
                  # in UserConfig, there can be multiple Locations/Attributes per user
-                 collect() %>% mutate(Location = str_split(Location, ";"),
-                                      Attributes = str_split(Attributes, ";")))
+                 collect() %>% mutate(Location = stringr::str_split(Location, ";"),
+                                      Attributes = stringr::str_split(Attributes, ";")))
   })
 
   ### emr database variables

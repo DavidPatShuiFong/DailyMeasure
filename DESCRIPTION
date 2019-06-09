@@ -15,8 +15,10 @@ ByteCompile: true
 RoxygenNote: 6.1.1
 Depends:
  tidyverse,
- dbplyr
-Imports: 
+ dplyr,
+ dbplyr,
+ tidyr
+Imports:
  shiny,
  shinyjs,
  shinydashboard,
@@ -32,7 +34,8 @@ Imports:
  configr,  
  DT,       
  lubridate,
- DTedit
+ DTedit,
+ stringr
 ImportComments:
  shinycssloaders - loading animations
  custom version based on Gao Zheng's 'transparent' background version

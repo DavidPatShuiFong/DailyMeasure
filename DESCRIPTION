@@ -17,8 +17,7 @@ Depends:
  tidyverse,
  dplyr,
  dbplyr,
- tidyr
-Imports:
+ tidyr,
  shiny,
  shinyjs,
  shinydashboard,

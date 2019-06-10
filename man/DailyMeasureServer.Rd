@@ -6,6 +6,13 @@
 \usage{
 DailyMeasureServer(input, output, session)
 }
+\arguments{
+\item{input}{required for shiny server}
+
+\item{output}{required for shiny server}
+
+\item{session}{required for shiny server}
+}
 \value{
 None
 }

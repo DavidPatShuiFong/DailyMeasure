@@ -1,11 +1,17 @@
 ##### Define server logic #####################################################
 
-#' @import dplyr
 #' @import dbplyr
 #' @import tidyr
+#' @import shiny
+#' @import tidyverse
+#' @import dplyr
 NULL
 
 #' Shiny app server function
+#'
+#' @param input required for shiny server
+#' @param output required for shiny server
+#' @param session required for shiny server
 #'
 #' @return None
 #'

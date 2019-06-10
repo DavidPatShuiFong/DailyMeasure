@@ -227,7 +227,6 @@ DailyMeasureServer <- function(input, output, session) {
       db$preventive_health <- NULL
       db$correspondenceIn <- NULL
       db$reportValues <- NULL
-      db$invoices <- NULL
       db$services <- NULL
       db$history <- NULL
       clinician_choice_list(NULL)
@@ -337,11 +336,6 @@ DailyMeasureServer <- function(input, output, session) {
       # InternalID, ReportDate, ResultName, LoincCode
       tbl(in_schema('dbo', 'BPS_ReportValues')) %>%
       select('InternalID', 'ReportDate', 'ResultName', 'LoincCode')
-
-    db$invoices <- emrpool() %>%
-      # InternalID, INVOICEID, INVOICEDATE
-      tbl(in_schema('dbo', 'INVOICES')) %>%
-      select('InternalID', 'INVOICEID', 'INVOICEDATE')
 
     db$services <- emrpool() %>%
       tbl(in_schema('dbo', 'BPS_SERVICES')) %>%

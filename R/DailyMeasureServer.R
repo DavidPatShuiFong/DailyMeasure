@@ -326,50 +326,50 @@ DailyMeasureServer <- function(input, output, session) {
     db$preventive_health <- emrpool() %>%
       # INTERNALID, ITEMID (e.g. not for Zostavax remindders)
       tbl(in_schema('dbo', 'PreventiveHealth')) %>%
-      select(InternalID = INTERNALID, ITEMID)
+      select('InternalID' = 'INTERNALID', 'ITEMID')
 
     db$correspondenceIn <- emrpool() %>%
       # InternalID, CorrespondenceDate, Subject, Detail
       tbl(in_schema('dbo', 'BPS_CorrespondenceIn')) %>%
-      select(InternalID, CorrespondenceDate, Subject, Detail)
+      select('InternalID', 'CorrespondenceDate', 'Subject', 'Detail')
 
     db$reportValues <- emrpool() %>%
       # InternalID, ReportDate, ResultName, LoincCode
       tbl(in_schema('dbo', 'BPS_ReportValues')) %>%
-      select(InternalID, ReportDate, ResultName, LoincCode)
+      select('InternalID', 'ReportDate', 'ResultName', 'LoincCode')
 
     db$invoices <- emrpool() %>%
       # InternalID, INVOICEID, INVOICEDATE
       tbl(in_schema('dbo', 'INVOICES')) %>%
-      select(InternalID, INVOICEID, INVOICEDATE)
+      select('InternalID', 'INVOICEID', 'INVOICEDATE')
 
     db$services <- emrpool() %>%
       tbl(in_schema('dbo', 'BPS_SERVICES')) %>%
-      select(InternalID = INTERNALID, ServiceDate = SERVICEDATE,
-             MBSItem = MBSITEM, Description = DESCRIPTION)
+      select('InternalID' = 'INTERNALID', 'ServiceDate' = 'SERVICEDATE',
+             'MBSItem' = 'MBSITEM', 'Description' = 'DESCRIPTION')
 
     db$history <- emrpool() %>%
       # InternalID, Year, Condition, ConditionID, Status
       tbl(in_schema('dbo', 'BPS_History')) %>%
-      select(InternalID, Year, Condition, ConditionID, Status)
+      select('InternalID', 'Year', 'Condition', 'ConditionID', 'Status')
 
     db$observations <- emrpool() %>%
       tbl(in_schema("dbo", "OBSERVATIONS")) %>%
-      select(InternalID = INTERNALID, DATANAME, DATACODE, DATAVALUE, OBSDATE)
+      select('InternalID' = 'INTERNALID', 'DATANAME', 'DATACODE', 'DATAVALUE', 'OBSDATE')
 
     db$currentrx <- emrpool() %>%
       tbl(in_schema("dbo", "CURRENTRX")) %>%
-      select(InternalID = INTERNALID, PRODUCTID, DRUGNAME, RXSTATUS)
+      select('InternalID' = 'INTERNALID', 'PRODUCTID', 'DRUGNAME', 'RXSTATUS')
     # RXSTATUS appears to be 1 if 'long-term' and 2 if 'short-term'
 
     db$obgyndetail <- emrpool() %>%
       tbl(in_schema("dbo", "OBSGYNDETAIL")) %>%
-      select(InternalID = INTERNALID, NOMINALLMP, LASTPAPDATE, LASTPAPRESULT, BREASTFEEDING,
-             MammogramStatus, LastMammogramDate, MammogramResult)
+      select('InternalID' = 'INTERNALID', 'NOMINALLMP', 'LASTPAPDATE', 'LASTPAPRESULT',
+             'BREASTFEEDING', 'MammogramStatus', 'LastMammogramDate', 'MammogramResult')
 
     db$pregnancies <- emrpool() %>%
       tbl(in_schema("dbo", "PREGNANCIES")) %>%
-      select(InternalID = INTERNALID, EDCBYDATE, ACTUALLMP, NOMINALLMP, ENDDATE)
+      select('InternalID' = 'INTERNALID', 'EDCBYDATE', 'ACTUALLMP', 'NOMINALLMP', 'ENDDATE')
 
     db$dbversion <- isolate(db$dbversion)+1
     print(paste("dbversion:", db$dbversion))

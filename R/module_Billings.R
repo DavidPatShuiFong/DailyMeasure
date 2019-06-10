@@ -96,7 +96,6 @@ billings_datatable <- function(input, output, session,
 	  validate(
 	    need(billings_list(), "No appointments in selected range")
 	  )
-	  print("Creating styled billing list")
 
 	  if (input$printcopy_view == TRUE) {
 	    # printable/copyable view

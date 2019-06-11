@@ -91,7 +91,14 @@ semantic_popupJS <- c("window.onload = function() {$('.ui.button') .popup({on: '
 datatable_styled <- function(data, fillContainer = TRUE,
 														 extensions = c('Buttons', 'Scroller', 'Responsive'),
 														 dom = 'frltiBp',
-														 buttons = c('copyHtml5', 'csvHtml5', 'excel', 'pdf', 'print'),
+														 buttons = list('copyHtml5', 'print', list(
+														   extend = 'collection',
+														   buttons = list(
+														     list(extend = 'csvHtml5', filename = 'DailyMeasure'),
+														     list(extend = 'excel', filename = 'DailyMeasure'),
+														     list(extend = 'pdf', filename = 'DailyMeasure')),
+														   text = 'Download'
+														 )),
 														 initComplete = DT::JS(semantic_popupJS),
 														 paging = FALSE,
 														 scrollY = "60vh",

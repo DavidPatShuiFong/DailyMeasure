@@ -307,10 +307,16 @@ locations_datatable <- function(input, output, session,
     # change (update) a practice location
 
     if (length(grep(toupper(data[row, ]$Name),
-                    toupper(as.data.frame(isolate(PracticeLocations()))$Name)))){
+                    toupper(data[-row,]$Name)))){
       # if the proposed new name is the same as one that already exists
       # (ignoring case). grep returns empty integer list if no match
       stop("New practice location name cannot be the same as existing names")
+    } else if (is.null(data[row,]$Name)){
+      stop("New practice location name cannot be 'empty'!")
+    } else if ((olddata[row,]$Name %in% userlocations()) &
+               (olddata[row,]$Name != data[row,]$Name)) {
+      stop(paste0("Cannot change the name of '", olddata[row,]$Name,
+                  "', this location is assigned to a user."))
     } else {
       query <- "UPDATE Location SET Name = ?, Description = ? WHERE id = ?"
       data_for_sql <- as.list.data.frame(c(data[row,]$Name, data[row,]$Description, data[row,]$id))
@@ -460,29 +466,26 @@ userconfig_datatable <- function(input, output, session,
   userconfig.update.callback <- function(data, olddata, row) {
     # change (update) a user configuration
 
-    if (data[row, ]$Fullname %in% data[-row,]$Fullname) {
-      # if the proposed new name is the same as one that is configured elsewhere
-      stop("This user is already configured")
-    } else {
-      query <- "UPDATE Users SET Fullname = ?, AuthIdentity = ?, Location = ?, Attributes = ? WHERE id = ?"
-      data_for_sql <- as.list(c(data[row,]$Fullname, paste0(data[row,]$AuthIdentity, ""),
-                                paste0(data[row,]$Location[[1]], "", collapse = ";"),
-                                paste0(data[row,]$Attributes[[1]], "", collapse = ";"),
-                                data[row,]$id))
-      # note extra "" within paste0 is required in the case of empty data
-      connection <- pool::poolCheckout(config_pool())
-      # can't write with the pool
-      rs <- DBI::dbSendQuery(connection, query) # update database
-      DBI::dbBind(rs, data_for_sql)
-      DBI::dbClearResult(rs)
-      pool::poolReturn(connection)
 
-      UserConfig(data)
-      userconfig_list_change(userconfig_list_change() + 1)
-      # this value returned by module
+    query <- "UPDATE Users SET Fullname = ?, AuthIdentity = ?, Location = ?, Attributes = ? WHERE id = ?"
+    data_for_sql <- as.list(c(data[row,]$Fullname, paste0(data[row,]$AuthIdentity, ""),
+                              paste0(data[row,]$Location[[1]], "", collapse = ";"),
+                              paste0(data[row,]$Attributes[[1]], "", collapse = ";"),
+                              data[row,]$id))
+    # note extra "" within paste0 is required in the case of empty data
+    connection <- pool::poolCheckout(config_pool())
+    # can't write with the pool
+    rs <- DBI::dbSendQuery(connection, query) # update database
+    DBI::dbBind(rs, data_for_sql)
+    DBI::dbClearResult(rs)
+    pool::poolReturn(connection)
 
-      return(UserConfig())
-    }
+    UserConfig(data)
+    userconfig_list_change(userconfig_list_change() + 1)
+    # this value returned by module
+
+    return(UserConfig())
+
   }
   userconfig.delete.callback <- function(data, row) {
     # delete a user configuration

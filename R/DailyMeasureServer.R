@@ -864,17 +864,11 @@ DailyMeasureServer <- function(input, output, session) {
   userconfig_change <- callModule(userconfig_datatable, "userconfig_dt",
                                   UserConfig, UserFullConfig,
                                   location_list_names, db, config_pool)
-  
-  shiny::addResourcePath('www', system.file('www', package = 'DailyMeasure')) 
-  
-  print(paste0("Blank file:", system.file(c('', ''), package = "DailyMeasure", mustwork = FALSE)))
-  print(paste0("Blank file:", system.file(c('www/assets/icons', 'user-avatar.svg'), package = "DailyMeasure", mustwork = FALSE)))
-  
+
   output$user <- shinydashboardPlus::renderUser({
     shinydashboardPlus::dashboardUser(
       name = UserConfig()$Fullname[UserConfig()$AuthIdentity == Sys.info()[["user"]]],
-      src = system.file('assets/icons', 'user-avatar.svg',
-                        package = 'DailyMeasure'),
+      src = 'icons/user-avatar.svg', # this depends on addResourcePath in zzz.R
       subtitle = Sys.info()[["user"]],
       fluidRow(
         shinydashboardPlus::dashboardUserItem(

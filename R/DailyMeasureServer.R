@@ -868,7 +868,7 @@ DailyMeasureServer <- function(input, output, session) {
   output$user <- shinydashboardPlus::renderUser({
     shinydashboardPlus::dashboardUser(
       name = UserConfig()$Fullname[UserConfig()$AuthIdentity == Sys.info()[["user"]]],
-      src = "./www/assets/icons/user-avatar.svg", # requires "./www/" for package version?
+      src = 'icons/user-avatar.svg', # this depends on addResourcePath in zzz.R
       subtitle = Sys.info()[["user"]],
       fluidRow(
         shinydashboardPlus::dashboardUserItem(

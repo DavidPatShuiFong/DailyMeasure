@@ -83,9 +83,6 @@ cdm_datatable <- function(input, output, session,
 	# filter to CDM item billed prior to (or on) the day of displayed appointments
 	# only show most recent billed item in each category
 
-
-#	observeEvent(c(appointments_billings(), diabetes_list_cdm(), asthma_list_cdm(),
-#								 input$cdm_chosen), {
 	appointments_billings_cdm <- reactive({
 		validate(
 			need(appointments_billings(), "No billed appointments in chosen range"),

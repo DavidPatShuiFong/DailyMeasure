@@ -21,6 +21,21 @@ DailyMeasureServer <- function(input, output, session) {
   # this is needed to terminate the R process when the
   # shiny app session ends. Otherwise, you end up with a zombie process
   session$onSessionEnded(function() {
+
+    if (is.environment(isolate(config_pool()))) {
+      if (DBI::dbIsValid(isolate(config_pool()))) {
+        # if emrpool() is defined as a database, then close it
+        pool::poolClose(isolate(config_pool()))
+      }
+    }
+    
+    if (is.environment(isolate(emrpool()))) {
+      if (DBI::dbIsValid(isolate(emrpool()))) {
+        # if emrpool() is defined as a database, then close it
+        pool::poolClose(isolate(emrpool()))
+      }
+    }
+    
     stopApp()
   })
 

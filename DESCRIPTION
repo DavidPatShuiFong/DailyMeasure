@@ -35,7 +35,9 @@ Imports:
     lubridate,
     DTedit,
     stringr,
-    magrittr
+    magrittr,
+    base64enc,
+    sodium
 ImportComments:
  shinycssloaders - loading animations
  custom version based on Gao Zheng's 'transparent' background version
@@ -45,13 +47,13 @@ ImportComments:
  install with devtools::install_github('DavidPatShuiFong/DTedit')
 Collate: 
     'DailyMeasure.R'
+    'calculation_definitions.R'
     'DailyMeasureServer.R'
     'module_Configuration.R'
     'fomantic_definitions.R'
     'module_CDM.R'
     'module_Billings.R'
     'module_CancerScreen.R'
-    'calculation_definitions.R'
     'module_Immunization.R'
     'module_Appointments.R'
     'DailyMeasureUI.R'

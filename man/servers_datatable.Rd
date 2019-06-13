@@ -23,7 +23,7 @@ servers_datatable(input, output, session, BPdatabase, BPdatabaseChoice,
 \item{config_pool}{reactiveval, access to configuration database}
 }
 \value{
-count - increments with each edit of server database
+count increments with each edit of server database
 }
 \description{
 Server selector (dropdown)

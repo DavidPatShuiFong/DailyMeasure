@@ -15,6 +15,8 @@ NULL
 #'
 #' @return None
 #'
+#' @include calculation_definitions.R
+#' needed for simple encode/decode
 DailyMeasureServer <- function(input, output, session) {
 
   # IMPORTANT!
@@ -28,14 +30,14 @@ DailyMeasureServer <- function(input, output, session) {
         pool::poolClose(isolate(config_pool()))
       }
     }
-    
+
     if (is.environment(isolate(emrpool()))) {
       if (DBI::dbIsValid(isolate(emrpool()))) {
         # if emrpool() is defined as a database, then close it
         pool::poolClose(isolate(emrpool()))
       }
     }
-    
+
     stopApp()
   })
 
@@ -43,9 +45,23 @@ DailyMeasureServer <- function(input, output, session) {
 
   ##### Configuration file ######################################################
 
-  if (configr::is.yaml.file('./DailyMeasure_cfg.yaml')) {
+	# User configuration file path
+	# (this config file contains a pointer to the .sqlite configuration file path)
+
+	if (grepl("AppData", normalizePath(R.home()))) {
+		# this is a 'local' user install, not a system-wide install
+		# e.g. C:/Users/MyName/AppData/Programs/...
+		# as opposed to 'C:/Program Files/...'
+		yaml_config_filepath <- "./DailyMeasure_cfg.yaml"
+		# this file can be stored in the AppData folder, out of sight of the user
+	} else {
+		yaml_config_filepath <- "~/.DailyMeasure_cfg.yaml"
+		# store in user's home directory
+	}
+
+  if (configr::is.yaml.file(yaml_config_filepath)) {
     # if config file exists and is a YAML-type file
-    local_config <- configr::read.config("./DailyMeasure_cfg.yaml")
+    local_config <- configr::read.config(yaml_config_filepath)
     # config in local location
   } else {
     # local config file does not exist. possibly first-run
@@ -55,7 +71,7 @@ DailyMeasureServer <- function(input, output, session) {
     # write the (minimalist) local config file
     configr::write.config(
       local_config,
-      file.path = "./DailyMeasure_cfg.yaml",
+      file.path = yaml_config_filepath,
       write.type = "yaml"
     )
   }
@@ -217,7 +233,7 @@ DailyMeasureServer <- function(input, output, session) {
       emrpool(tryCatch(pool::dbPool(
         odbc::odbc(), driver = "SQL Server",
         server = server$Address, database = server$Database,
-        uid = server$UserID, pwd = server$dbPassword),
+        uid = server$UserID, pwd = simple_decode(server$dbPassword)),
         error = function(e) {
           shinytoastr::toastr_error(
             paste0(e), title = "Error opening Best Practice database",

@@ -33,7 +33,10 @@ servers_datatableUI <- function(id) {
 #' @param emrpool reactiveval, current Best Practice (electronic medical record 'EMR') database pool in use
 #' @param config_pool reactiveval, access to configuration database
 #'
-#' @return count - increments with each edit of server database
+#' @return count increments with each edit of server database
+#'
+#' @include calculation_definitions.R
+#' required for simple encoding/decoding
 servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoice, emrpool, config_pool) {
   # Practice locations/groups server part of module
   # returns server_list_change$count - increments with each GUI edit of server list
@@ -114,6 +117,9 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
       newid <- max(c(as.data.frame(BPdatabase())$id, 0)) + 1
       # initially, BPdatabase()$id might be an empty set, so need to append a '0'
       data[row, ]$id <- newid
+      data[row, ]$dbPassword <- simple_encode(data[row, ]$dbPassword)
+      # immediately encode password.
+      # stored encrypted both in memory and in configuration file
 
       query <- "INSERT INTO Server (id, Name, Address, Database, UserID, dbPassword) VALUES (?, ?, ?, ?, ?, ?)"
       data_for_sql <- as.list.data.frame(c(newid, data[row,]$Name, data[row,]$Address,
@@ -154,6 +160,10 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
                stringr::str_length(data[row,]$dbPassword) == 0) {
       stop("All entries must be described")
     } else {
+    	data[row, ]$dbPassword <- simple_encode(data[row, ]$dbPassword)
+    	# immediately encode password.
+    	# stored encrypted both in memory and in configuration file
+
       query <- "UPDATE Server SET Name = ?, Address = ?, Database = ?, UserID = ?, dbPassword = ? WHERE id = ?"
       data_for_sql <- as.list.data.frame(c(data[row,]$Name, data[row,]$Address,
                                            data[row,]$Database, data[row,]$UserID,
@@ -165,7 +175,7 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
       DBI::dbClearResult(rs)
       pool::poolReturn(connection)
 
-      BPdatabase(data)
+      BPdatabase(data) # store new values in copy of settings in memory
       servers_list_change(servers_list_change() + 1) # this value returned by module
 
       return(BPdatabase())
@@ -198,7 +208,7 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
                                edit.cols = servers_dt_editcols,
                                input.types = c(Name = 'textInput', Address = 'textInput',
                                                Database = 'textInput', UserID = 'textInput',
-                                               dbPassword = 'textInput'),
+                                               dbPassword = 'passwordInput'),
                                callback.update = servers.update.callback,
                                callback.insert = servers.insert.callback,
                                callback.delete = servers.delete.callback

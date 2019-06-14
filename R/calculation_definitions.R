@@ -50,7 +50,7 @@ hrmin <- function(t) {
 simple_encode <- function (msg, key = NULL, nonce = NULL) {
 	if (is.null(nonce)) {
 		# non-secret unique data 'nonce' used to randomize the cipher
-		nonce <- hex2bin("89:63:73:bc:dc:eb:98:14:59:ce:17:4f:6e:0a:75:15:83:0c:36:00:f2:6e:f7:07")
+		nonce <- sodium::hex2bin("89:63:73:bc:dc:eb:98:14:59:ce:17:4f:6e:0a:75:15:83:0c:36:00:f2:6e:f7:07")
 		# the 24 bytes of hexadecimal digits created by paste0(random(24), collapse = ":")
 	}
 	if (is.null(key)) {
@@ -62,8 +62,7 @@ simple_encode <- function (msg, key = NULL, nonce = NULL) {
 			key <- "noncenonce"
 		}
 	}
-	key <- hash(charToRaw(key))
-	browser()
+	key <- sodium::hash(charToRaw(key))
 	return(base64enc::base64encode(
 		sodium::data_encrypt(charToRaw(msg), key, nonce)))
 }
@@ -83,7 +82,7 @@ simple_encode <- function (msg, key = NULL, nonce = NULL) {
 simple_decode <- function(msg, key = NULL, nonce = NULL) {
 	if (is.null(nonce)) {
 		# non-secret unique data 'nonce' used to randomize the cipher
-		nonce <- hex2bin("89:63:73:bc:dc:eb:98:14:59:ce:17:4f:6e:0a:75:15:83:0c:36:00:f2:6e:f7:07")
+		nonce <- sodium::hex2bin("89:63:73:bc:dc:eb:98:14:59:ce:17:4f:6e:0a:75:15:83:0c:36:00:f2:6e:f7:07")
 		# the 24 bytes of hexadecimal digits created by paste0(random(24), collapse = ":")
 	}
 	if (is.null(key)) {
@@ -96,7 +95,7 @@ simple_decode <- function(msg, key = NULL, nonce = NULL) {
 			key <- "noncenonce"
 		}
 	}
-	key <- hash(charToRaw(key))
+	key <- sodium::hash(charToRaw(key))
 	return(rawToChar(sodium::data_decrypt(
 		base64enc::base64decode(msg),key, nonce)
 	))

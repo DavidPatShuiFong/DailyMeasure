@@ -396,27 +396,34 @@ restrictionTypes <- list(
   list(
     id = "ServerAdmin", label = "Server Administrator",
     Description = "Only ServerAdmin users can change database server settings",
-    callback = function () {    }
+    callback = function (state) {
+      # these callbacks have no immediate access to the parent environment
+      if (state == TRUE) {
+        print("True")
+      } else {
+        print("false")
+      }
+    }
   ),
   list(
     id = "UserAdmin", label = "User Administrator",
     Description = "Only UserAdmin users can change user permissions",
-    callback = function () {    }
+    callback = function (state) {    }
   ),
   list(
     id = "GlobalActionView", label = "Global Action View",
     Description = "GlobalActionView users can view actions in 'other' appointment lists",
-    callback = function () {    }
+    callback = function (state) {    }
   ),
   list(
     id = "GlobalBillView", label = "Global Bill View",
     Description = "GlobalBillView users can view billing status in 'other' appointment listss",
-    callback = function () {    }
+    callback = function (state) {    }
   ),
   list(
     id = "GlobalCDMView", label = "Global CDM View",
     Description = "GlobalCDMView users can view CDM status in 'other' appointment lists",
-    callback = function () {    }
+    callback = function (state) {    }
   )
 )
 
@@ -480,6 +487,7 @@ userconfig_datatableUI <- function(id) {
 userconfig_datatable <- function(input, output, session,
                                  UserConfig, UserFullConfig, UserRestrictions,
                                  LocationNames, db, config_pool) {
+  ns <- session$ns
 
   userconfig_dt_viewcols <- c("id", "Fullname", "AuthIdentity", "Location",
                               "Attributes")
@@ -513,13 +521,23 @@ userconfig_datatable <- function(input, output, session,
     validate(
       need(UserRestrictions(), "No restriction list")
     )
-    for (restrictionType in unlist(restrictionTypes_df$id, use.names = FALSE)) {
+    for (restriction in unlist(restrictionTypes_df$id, use.names = FALSE)) {
       # set the switches according the what is stored in the configuration database
       shinyWidgets::updateMaterialSwitch(
-        session, restrictionType,
-        restrictionType %in% (UserRestrictions()$Restriction))
+        session, restriction,
+        restriction %in% (UserRestrictions()$Restriction))
     }
   })
+  for (restriction in restrictionTypes) {
+    local({
+      # evaluate expression in a new environment
+      # (otherwise only the final expression in the loop is registered as an observer!)
+      restrictionLocal <- restriction
+      observeEvent(input[[restrictionLocal$id]], {
+        restrictionLocal$callback(input[[restrictionLocal$id]])
+      })
+    })
+  }
 
   userconfig_list_change <- reactiveVal(0)
   # counts number of GUI edits of the user configuration table

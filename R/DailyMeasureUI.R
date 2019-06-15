@@ -13,7 +13,7 @@ DailyMeasureUI <- function() {
 
 		header = shinydashboardPlus::dashboardHeaderPlus(
 			enable_rightsidebar = TRUE,
-			rightSidebarIcon = "calendar-alt",
+			rightSidebarIcon = "address-card",
 			title = tagList(
 				span(class = "logo-lg", "Daily Measure"),
 				icon = icon("heartbeat")),
@@ -42,6 +42,22 @@ DailyMeasureUI <- function() {
 				icon = "users",
 				active = TRUE,
 
+				# clinician list
+				wellPanel(
+					uiOutput('locationList'),
+					# list of practice sites
+					uiOutput('clinicianList'),
+					# list of clinicians at the currently chosen practice site
+					tags$div(title = "Select/De-select all clinicians",
+									 # toggle all listed clinicians on, or off
+									 actionButton('toggle_clinician_list', 'Select All/None', icon('check-square'), class = 'btn btn-primary'))
+				)
+			),
+			shinydashboardPlus::rightSidebarTabContent(
+				id = 2,
+				title = "Selected date range",
+				icon = "calendar-alt",
+
 				# appointment date range
 				wellPanel(
 					dateInput('date1', label = 'From:', format='D dd/M/yyyy',
@@ -56,23 +72,11 @@ DailyMeasureUI <- function() {
 					tags$div(title = "View today's appointments",
 									 actionButton('update_date_today', 'Today', icon('calendar'), class = 'btn btn-info'))
 					# manually change date range to 'today'
-				),
-
-				# clinician list
-				wellPanel(
-					uiOutput('locationList'),
-					# list of practice sites
-					uiOutput('clinicianList'),
-					# list of clinicians at the currently chosen practice site
-					tags$div(title = "Select/De-select all clinicians",
-									 # toggle all listed clinicians on, or off
-									 actionButton('toggle_clinician_list', 'Select All/None', icon('check-square'), class = 'btn btn-primary'))
 				)
-
 			)
 		),
-
-		shinydashboard::dashboardBody(
+		title = "Daily Measure",
+		body = shinydashboard::dashboardBody(
 			shinyWidgets::useSweetAlert(),
 			shinytoastr::useToastr(),
 			shinyjs::useShinyjs(),

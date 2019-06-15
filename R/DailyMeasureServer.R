@@ -48,15 +48,18 @@ DailyMeasureServer <- function(input, output, session) {
 	# User configuration file path
 	# (this config file contains a pointer to the .sqlite configuration file path)
 
-	if (grepl("AppData", normalizePath(R.home()))) {
+	if (grepl("Program Files", normalizePath(R.home()))) {
+		# this is a system-wide install
+		yaml_config_filepath <- "~/.DailyMeasure_cfg.yaml"
+		sql_config_filepath <- "~/.DailyMeasure_cfg.sqlite"
+		# store in user's home directory
+	} else {
 		# this is a 'local' user install, not a system-wide install
 		# e.g. C:/Users/MyName/AppData/Programs/...
 		# as opposed to 'C:/Program Files/...'
 		yaml_config_filepath <- "./DailyMeasure_cfg.yaml"
+		sql_config_filepath <- "./Dailymeasure_cfg.sqlite"
 		# this file can be stored in the AppData folder, out of sight of the user
-	} else {
-		yaml_config_filepath <- "~/.DailyMeasure_cfg.yaml"
-		# store in user's home directory
 	}
 
   if (configr::is.yaml.file(yaml_config_filepath)) {
@@ -66,7 +69,7 @@ DailyMeasureServer <- function(input, output, session) {
   } else {
     # local config file does not exist. possibly first-run
     local_config <- list()
-    local_config$config_file <- c("./DailyMeasure_cfg.sqlite")
+    local_config$config_file <- sql_config_filepath
     # main configuration file, could be set to 'common location'
     # write the (minimalist) local config file
     configr::write.config(

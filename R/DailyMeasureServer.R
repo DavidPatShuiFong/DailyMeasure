@@ -45,22 +45,22 @@ DailyMeasureServer <- function(input, output, session) {
 
   ##### Configuration file ######################################################
 
-	# User configuration file path
-	# (this config file contains a pointer to the .sqlite configuration file path)
+  # User configuration file path
+  # (this config file contains a pointer to the .sqlite configuration file path)
 
-	if (grepl("Program Files", normalizePath(R.home()))) {
-		# this is a system-wide install
-		yaml_config_filepath <- "~/.DailyMeasure_cfg.yaml"
-		sql_config_filepath <- "~/.DailyMeasure_cfg.sqlite"
-		# store in user's home directory
-	} else {
-		# this is a 'local' user install, not a system-wide install
-		# e.g. C:/Users/MyName/AppData/Programs/...
-		# as opposed to 'C:/Program Files/...'
-		yaml_config_filepath <- "./DailyMeasure_cfg.yaml"
-		sql_config_filepath <- "./Dailymeasure_cfg.sqlite"
-		# this file can be stored in the AppData folder, out of sight of the user
-	}
+  if (grepl("Program Files", normalizePath(R.home()))) {
+    # this is a system-wide install
+    yaml_config_filepath <- "~/.DailyMeasure_cfg.yaml"
+    sql_config_filepath <- "~/.DailyMeasure_cfg.sqlite"
+    # store in user's home directory
+  } else {
+    # this is a 'local' user install, not a system-wide install
+    # e.g. C:/Users/MyName/AppData/Programs/...
+    # as opposed to 'C:/Program Files/...'
+    yaml_config_filepath <- "./DailyMeasure_cfg.yaml"
+    sql_config_filepath <- "~/.DailyMeasure_cfg.sqlite"
+    # this file can be stored in the AppData folder, out of sight of the user
+  }
 
   if (configr::is.yaml.file(yaml_config_filepath)) {
     # if config file exists and is a YAML-type file
@@ -107,13 +107,14 @@ DailyMeasureServer <- function(input, output, session) {
                        stringsAsFactors = FALSE))
 
   UserRestrictions <- reactiveVal(
-  	value = data.frame(id = integer(),
-  										 Restriction = character(),
-  										 stringsAsFactors = FALSE))
+    value = data.frame(uid = integer(),
+                       Restriction = character(),
+                       stringsAsFactors = FALSE))
   # this lists the 'enabled' restrictions,
   #  relevant to the 'Attributes' field of 'UserConfig'
   # without the restriction, all users have the 'permission'
   #  for the 'non-specified' action
+  # use 'uid' rather than 'id', because 'id' is later used to identify the restrictions...
 
   configuration_file_path(local_config$config_file)
 
@@ -153,7 +154,7 @@ DailyMeasureServer <- function(input, output, session) {
         # if table exists in config_pool database
         columns <- config_pool() %>% tbl(tablename) %>% colnames()
         # list of column (variable) names
-        data <- config_pool() %>% tbl("Server") %>% collect()
+        data <- config_pool() %>% tbl(tablename) %>% collect()
         # get a copy of the table's data
       } else {
         # table does not exist, needs to be created
@@ -210,9 +211,10 @@ DailyMeasureServer <- function(input, output, session) {
                                c("Attributes", "character")))
 
     initialize_data_table(config_pool, "UserRestrictions",
-    											list(c("id", "integer"),
-    													 c("Restriction", "character")))
+                          list(c("uid", "integer"),
+                               c("Restriction", "character")))
     # list of restrictions for users
+    # use of 'uid' rather than 'id'
     # (this relates to the 'Attributes' field in "Users")
   })
 
@@ -247,7 +249,7 @@ DailyMeasureServer <- function(input, output, session) {
       print("Initializing EMR database")
       shinytoastr::toastr_info(
         "Opening link to Best Practice", closeButton = TRUE,
-        position = "top-center", title = "Best Practice database")
+        position = "bottom-center", title = "Best Practice database")
       emrpool(tryCatch(pool::dbPool(
         odbc::odbc(), driver = "SQL Server",
         server = server$Address, database = server$Database,
@@ -255,7 +257,7 @@ DailyMeasureServer <- function(input, output, session) {
         error = function(e) {
           shinytoastr::toastr_error(
             paste0(e), title = "Error opening Best Practice database",
-            closeButton = TRUE, position = "top-center",
+            closeButton = TRUE, position = "bottom-center",
             timeOut = 0) # stays open until clicked
           # SweetAlert from shinyWidgets not working as of June/2019
           # (including in shinyWidget's gallery)

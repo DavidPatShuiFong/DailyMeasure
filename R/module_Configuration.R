@@ -160,9 +160,9 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
                stringr::str_length(data[row,]$dbPassword) == 0) {
       stop("All entries must be described")
     } else {
-    	data[row, ]$dbPassword <- simple_encode(data[row, ]$dbPassword)
-    	# immediately encode password.
-    	# stored encrypted both in memory and in configuration file
+      data[row, ]$dbPassword <- simple_encode(data[row, ]$dbPassword)
+      # immediately encode password.
+      # stored encrypted both in memory and in configuration file
 
       query <- "UPDATE Server SET Name = ?, Address = ?, Database = ?, UserID = ?, dbPassword = ? WHERE id = ?"
       data_for_sql <- as.list.data.frame(c(data[row,]$Name, data[row,]$Address,
@@ -383,6 +383,43 @@ locations_datatable <- function(input, output, session,
   # increments each time a callback changes PracticeLocations()
 }
 
+# restriction types
+#  ServerAdmin - only users with ServerAdmin attribute can view/change server settings
+#  UserAdmin - only users with UserAdmin attribute can view/change user settings
+#  GlobalActionView - only users with GlobalActionView attribute can see
+#                     potential actions in "other" people's appointment books
+#  GlobalBillView   - only users with GlobalBillView attribute can see
+#                     billings in "other" people's appointment books
+#  GlobalCDMView    - only users with GlobalCDMView attribute can see
+#                     potential CDM actions in "other" people's appointment books
+restrictionTypes <- list(
+  list(
+    id = "ServerAdmin", label = "Server Administrator",
+    Description = "Only ServerAdmin users can change database server settings",
+    callback = function () {    }
+  ),
+  list(
+    id = "UserAdmin", label = "User Administrator",
+    Description = "Only UserAdmin users can change user permissions",
+    callback = function () {    }
+  ),
+  list(
+    id = "GlobalActionView", label = "Global Action View",
+    Description = "GlobalActionView users can view actions in 'other' appointment lists",
+    callback = function () {    }
+  ),
+  list(
+    id = "GlobalBillView", label = "Global Bill View",
+    Description = "GlobalBillView users can view billing status in 'other' appointment listss",
+    callback = function () {    }
+  ),
+  list(
+    id = "GlobalCDMView", label = "Global CDM View",
+    Description = "GlobalCDMView users can view CDM status in 'other' appointment lists",
+    callback = function () {    }
+  )
+)
+
 ##### users config - editable datatable module ######################################################
 #'
 #' user configuration module - user interface function
@@ -396,7 +433,35 @@ userconfig_datatableUI <- function(id) {
   ns <- NS(id)
 
   tagList(
-    DTedit::dteditUI(ns("userconfigs"))
+    tabsetPanel(
+      tabPanel(
+        title = "User settings",
+        width = 12,
+        DTedit::dteditUI(ns("userconfigs"))
+      ),
+      tabPanel(
+        title = "Enabled Restrictions",
+        width = 12,
+        lapply(restrictionTypes,
+               function(type) {
+                 tagList(
+                   br(),
+                   fluidRow(
+                     column(width = 3,
+                            shinyWidgets::materialSwitch(
+                              inputId = ns(type$id),
+                              label = type$label,
+                              right = TRUE,
+                              value = FALSE,
+                              status = "primary")
+                     ),
+                     column(width = 8, type$Description)
+                   )
+                 )
+               }
+        )
+      )
+    )
   )
 }
 
@@ -406,14 +471,15 @@ userconfig_datatableUI <- function(id) {
 #' @param output as required by Shiny modules
 #' @param session as required by Shiny modules
 #' @param	UserConfig reactiveval, list of user config
+#' @param UserRestrictions reactiveval, user restriction list
 #' @param LocationNames list of location names (not including ID or Description)
 #' @param db reactivevalues link to EMR database. includes $users and $dbversion
 #' @param config_pool reactiveval, access to configuration database
 #'
 #' @return count - increments with each GUI edit of user configuration database
 userconfig_datatable <- function(input, output, session,
-                                 UserConfig, UserFullConfig, LocationNames,
-                                 db, config_pool) {
+                                 UserConfig, UserFullConfig, UserRestrictions,
+                                 LocationNames, db, config_pool) {
 
   userconfig_dt_viewcols <- c("id", "Fullname", "AuthIdentity", "Location",
                               "Attributes")
@@ -425,8 +491,10 @@ userconfig_datatable <- function(input, output, session,
   # list of user names
   observeEvent(db$dbversion, {
     validate(
-      need(UserFullConfig(), "No user list")
+      need(UserFullConfig(), "No user list"),
+      need(UserRestrictions(), "No restriction list")
     )
+    # if the database has been connected
     if (!is.null(UserFullConfig())) {
       usernames(UserFullConfig() %>% select(Fullname) %>% collect() %>%
                   unlist(use.names = FALSE))
@@ -434,6 +502,22 @@ userconfig_datatable <- function(input, output, session,
       # underlying change in EMR database
       # does not exclude names already configured, because this is also used when
       # editing a current user configuration
+    }
+  })
+
+  restrictionTypes_df <- data.frame(Reduce(rbind, restrictionTypes))
+  # converts the list to a dataframe
+
+  observeEvent(config_pool(), {
+    # if configuration pool has been initialized
+    validate(
+      need(UserRestrictions(), "No restriction list")
+    )
+    for (restrictionType in unlist(restrictionTypes_df$id, use.names = FALSE)) {
+      # set the switches according the what is stored in the configuration database
+      shinyWidgets::updateMaterialSwitch(
+        session, restrictionType,
+        restrictionType %in% (UserRestrictions()$Restriction))
     }
   })
 

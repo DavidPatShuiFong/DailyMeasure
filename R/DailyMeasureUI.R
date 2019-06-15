@@ -158,19 +158,19 @@ DailyMeasureUI <- function() {
 										tabPanel(
 											# Microsoft SQL server details
 											title = "Microsoft SQL Server details",
-											column(width=12,
+											column(width = 12,
 														 servers_datatableUI("servers_dt"))
 										),
 										tabPanel(
 											# Practice locations or groups
 											title = "Practice locations/groups",
-											column(width=12,
+											column(width = 12,
 														 locations_datatableUI("locations_dt"))
 										),
 										tabPanel(
 											# User settings and permissions
 											title = "User settings and permissions",
-											column(width=12,
+											column(width = 12,
 														 userconfig_datatableUI("userconfig_dt"))
 										)
 									)

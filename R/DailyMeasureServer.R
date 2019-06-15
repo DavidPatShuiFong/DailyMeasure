@@ -106,6 +106,15 @@ DailyMeasureServer <- function(input, output, session) {
                        Attributes = character(),
                        stringsAsFactors = FALSE))
 
+  UserRestrictions <- reactiveVal(
+  	value = data.frame(id = integer(),
+  										 Restriction = character(),
+  										 stringsAsFactors = FALSE))
+  # this lists the 'enabled' restrictions,
+  #  relevant to the 'Attributes' field of 'UserConfig'
+  # without the restriction, all users have the 'permission'
+  #  for the 'non-specified' action
+
   configuration_file_path(local_config$config_file)
 
   observeEvent(configuration_file_path(), ignoreNULL = TRUE, {
@@ -199,6 +208,12 @@ DailyMeasureServer <- function(input, output, session) {
                                c("AuthIdentity", "character"),
                                c("Location", "character"),
                                c("Attributes", "character")))
+
+    initialize_data_table(config_pool, "UserRestrictions",
+    											list(c("id", "integer"),
+    													 c("Restriction", "character")))
+    # list of restrictions for users
+    # (this relates to the 'Attributes' field in "Users")
   })
 
   ### database initialization
@@ -315,6 +330,7 @@ DailyMeasureServer <- function(input, output, session) {
                  # in UserConfig, there can be multiple Locations/Attributes per user
                  collect() %>% mutate(Location = stringr::str_split(Location, ";"),
                                       Attributes = stringr::str_split(Attributes, ";")))
+    UserRestrictions(config_pool() %>% tbl("UserRestrictions") %>% collect())
   })
 
   ### emr database variables
@@ -896,7 +912,7 @@ DailyMeasureServer <- function(input, output, session) {
   })
 
   userconfig_change <- callModule(userconfig_datatable, "userconfig_dt",
-                                  UserConfig, UserFullConfig,
+                                  UserConfig, UserFullConfig, UserRestrictions,
                                   location_list_names, db, config_pool)
 
   output$user <- shinydashboardPlus::renderUser({

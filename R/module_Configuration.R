@@ -642,7 +642,7 @@ userconfig_datatable <- function(input, output, session,
       # evaluate expression in a new environment
       # (otherwise only the final expression in the loop is registered as an observer!)
       restrictionLocal <- restriction
-      observeEvent(input[[restrictionLocal$id]], {
+      observeEvent(input[[restrictionLocal$id]], ignoreInit = TRUE, {
         if (input[[restrictionLocal$id]] != (restrictionLocal$id) %in% UserRestrictions()$Restriction) {
           # change in state
           state <- restrictionLocal$callback(
@@ -724,6 +724,20 @@ userconfig_datatable <- function(input, output, session,
   userconfig.update.callback <- function(data, olddata, row) {
     # change (update) a user configuration
 
+    # is restrictions have been placed on who can modify the server or user configuration
+    # then at least one user must have the restricted attribute
+    if ("ServerAdmin" %in% UserRestrictions()$Restriction) {
+      if (!("ServerAdmin" %in% unlist(data$Attributes))) {
+        # modified data would no longer have anyone with ServerAdmin attribute
+        stop("Only 'ServerAdmin' users can change server settings. At least one user must have the 'ServerAdmin' attribute!")
+      }
+    }
+    if ("UserAdmin" %in% UserRestrictions()$Restriction) {
+      if (!("UserAdmin" %in% unlist(data$Attributes))) {
+        # modified data would no longer have anyone with UserAdmin attribute
+        stop("Only 'UserAdmin' users can change server settings. At least one user must have the 'UserAdmin' attribute!")
+      }
+    }
 
     query <- "UPDATE Users SET Fullname = ?, AuthIdentity = ?, Location = ?, Attributes = ? WHERE id = ?"
     data_for_sql <- as.list(c(data[row,]$Fullname, paste0(data[row,]$AuthIdentity, ""),
@@ -747,6 +761,21 @@ userconfig_datatable <- function(input, output, session,
   }
   userconfig.delete.callback <- function(data, row) {
     # delete a user configuration
+
+    # is restrictions have been placed on who can modify the server or user configuration
+    # then at least one user must have the restricted attribute
+    if ("ServerAdmin" %in% UserRestrictions()$Restriction) {
+      if (!("ServerAdmin" %in% unlist(data[-c(row),]$Attributes))) {
+        # modified data would no longer have anyone with ServerAdmin attribute
+        stop("Only 'ServerAdmin' users can change server settings. At least one user must have the 'ServerAdmin' attribute!")
+      }
+    }
+    if ("UserAdmin" %in% UserRestrictions()$Restriction) {
+      if (!("UserAdmin" %in% unlist(data[-c(row),]$Attributes))) {
+        # modified data would no longer have anyone with UserAdmin attribute
+        stop("Only 'UserAdmin' users can change server settings. At least one user must have the 'UserAdmin' attribute!")
+      }
+    }
 
     query <- "DELETE FROM Users WHERE id = ?"
     data_for_sql <- as.list.data.frame(c(data[row,]$id))

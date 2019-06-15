@@ -917,17 +917,45 @@ DailyMeasureServer <- function(input, output, session) {
                                   UserConfig, UserFullConfig, UserRestrictions,
                                   location_list_names, db, config_pool)
 
+  LoggedInUser <- reactiveVal()
+  observeEvent(UserConfig(), ignoreNULL = TRUE, {
+    browser()
+    LoggedInUser(UserConfig()[UserConfig()$AuthIdentity == Sys.info()[["user"]],])
+  })
+
+  observeEvent(c(LoggedInUser(), UserRestrictions()), {
+    if ("ServerAdmin" %in% unlist(UserRestrictions()$Restriction)) {
+      # only some users allowed to see/change server settings
+      if ("ServerAdmin" %in% unlist(LoggedInUser()$Attributes)) {
+        showTab("tab_config", "ServerPanel")
+      } else {
+        hideTab("tab_config", "ServerPanel")
+      }
+    }
+    if ("UserAdmin" %in% unlist(UserRestrictions()$Restriction)) {
+      # only some users allowed to see/change user settings
+      if ("UserAdmin" %in% unlist(LoggedInUser()$Attributes)) {
+        showTab("tab_config", "LocationsPanel")
+        # also change ability to view locations panel
+        showTab("tab_config", "UsersPanel")
+      } else {
+        hideTab("tab_config", "LocationsPanel")
+        hideTab("tab_config", "UsersPanel")
+      }
+    }
+  })
+
   output$user <- shinydashboardPlus::renderUser({
     shinydashboardPlus::dashboardUser(
-      name = UserConfig()$Fullname[UserConfig()$AuthIdentity == Sys.info()[["user"]]],
+      name = LoggedInUser()$Fullname,
       src = 'icons/user-avatar.svg', # this depends on addResourcePath in zzz.R
-      subtitle = Sys.info()[["user"]],
+      subtitle = Sys.info()[["user"]], # not necessarily an identified user
       fluidRow(
         shinydashboardPlus::dashboardUserItem(
           width = 6,
           shinydashboardPlus::descriptionBlock(
             text = paste0(
-              unlist(UserConfig()$Location[UserConfig()$AuthIdentity == Sys.info()[["user"]]]),
+              unlist(LoggedInUser()$Location),
               collapse = ", "),
             right_border = TRUE,
             margin_bottom = TRUE)
@@ -936,7 +964,7 @@ DailyMeasureServer <- function(input, output, session) {
           width = 6,
           shinydashboardPlus::descriptionBlock(
             text = paste0(
-              unlist(UserConfig()$Attributes[UserConfig()$AuthIdentity == Sys.info()[["user"]]]),
+              unlist(LoggedInUser()$Attributes),
               collapse = ", "),
             right_border = FALSE,
             margin_bottom = TRUE)

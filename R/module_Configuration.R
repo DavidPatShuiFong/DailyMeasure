@@ -729,13 +729,15 @@ userconfig_datatable <- function(input, output, session,
     if ("ServerAdmin" %in% UserRestrictions()$Restriction) {
       if (!("ServerAdmin" %in% unlist(data$Attributes))) {
         # modified data would no longer have anyone with ServerAdmin attribute
-        stop("Only 'ServerAdmin' users can change server settings. At least one user must have the 'ServerAdmin' attribute!")
+        stop("Only 'ServerAdmin' users can change server settings.
+              At least one user must have the 'ServerAdmin' attribute!")
       }
     }
     if ("UserAdmin" %in% UserRestrictions()$Restriction) {
       if (!("UserAdmin" %in% unlist(data$Attributes))) {
         # modified data would no longer have anyone with UserAdmin attribute
-        stop("Only 'UserAdmin' users can change server settings. At least one user must have the 'UserAdmin' attribute!")
+        stop("Only 'UserAdmin' users can change user permissions.
+              At least one user must have the 'UserAdmin' attribute!")
       }
     }
 
@@ -767,13 +769,15 @@ userconfig_datatable <- function(input, output, session,
     if ("ServerAdmin" %in% UserRestrictions()$Restriction) {
       if (!("ServerAdmin" %in% unlist(data[-c(row),]$Attributes))) {
         # modified data would no longer have anyone with ServerAdmin attribute
-        stop("Only 'ServerAdmin' users can change server settings. At least one user must have the 'ServerAdmin' attribute!")
+        stop("Only 'ServerAdmin' users can change server settings.
+             At least one user must have the 'ServerAdmin' attribute!")
       }
     }
     if ("UserAdmin" %in% UserRestrictions()$Restriction) {
       if (!("UserAdmin" %in% unlist(data[-c(row),]$Attributes))) {
         # modified data would no longer have anyone with UserAdmin attribute
-        stop("Only 'UserAdmin' users can change server settings. At least one user must have the 'UserAdmin' attribute!")
+        stop("Only 'UserAdmin' users can change user permissions.
+             At least one user must have the 'UserAdmin' attribute!")
       }
     }
 

@@ -12,6 +12,6 @@ DailyMeasure <- function () {
 
   ##### Run the application ###########################################
   shiny::shinyApp(ui = DailyMeasureUI(), server = DailyMeasureServer,
-                  options = list(launch.browser = TRUE, port = 7869))
+                  options = list(launch.browser = TRUE))
 
 }

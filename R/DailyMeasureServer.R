@@ -468,24 +468,57 @@ DailyMeasureServer <- function(input, output, session) {
   # list of clinicians shown depends on 'practice location' chosen
   clinician_choice_list <- reactiveVal()
 
-  observeEvent(
-    c(db$dbversion, input$location),
-    {
-      if (!is.null(input$location)) { # only if initialized
-        clinician_choice_list(
-          if (isolate(input$location) == 'All') {
-            UserFullConfig()$Fullname
+  view_restrictions <- list(
+    # if a view restriction is active, then by default users
+    # can only see patients in their own appointment book for
+    # the specified topic
+    # this restriction does not apply if the user has the
+    # 'Global' attribute for the topic in the user's attribute list
+    list(restriction = "GlobalActionView",
+         tabs_to_hide = list("immunization", "cancerscreen")),
+    list(restriction = "GlobalBillView",
+         tabs_to_hide = list("billings")),
+    list(restriction = "GlobalCDMView",
+         tabs_to_hide = list("cdm"))
+  )
+
+  observeEvent(c(db$dbversion, input$location, UserRestrictions(), input$sidebartabs), {
+    # respond to database initialization or change in input choice
+    # respond to change in UserRestrictions and which sidebartab is selected
+    validate(
+      need(!is.null(input$location), "Locations not available")
+    )
+    if (isolate(input$location) == 'All') {
+      # note that 'ifelse' only returns result in the
+      # same 'shape' as the comparison statement
+      clinician_list <- UserFullConfig()$Fullname
+    } else {
+      clinician_list <- subset(UserConfig()$Fullname,
+                               sapply(UserConfig()$Location,
+                                      function (y) input$location %in% y))
+      # filter clinicians by location choice
+      # it is possible for a clinician to have multiple locations
+      # initially, $Location might include a lot of NA
+    }
+
+    for (restriction in view_restrictions) {
+      # go through list of view restrictions
+      if (restriction$restriction %in% unlist(UserRestrictions()$Restriction)) {
+        # if the restriction has been activated
+        if (input$sidebartabs %in% restriction$tabs_to_hide) {
+          # if the relevant tab is being shown
+          if (!(restriction$restriction %in% unlist(LoggedInUser()$Attributes))) {
+            # if the current user does not have this 'Global' attribute
+            # then can only view one's own appointments
+            clinician_list <- subset(clinician_list,
+                                     clinician_list == LoggedInUser()$Fullname)
           }
-          else {
-            subset(UserConfig()$Fullname,
-                   sapply(UserConfig()$Location,
-                          function (y) input$location %in% y))
-            # initially, $Location might include a lot of NA
-          }
-        )
-        # note that 'ifelse' only returns result in the same 'shape' as the comparison statement
+        }
       }
-    })
+    }
+
+    clinician_choice_list(clinician_list)
+  })
 
   output$clinicianList <- renderUI({
     choice_list <- clinician_choice_list()
@@ -919,7 +952,6 @@ DailyMeasureServer <- function(input, output, session) {
 
   LoggedInUser <- reactiveVal()
   observeEvent(UserConfig(), ignoreNULL = TRUE, {
-    browser()
     LoggedInUser(UserConfig()[UserConfig()$AuthIdentity == Sys.info()[["user"]],])
   })
 

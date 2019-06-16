@@ -662,10 +662,10 @@ userconfig_datatable <- function(input, output, session,
           } else {
             # state returned is the same as the attempted change
             if (state == TRUE) {
-              UserRestrictions(rbind(isolate(UserRestrictions()),
-                                     data.frame(uid = max(isolate(UserRestrictions()$uid), 0) + 1,
-                                                Restriction = restrictionLocal$id,
-                                                stringsAsFactors = FALSE)))
+              UserRestrictions(bind_rows(isolate(UserRestrictions()),
+                                         data.frame(uid = max(isolate(UserRestrictions()$uid), 0) + 1,
+                                                    Restriction = restrictionLocal$id,
+                                                    stringsAsFactors = FALSE)))
               # add entry to datatable of UserRestrictions
               # add one to maximum UID (at least zero), and add restriction to new row
               # note that this table in the database uses 'uid' rather than 'id'

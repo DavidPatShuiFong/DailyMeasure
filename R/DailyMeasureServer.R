@@ -963,6 +963,8 @@ DailyMeasureServer <- function(input, output, session) {
     LoggedInUser(UserConfig()[UserConfig()$AuthIdentity == Sys.info()[["user"]],])
   })
 
+  authenticated <- FALSE
+
   observeEvent(c(LoggedInUser(), UserRestrictions()), {
     validate(
       need(LoggedInUser(), "No user information")
@@ -996,6 +998,99 @@ DailyMeasureServer <- function(input, output, session) {
     }
   })
 
+  ####### User login #######################################################
+  observeEvent(c(LoggedInUser(), UserRestrictions()), {
+    # need to know that user identification has occurred
+    # and that restrictions have been read
+    validate(
+      need(LoggedInUser(), "No user information")
+    )
+    if ("RequirePasswords" %in% unlist(UserRestrictions()$Restriction) &
+        authenticated == FALSE &
+        nrow(UserConfig()) > 0) {
+      # passwords are required, not yet authenticated
+      # and information about users has been read in
+      if (nrow(LoggedInUser()) > 0) {
+        # user has been identified
+        if (is.na(LoggedInUser()$Password) || (nchar(LoggedInUser()$Password) == 0)) {
+          # empty or NA password, then asking for new password
+          showModal(modalDialog(
+            title="New password",
+            tagList(
+              paste("Password required for user ", LoggedInUser()$Fullname, "."),
+              "You need to set a password",
+              br(),
+              passwordInput("password1", label = "Enter Password", value = ""),
+              br(),
+              passwordInput("password2", label = "Confirm Password", value = "")
+            ),
+            footer = tagList(actionButton("confirmNewPassword", "Confirm"))
+          ))
+        } else {
+          showModal(modalDialog(
+            title="Password required",
+            tagList(
+              paste("Password required for user ", LoggedInUser()$Fullname, "."),
+              HTML("<br><br>Please enter your password!<br>
+              Click the 'Enter' button after typing in your password.<br><br>
+              This is not (or shouldn't be!) your Windows or Best Practice password<br><br>"),
+              passwordInput("password", label = "Password", value = "")
+            ),
+            footer = tagList(actionButton("confirmPassword", "Enter"))
+          ))
+        }
+      } else {
+        # no user identified! but password required
+        # will need to stop
+        showModal(modalDialog(
+          title="Password required",
+          tagList(
+            "User not recognized!",
+            br(),
+            "Please contact your systems administrator."
+          ),
+          footer = tagList()
+        ))
+      }
+    }
+  })
+
+  observeEvent(input$confirmNewPassword, {
+    if (input$password1 != input$password2) {
+      shinytoastr::toastr_error("Passwords must match",
+                                closeButton = TRUE)
+    } else if (nchar(input$password1) < 6) {
+      shinytoastr::toastr_error("Password must be at least six (6) characters long")
+    } else {
+      setPassword(input$password1, UserConfig, LoggedInUser, config_pool)
+      # this function is found in calculation_definitions.R
+      removeModal()
+      shinytoastr::toastr_success(message = "Password set and Successful login",
+                                  title = "Welcome back!",
+                                  position = "bottom-left")
+    }
+  })
+
+  input_password_CR <- reactiveVal(0)
+
+  observeEvent(c(input$confirmPassword), {
+    validate(
+      need(nchar(input$password) > 0, "No password entered")
+    )
+    if (!simple_tag_compare(input$password, LoggedInUser()$Password)) {
+      shinytoastr::toastr_error("Wrong password",
+                                closeButton = TRUE)
+    } else {
+      # successful login
+      removeModal()
+      shinytoastr::toastr_success(message = paste("Successful login for",
+                                                  LoggedInUser()$Fullname),
+                                  title = "Welcome back!",
+                                  position = "bottom-left")
+    }
+  })
+
+  ###### Render user information on top-right header ##########################
   output$user <- shinydashboardPlus::renderUser({
     shinydashboardPlus::dashboardUser(
       name = LoggedInUser()$Fullname,

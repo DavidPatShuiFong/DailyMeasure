@@ -1008,32 +1008,6 @@ passwordConfig_server <- function(input, output, session,
     }
   })
 
-  setPassword <- function(newpassword) {
-    # set the password for the user
-
-    newpassword <- simple_tag(newpassword)
-    # tagging (hash) defined in calculation_definitions
-
-    newUserConfig <-
-      UserConfig() %>%
-      mutate(Password =
-               replace(Password,
-                       LoggedInUser()$Fullname == Fullname,
-                       newpassword))
-    UserConfig(newUserConfig) # replace password with empty string
-
-    query <- "UPDATE Users SET Password = ? WHERE id = ?"
-    # write to configuration database
-    data_for_sql <- list(newpassword, LoggedInUser()$id[[1]])
-
-    connection <- pool::poolCheckout(config_pool())
-    # can't write with the pool
-    rs <- DBI::dbSendQuery(connection, query) # update database
-    DBI::dbBind(rs, data_for_sql)
-    DBI::dbClearResult(rs)
-    pool::poolReturn(connection)
-  }
-
   observeEvent(input$confirmNewPassword, {
     if (input$password1 != input$password2) {
       shinytoastr::toastr_error("Passwords must match",
@@ -1041,7 +1015,8 @@ passwordConfig_server <- function(input, output, session,
     } else if (nchar(input$password1) < 6) {
       shinytoastr::toastr_error("Password must be at least six (6) characters long")
     } else {
-      setPassword(input$password1)
+      setPassword(input$password1, UserConfig, LoggedInUser, config_pool)
+      # this function is found in calculation_definitions.R
       removeModal()
     }
   })
@@ -1056,7 +1031,7 @@ passwordConfig_server <- function(input, output, session,
     } else if (nchar(input$password1) < 6) {
       shinytoastr::toastr_error("Password must be at least six (6) characters long")
     } else {
-      setPassword(input$password1)
+      setPassword(input$password1, UserConfig, LoggedInUser, config_pool)
       removeModal()
     }
   })

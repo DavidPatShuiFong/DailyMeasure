@@ -136,6 +136,7 @@ DailyMeasureUI <- function() {
 											# this is stored in a YAML file
 											# allows a 'local' user to use a remote configuration file
 											title = "Configuration file",
+											value = "ConfigLocation",
 											column(width=12,
 														 wellPanel(
 														 	textOutput('configuration_file_details') # location of sqlite configuration file
@@ -158,19 +159,22 @@ DailyMeasureUI <- function() {
 										tabPanel(
 											# Microsoft SQL server details
 											title = "Microsoft SQL Server details",
-											column(width=12,
+											value = "ServerPanel",
+											column(width = 12,
 														 servers_datatableUI("servers_dt"))
 										),
 										tabPanel(
 											# Practice locations or groups
 											title = "Practice locations/groups",
-											column(width=12,
+											value = "LocationsPanel",
+											column(width = 12,
 														 locations_datatableUI("locations_dt"))
 										),
 										tabPanel(
 											# User settings and permissions
 											title = "User settings and permissions",
-											column(width=12,
+											value = "UsersPanel",
+											column(width = 12,
 														 userconfig_datatableUI("userconfig_dt"))
 										)
 									)

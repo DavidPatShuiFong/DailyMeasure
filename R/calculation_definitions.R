@@ -156,6 +156,12 @@ simple_tag_compare <- function(msg, tag, key = NULL) {
   newtag <- sodium::data_tag(msg, key)
   oldtag <- base64enc::base64decode(tag)
 
+  if (newtag == oldtag) {
+    result = TRUE
+  } else {
+    result = FALSE
+  }
+
   return(newtag == oldtag)
 }
 

@@ -586,12 +586,18 @@ DailyMeasureServer <- function(input, output, session) {
       filter(Provider %in% input$clinicians)
     # note that dbplyr does not evaluate manipulated expressions, hence the use of 'local()'
     # a database filter on an empty list after %in% will result in an error message
+    #
+    # this reactive is not "collect()"ed because it is joined to other
+    # filtered database lists prior to 'collection'
   })
 
   appointments_filtered_time <- reactive({
     # changes times to more R (and visually) friendly formats
     appointments_filtered() %>%
       collect() %>% # force read of database required before mutations
+      filter(Provider %in% clinician_choice_list()) %>% # this also requires collect()
+      # clinicians_choice_list() may have been changed by different tab selection and
+      # view permission before input$clinicians has actually been changed
       mutate(AppointmentTime = hrmin(AppointmentTime),
              AppointmentDate = as.Date(substr(AppointmentDate,1,10))) %>%
       arrange(AppointmentDate, AppointmentTime)
@@ -963,7 +969,8 @@ DailyMeasureServer <- function(input, output, session) {
     LoggedInUser(UserConfig()[UserConfig()$AuthIdentity == Sys.info()[["user"]],])
   })
 
-  authenticated <- FALSE
+  authenticated <- reactiveVal(FALSE)
+  # has the current log-in use been identified and authenticated yet?
 
   observeEvent(c(LoggedInUser(), UserRestrictions()), {
     validate(
@@ -976,6 +983,8 @@ DailyMeasureServer <- function(input, output, session) {
       } else {
         hideTab("tab_config", "ServerPanel")
       }
+    } else {
+      showTab("tab_config", "ServerPanel")
     }
     if ("UserAdmin" %in% unlist(UserRestrictions()$Restriction)) {
       # only some users allowed to see/change user settings
@@ -986,7 +995,11 @@ DailyMeasureServer <- function(input, output, session) {
       } else {
         hideTab("tab_config", "LocationsPanel")
         hideTab("tab_config", "UsersPanel")
+        browser()
       }
+    } else {
+      showTab("tab_config", "LocationsPanel")
+      showTab("tab_config", "UsersPanel")
     }
     if (nrow(LoggedInUser()) > 0) {
       # user has been identified
@@ -1006,8 +1019,7 @@ DailyMeasureServer <- function(input, output, session) {
       need(LoggedInUser(), "No user information")
     )
     if ("RequirePasswords" %in% unlist(UserRestrictions()$Restriction) &
-        authenticated == FALSE &
-        nrow(UserConfig()) > 0) {
+        authenticated() == FALSE & nrow(UserConfig()) > 0) {
       # passwords are required, not yet authenticated
       # and information about users has been read in
       if (nrow(LoggedInUser()) > 0) {
@@ -1018,8 +1030,7 @@ DailyMeasureServer <- function(input, output, session) {
             title="New password",
             tagList(
               paste("Password required for user ", LoggedInUser()$Fullname, "."),
-              "You need to set a password",
-              br(),
+              HTML("You need to set a password<br><br>"),
               passwordInput("password1", label = "Enter Password", value = ""),
               br(),
               passwordInput("password2", label = "Confirm Password", value = "")
@@ -1065,6 +1076,7 @@ DailyMeasureServer <- function(input, output, session) {
       setPassword(input$password1, UserConfig, LoggedInUser, config_pool)
       # this function is found in calculation_definitions.R
       removeModal()
+      authenticated(TRUE)
       shinytoastr::toastr_success(message = "Password set and Successful login",
                                   title = "Welcome back!",
                                   position = "bottom-left")
@@ -1083,6 +1095,7 @@ DailyMeasureServer <- function(input, output, session) {
     } else {
       # successful login
       removeModal()
+      authenticated(TRUE)
       shinytoastr::toastr_success(message = paste("Successful login for",
                                                   LoggedInUser()$Fullname),
                                   title = "Welcome back!",

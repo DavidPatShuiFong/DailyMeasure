@@ -72,7 +72,7 @@ simple_encode <- function (msg, key = NULL, nonce = NULL) {
 #' Simple decoder of text strings, will output a text string.
 #' Uses sodium library and base64enc. Has some defaults, but
 #' will also take command-line arguments or read from environment.
-#' Componaion function to simple_encode
+#' Companion function to simple_encode
 #'
 #' @param msg the text to decode
 #' @param key the cipher, which can be set manually, otherwise will read from env
@@ -101,3 +101,60 @@ simple_decode <- function(msg, key = NULL, nonce = NULL) {
 	))
 }
 
+#' Simple tagger
+#'
+#' Simple tagger of text strings, will output a text string.
+#' Uses sodium library and base64enc. Has some defaults, but
+#' will also take command-line arguments or read from environment.
+#'
+#' @param msg the text to decode
+#' @param key the cipher, which can be set manually, otherwise will read from env
+#'
+#' @return - the hash
+simple_tag <- function(msg, key = NULL) {
+  if (is.null(key)) {
+    if (nchar(Sys.getenv("DailyMeasure_Value3"))>0) {
+      # if not set then the number of characters will be zero
+      key <- Sys.getenv("DailyMeasure_value3")
+      # this can be set in .Renviron
+      # or with Sys.setenv(DailyMeasure_value2="password")
+    } else {
+      key <- "noncenonce"
+    }
+  }
+  key <- sodium::hash(charToRaw(key))
+  msg <- serialize(msg, NULL)
+  tag <- base64enc::base64encode(sodium::data_tag(msg, key))
+
+  return(tag)
+}
+
+#' Simple tag comparison
+#'
+#' Simple tagger of text strings, will output a text string.
+#' Uses sodium library and base64enc. Has some defaults, but
+#' will also take command-line arguments or read from environment.
+#'
+#' @param msg the text to check
+#' @param tag the tagged message (base64 encoded)
+#' @param key the cipher, which can be set manually, otherwise will read from env
+#'
+#' @return - TRUE if matching, FALSE otherwise
+simple_tag_compare <- function(msg, tag, key = NULL) {
+  if (is.null(key)) {
+    if (nchar(Sys.getenv("DailyMeasure_Value3"))>0) {
+      # if not set then the number of characters will be zero
+      key <- Sys.getenv("DailyMeasure_value3")
+      # this can be set in .Renviron
+      # or with Sys.setenv(DailyMeasure_value2="password")
+    } else {
+      key <- "noncenonce"
+    }
+  }
+  key <- sodium::hash(charToRaw(key))
+  msg <- serialize(msg, NULL)
+  newtag <- sodium::data_tag(msg, key)
+  oldtag <- base64enc::base64decode(tag)
+
+  return(newtag == oldtag)
+}

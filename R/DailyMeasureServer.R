@@ -104,6 +104,7 @@ DailyMeasureServer <- function(input, output, session) {
                        Fullname = character(), AuthIdentity = character(),
                        Location = character(),
                        Attributes = character(),
+                       Password = character(),
                        stringsAsFactors = FALSE))
 
   UserRestrictions <- reactiveVal(
@@ -207,7 +208,8 @@ DailyMeasureServer <- function(input, output, session) {
                           list(c("id", "integer"),
                                c("Fullname", "character"),
                                c("AuthIdentity", "character"),
-                               c("Location", "character"),
+                               c("Location", "charactcer"),
+                               c("Password", "character"),
                                c("Attributes", "character")))
 
     initialize_data_table(config_pool, "UserRestrictions",
@@ -950,12 +952,21 @@ DailyMeasureServer <- function(input, output, session) {
                                   UserConfig, UserFullConfig, UserRestrictions,
                                   location_list_names, db, config_pool)
 
+  ###### user configuration of their own password #######################
+  callModule(passwordConfig_server, "password_config",
+             UserConfig, LoggedInUser,
+             config_pool)
+
+  ###### display of panels etc. change depending on logged in user ######
   LoggedInUser <- reactiveVal()
   observeEvent(UserConfig(), ignoreNULL = TRUE, {
     LoggedInUser(UserConfig()[UserConfig()$AuthIdentity == Sys.info()[["user"]],])
   })
 
   observeEvent(c(LoggedInUser(), UserRestrictions()), {
+    validate(
+      need(LoggedInUser(), "No user information")
+    )
     if ("ServerAdmin" %in% unlist(UserRestrictions()$Restriction)) {
       # only some users allowed to see/change server settings
       if ("ServerAdmin" %in% unlist(LoggedInUser()$Attributes)) {
@@ -974,6 +985,14 @@ DailyMeasureServer <- function(input, output, session) {
         hideTab("tab_config", "LocationsPanel")
         hideTab("tab_config", "UsersPanel")
       }
+    }
+    if (nrow(LoggedInUser()) > 0) {
+      # user has been identified
+      showTab("tab_config", "PasswordPanel")
+      # only 'identified' and configured users can set a password
+    } else {
+      # no user identified
+      hideTab("tab_config", "PasswordPanel")
     }
   })
 

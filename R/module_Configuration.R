@@ -396,6 +396,8 @@ restrictionTypes <- list(
   list(
     id = "ServerAdmin", label = "Server Administrator",
     Description = "Only ServerAdmin users can change database server settings",
+    userAttribute = TRUE,
+    # is this actually a userattribute
     callback = function (state, AttributeList, anyPassword) {
       # these callbacks have no immediate access to the parent environment
       # only called if state is changed from the old state
@@ -438,6 +440,7 @@ restrictionTypes <- list(
   list(
     id = "UserAdmin", label = "User Administrator",
     Description = "Only UserAdmin users can change user permissions",
+    userAttribute = TRUE,
     callback = function (state, AttributeList, anyPassword) {
       # these callbacks have no immediate access to the parent environment
       # only called if state is changed from the old state
@@ -478,13 +481,15 @@ restrictionTypes <- list(
   list(
     id = "GlobalActionView", label = "Global Action View",
     Description = "GlobalActionView users can view actions in 'other' appointment lists",
+    userAttribute = TRUE,
     callback = function (state, AttributeList, anyPassword) {
       # this can always be set/unset
       return(state)}
   ),
   list(
     id = "GlobalBillView", label = "Global Bill View",
-    Description = "GlobalBillView users can view billing status in 'other' appointment listss",
+    Description = "GlobalBillView users can view billing status in 'other' appointment lists",
+    userAttribute = TRUE,
     callback = function (state, AttributeList, anyPassword) {
       # this can always be set/unset
       return(state)
@@ -493,6 +498,7 @@ restrictionTypes <- list(
   list(
     id = "GlobalCDMView", label = "Global CDM View",
     Description = "GlobalCDMView users can view CDM status in 'other' appointment lists",
+    userAttribute = TRUE,
     callback = function (state, AttributeList, anyPassword) {
       # this can always be set/unset
       return(state)
@@ -501,6 +507,8 @@ restrictionTypes <- list(
   list(
     id = "RequirePasswords", label = "Require Passwords",
     Description = "Password required from all users",
+    userAttribute = FALSE,
+    # 'RequirePasswords' is not actually a user attribute
     callback = function (state, AttributeList, anyPassword) {
       # these callbacks have no immediate access to the parent environment
       # only called if state is changed from the old state
@@ -676,8 +684,9 @@ userconfig_datatable <- function(input, output, session,
   ####### Restriction of permissions #############################################
   restrictionTypes_df <- data.frame(Reduce(rbind, restrictionTypes))
   # converts the list to a dataframe
-  user_attribute_types <- unlist(restrictionTypes_df$id, use.names = FALSE)
-  # user attribute types is defined in restrictionTypes
+  user_attribute_types <- unlist(filter(restrictionTypes_df, userAttribute == TRUE)$id,
+                                 use.names = FALSE)
+  # user attribute types is defined in restrictionTypes. only those with userAttribute TRUE
 
   usernames <- reactiveVal()
   # list of user names

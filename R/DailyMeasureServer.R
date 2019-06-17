@@ -208,7 +208,7 @@ DailyMeasureServer <- function(input, output, session) {
                           list(c("id", "integer"),
                                c("Fullname", "character"),
                                c("AuthIdentity", "character"),
-                               c("Location", "charactcer"),
+                               c("Location", "character"),
                                c("Password", "character"),
                                c("Attributes", "character")))
 
@@ -913,9 +913,20 @@ DailyMeasureServer <- function(input, output, session) {
     if (!is.integer(input$choose_configuration_file)) {
       # if input$choose_configuration_file is an integer,
       # it is just the 'click' event on the filechoose button
-      inFile <- parseFilePaths(volumes, input$choose_configuration_file)
+      inFile <- shinyFiles::parseFilePaths(volumes, input$choose_configuration_file)
       file_name <- paste(inFile$datapath)
       configuration_file_path(file_name)
+
+      # write SQLite location back into yaml_config_filepath
+      sql_config_filepath <- file_name
+      local_config$config_file <- sql_config_filepath
+      # main configuration file, could be set to 'common location'
+      # write the (minimalist) local config file
+      configr::write.config(
+        local_config,
+        file.path = yaml_config_filepath,
+        write.type = "yaml"
+      )
     }
   })
 

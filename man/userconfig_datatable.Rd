@@ -5,7 +5,7 @@
 \title{user configuration module - server function}
 \usage{
 userconfig_datatable(input, output, session, UserConfig, UserFullConfig,
-  LocationNames, db, config_pool)
+  UserRestrictions, LocationNames, db, config_pool)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -15,6 +15,8 @@ userconfig_datatable(input, output, session, UserConfig, UserFullConfig,
 \item{session}{as required by Shiny modules}
 
 \item{UserConfig}{reactiveval, list of user config}
+
+\item{UserRestrictions}{reactiveval, user restriction list}
 
 \item{LocationNames}{list of location names (not including ID or Description)}
 

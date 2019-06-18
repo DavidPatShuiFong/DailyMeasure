@@ -160,9 +160,9 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
                stringr::str_length(data[row,]$dbPassword) == 0) {
       stop("All entries must be described")
     } else {
-    	data[row, ]$dbPassword <- simple_encode(data[row, ]$dbPassword)
-    	# immediately encode password.
-    	# stored encrypted both in memory and in configuration file
+      data[row, ]$dbPassword <- simple_encode(data[row, ]$dbPassword)
+      # immediately encode password.
+      # stored encrypted both in memory and in configuration file
 
       query <- "UPDATE Server SET Name = ?, Address = ?, Database = ?, UserID = ?, dbPassword = ? WHERE id = ?"
       data_for_sql <- as.list.data.frame(c(data[row,]$Name, data[row,]$Address,
@@ -383,6 +383,121 @@ locations_datatable <- function(input, output, session,
   # increments each time a callback changes PracticeLocations()
 }
 
+# restriction types
+#  ServerAdmin - only users with ServerAdmin attribute can view/change server settings
+#  UserAdmin - only users with UserAdmin attribute can view/change user settings
+#  GlobalActionView - only users with GlobalActionView attribute can see
+#                     potential actions in "other" people's appointment books
+#  GlobalBillView   - only users with GlobalBillView attribute can see
+#                     billings in "other" people's appointment books
+#  GlobalCDMView    - only users with GlobalCDMView attribute can see
+#                     potential CDM actions in "other" people's appointment books
+restrictionTypes <- list(
+  list(
+    id = "ServerAdmin", label = "Server Administrator",
+    Description = "Only ServerAdmin users can change database server settings",
+    callback = function (state, AttributeList) {
+      # these callbacks have no immediate access to the parent environment
+      # only called if state is changed from the old state
+      # @param state          : attempted new state
+      # @param AttributeList  : current list of user attributes in use
+      #
+      # @return newstate      : returns 'state', if permissible
+      #
+      # note that this function does not change UserRestrictions()
+      # changing UserRestrictions() is the responsibility of the calling function
+      newstate = state
+      if (state == TRUE) {
+        # if trying to turn on ServerAdmin restriction
+        if (!("ServerAdmin" %in% AttributeList)) {
+          # no user is listed as having ServerAdmin attribute!
+          # if this restriction is established, no one can edit the server
+          # (though this could be worked around by changing user settings)
+          shinytoastr::toastr_error(
+            "At least one user must have 'ServerAdmin' attribute to enable 'ServerAdmin' restriction.",
+            title = "Can't enable 'ServerAdmin' restriction",
+            closeButton = TRUE, position = "top-center",
+            timeOut = 5000) # stays open five seconds
+          newstate = FALSE
+        } else {
+          newstate = TRUE
+          # allow ServerAdmin to be restricted
+        }
+      } else {
+        # turning off ServerAdmin restriction
+        shinytoastr::toastr_warning(
+          "Without this restriction, anyone can edit and change Best Practice database settings!",
+          title = "Disabling 'ServerAdmin' restriction",
+          closeButton = TRUE, position = "top-center",
+          timeOut = 5000) # stays open five seconds
+      }
+      return(newstate)
+    }
+  ),
+  list(
+    id = "UserAdmin", label = "User Administrator",
+    Description = "Only UserAdmin users can change user permissions",
+    callback = function (state, AttributeList) {
+      # these callbacks have no immediate access to the parent environment
+      # only called if state is changed from the old state
+      # @param state          : attempted new state
+      # @param AttributeList  : current list of user attributes in use
+      #
+      # @return newstate      : returns 'state', if permissible
+      #
+      # note that this function does not change UserRestrictions()
+      # changing UserRestrictions() is the responsibility of the calling function
+      newstate = state
+      if (state == TRUE) {
+        # if trying to turn on ServerAdmin restriction
+        if (!("UserAdmin" %in% AttributeList)) {
+          # no user is listed as having UserAdmin attribute!
+          # if this restriction is established, no one can edit the user settings
+          shinytoastr::toastr_error(
+            "A least one user must have 'UserAdmin' attribute to enable the 'UserAdmin' restriction.",
+            title = "Can't enable 'UserAdmin' restriction",
+            closeButton = TRUE, position = "top-center",
+            timeOut = 5000) # stays open five seconds
+          newstate = FALSE
+        } else {
+          newstate = TRUE
+          # allow UserAdmin to be restricted
+        }
+      } else {
+          shinytoastr::toastr_warning(
+            "Without this restriction, anyone can edit and change user permission settings!",
+            title = "Disabling 'UserAdmin' restriction",
+            closeButton = TRUE, position = "top-center",
+            timeOut = 5000) # stays open five seconds
+      }
+      return(newstate)
+    }
+  ),
+  list(
+    id = "GlobalActionView", label = "Global Action View",
+    Description = "GlobalActionView users can view actions in 'other' appointment lists",
+    callback = function (state, AttributeList) {
+      # this can always be set/unset
+      return(state)}
+  ),
+  list(
+    id = "GlobalBillView", label = "Global Bill View",
+    Description = "GlobalBillView users can view billing status in 'other' appointment listss",
+    callback = function (state, AttributeList) {
+      # this can always be set/unset
+      return(state)
+    }
+  ),
+  list(
+    id = "GlobalCDMView", label = "Global CDM View",
+    Description = "GlobalCDMView users can view CDM status in 'other' appointment lists",
+    callback = function (state, AttributeList) {
+      # this can always be set/unset
+      return(state)
+    }
+  )
+)
+
 ##### users config - editable datatable module ######################################################
 #'
 #' user configuration module - user interface function
@@ -396,7 +511,34 @@ userconfig_datatableUI <- function(id) {
   ns <- NS(id)
 
   tagList(
-    DTedit::dteditUI(ns("userconfigs"))
+    tabsetPanel(
+      tabPanel(
+        title = "User settings",
+        width = 12,
+        DTedit::dteditUI(ns("userconfigs"))
+      ),
+      tabPanel(
+        title = "Enabled Restrictions",
+        width = 12,
+        lapply(restrictionTypes,
+               function(type) {
+                 tagList(
+                   br(),
+                   fluidRow(
+                     column(width = 3,
+                            shinyWidgets::materialSwitch(
+                              inputId = ns(type$id),
+                              label = type$label,
+                              right = TRUE,
+                              value = FALSE,
+                              status = "primary")),
+                     column(width = 8, type$Description)
+                   )
+                 )
+               }
+        )
+      )
+    )
   )
 }
 
@@ -406,27 +548,34 @@ userconfig_datatableUI <- function(id) {
 #' @param output as required by Shiny modules
 #' @param session as required by Shiny modules
 #' @param	UserConfig reactiveval, list of user config
+#' @param UserRestrictions reactiveval, user restriction list
 #' @param LocationNames list of location names (not including ID or Description)
 #' @param db reactivevalues link to EMR database. includes $users and $dbversion
 #' @param config_pool reactiveval, access to configuration database
 #'
 #' @return count - increments with each GUI edit of user configuration database
 userconfig_datatable <- function(input, output, session,
-                                 UserConfig, UserFullConfig, LocationNames,
-                                 db, config_pool) {
+                                 UserConfig, UserFullConfig, UserRestrictions,
+                                 LocationNames, db, config_pool) {
+  ns <- session$ns
 
   userconfig_dt_viewcols <- c("id", "Fullname", "AuthIdentity", "Location",
                               "Attributes")
   userconfig_dt_editcols <- userconfig_dt_viewcols[!userconfig_dt_viewcols %in% c("id")]
-  user_attribute_types <- c("Expert", "GlobalView", "Admin")
   # columns viewed in DTedit when adding/editing/removing user config
+  restrictionTypes_df <- data.frame(Reduce(rbind, restrictionTypes))
+  # converts the list to a dataframe
+  user_attribute_types <- unlist(restrictionTypes_df$id, use.names = FALSE)
+  # user attribute types is defined in restrictionTypes
 
   usernames <- reactiveVal()
   # list of user names
   observeEvent(db$dbversion, {
     validate(
-      need(UserFullConfig(), "No user list")
+      need(UserFullConfig(), "No user list"),
+      need(UserRestrictions(), "No restriction list")
     )
+    # if the database has been connected
     if (!is.null(UserFullConfig())) {
       usernames(UserFullConfig() %>% select(Fullname) %>% collect() %>%
                   unlist(use.names = FALSE))
@@ -436,6 +585,105 @@ userconfig_datatable <- function(input, output, session,
       # editing a current user configuration
     }
   })
+
+  update_UserRestrictions_database <- function() {
+    # update UserRestrictions database
+    # this is manually called when (one) restriction is added or removed
+    # so only has to find 'one' row of difference between the 'new' list and the 'old' list
+    originalRestrictions <- config_pool() %>% tbl("UserRestrictions") %>% collect()
+    newRestrictions <- isolate(UserRestrictions())
+
+    new_row <- anti_join(newRestrictions, originalRestrictions, by = "uid")
+    if (nrow(new_row) > 0) {
+      # if there is a new row, then add to configuration database
+      query <- "INSERT INTO UserRestrictions (uid, Restriction) VALUES (?, ?)"
+      data_for_sql <- as.list.data.frame(c(new_row$uid, new_row$Restriction))
+
+      connection <- pool::poolCheckout(isolate(config_pool())) # can't write with the pool
+      rs <- DBI::dbSendQuery(connection, query)
+      # parameterized query can handle apostrophes etc.
+      DBI::dbBind(rs, data_for_sql)
+      # for statements, rather than queries, we don't need to dbFetch(rs)
+      # update database
+      DBI::dbClearResult(rs)
+      pool::poolReturn(connection)
+    } else {
+      deleted_row <- anti_join(originalRestrictions, newRestrictions, by = "uid")
+      if (nrow(deleted_row) > 0) {
+        # if a row was deleted, then remove from configuration database
+        query <- "DELETE FROM UserRestrictions WHERE uid = ?"
+        data_for_sql <- as.list.data.frame(c(deleted_row$uid))
+
+        connection <- pool::poolCheckout(isolate(config_pool()))
+        # can't write with the pool
+        rs <- DBI::dbSendQuery(connection, query) # update database
+        DBI::dbBind(rs, data_for_sql)
+        DBI::dbClearResult(rs)
+        pool::poolReturn(connection)
+      }
+    }
+  }
+
+  observeEvent(config_pool(), {
+    # if configuration pool has been initialized
+    validate(
+      need(UserRestrictions(), "No restriction list")
+    )
+    for (restriction in unlist(restrictionTypes_df$id, use.names = FALSE)) {
+      # set the switches according the what is stored in the configuration database
+      shinyWidgets::updateMaterialSwitch(
+        session, restriction,
+        restriction %in% (UserRestrictions()$Restriction))
+    }
+  })
+  for (restriction in restrictionTypes) {
+    # add each of the restrictionTypes to the user interface
+    local({
+      # evaluate expression in a new environment
+      # (otherwise only the final expression in the loop is registered as an observer!)
+      restrictionLocal <- restriction
+      observeEvent(input[[restrictionLocal$id]], ignoreInit = TRUE, {
+        if (input[[restrictionLocal$id]] != (restrictionLocal$id) %in% UserRestrictions()$Restriction) {
+          # change in state
+          state <- restrictionLocal$callback(
+            input[[restrictionLocal$id]],
+            UserConfig()$Attributes %>% unlist(use.names = FALSE)
+            # list of attributes in use
+          )
+          # returns state. same as the 'changed to' state, if it is permissible
+          # e.g. it isn't permissible to set ServerAdmin/UserAdmin to 'TRUE' if
+          # there is no user who has UserAdmin attribute
+          if (state != input[[restrictionLocal$id]]) {
+            # state returned is not the same as the state which was attempted
+            # so change the state 'back' to the what is, in fact, the old state
+            shinyWidgets::updateMaterialSwitch(
+              session, restrictionLocal$id,
+              state)
+          } else {
+            # state returned is the same as the attempted change
+            if (state == TRUE) {
+              UserRestrictions(bind_rows(isolate(UserRestrictions()),
+                                         data.frame(uid = max(isolate(UserRestrictions()$uid), 0) + 1,
+                                                    Restriction = restrictionLocal$id,
+                                                    stringsAsFactors = FALSE)))
+              # add entry to datatable of UserRestrictions
+              # add one to maximum UID (at least zero), and add restriction to new row
+              # note that this table in the database uses 'uid' rather than 'id'
+              #  to reduce confusion with the use of 'id' for input names
+              print(UserRestrictions())
+              update_UserRestrictions_database()
+            } else {
+              # remove entry in datatable of UserRestrictions
+              UserRestrictions(filter(isolate(UserRestrictions()),
+                                      !(isolate(UserRestrictions()$Restriction) == restrictionLocal$id)))
+              print(UserRestrictions())
+              update_UserRestrictions_database()
+            }
+          }
+        }
+      })
+    })
+  }
 
   userconfig_list_change <- reactiveVal(0)
   # counts number of GUI edits of the user configuration table
@@ -476,6 +724,22 @@ userconfig_datatable <- function(input, output, session,
   userconfig.update.callback <- function(data, olddata, row) {
     # change (update) a user configuration
 
+    # is restrictions have been placed on who can modify the server or user configuration
+    # then at least one user must have the restricted attribute
+    if ("ServerAdmin" %in% UserRestrictions()$Restriction) {
+      if (!("ServerAdmin" %in% unlist(data$Attributes))) {
+        # modified data would no longer have anyone with ServerAdmin attribute
+        stop("Only 'ServerAdmin' users can change server settings.
+              At least one user must have the 'ServerAdmin' attribute!")
+      }
+    }
+    if ("UserAdmin" %in% UserRestrictions()$Restriction) {
+      if (!("UserAdmin" %in% unlist(data$Attributes))) {
+        # modified data would no longer have anyone with UserAdmin attribute
+        stop("Only 'UserAdmin' users can change user permissions.
+              At least one user must have the 'UserAdmin' attribute!")
+      }
+    }
 
     query <- "UPDATE Users SET Fullname = ?, AuthIdentity = ?, Location = ?, Attributes = ? WHERE id = ?"
     data_for_sql <- as.list(c(data[row,]$Fullname, paste0(data[row,]$AuthIdentity, ""),
@@ -499,6 +763,23 @@ userconfig_datatable <- function(input, output, session,
   }
   userconfig.delete.callback <- function(data, row) {
     # delete a user configuration
+
+    # is restrictions have been placed on who can modify the server or user configuration
+    # then at least one user must have the restricted attribute
+    if ("ServerAdmin" %in% UserRestrictions()$Restriction) {
+      if (!("ServerAdmin" %in% unlist(data[-c(row),]$Attributes))) {
+        # modified data would no longer have anyone with ServerAdmin attribute
+        stop("Only 'ServerAdmin' users can change server settings.
+             At least one user must have the 'ServerAdmin' attribute!")
+      }
+    }
+    if ("UserAdmin" %in% UserRestrictions()$Restriction) {
+      if (!("UserAdmin" %in% unlist(data[-c(row),]$Attributes))) {
+        # modified data would no longer have anyone with UserAdmin attribute
+        stop("Only 'UserAdmin' users can change user permissions.
+             At least one user must have the 'UserAdmin' attribute!")
+      }
+    }
 
     query <- "DELETE FROM Users WHERE id = ?"
     data_for_sql <- as.list.data.frame(c(data[row,]$id))

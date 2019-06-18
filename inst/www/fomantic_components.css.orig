@@ -5852,7 +5852,2438 @@ body .ui.inverted::-webkit-scrollbar-thumb:hover {
   hyphens: auto;
 }
 
+/*******************************
+         Theme Overrides
+*******************************/
 
+/*******************************
+         Site Overrides
+*******************************/
+/*!
+ * # Semantic UI 2.7.1 - Divider
+ * http://github.com/semantic-org/semantic-ui/
+ *
+ *
+ * Released under the MIT license
+ * http://opensource.org/licenses/MIT
+ *
+ */
+
+/*******************************
+            Divider
+*******************************/
+
+.ui.divider {
+  margin: 1rem 0;
+  line-height: 1;
+  height: 0;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(0, 0, 0, 0.85);
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+/*--------------
+      Basic
+---------------*/
+
+.ui.divider:not(.vertical):not(.horizontal) {
+  border-top: 1px solid rgba(34, 36, 38, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/*--------------
+    Coupling
+---------------*/
+
+/* Allow divider between each column row */
+
+.ui.grid > .column + .divider,
+.ui.grid > .row > .column + .divider {
+  left: auto;
+}
+
+/*--------------
+   Horizontal
+---------------*/
+
+.ui.horizontal.divider {
+  display: table;
+  white-space: nowrap;
+  height: auto;
+  margin: '';
+  line-height: 1;
+  text-align: center;
+}
+
+.ui.horizontal.divider:before,
+.ui.horizontal.divider:after {
+  content: '';
+  display: table-cell;
+  position: relative;
+  top: 50%;
+  width: 50%;
+  background-repeat: no-repeat;
+}
+
+.ui.horizontal.divider:before {
+  background-position: right 1em top 50%;
+}
+
+.ui.horizontal.divider:after {
+  background-position: left 1em top 50%;
+}
+
+/*--------------
+    Vertical
+---------------*/
+
+.ui.vertical.divider {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  margin: 0;
+  padding: 0;
+  width: auto;
+  height: 50%;
+  line-height: 0;
+  text-align: center;
+  -webkit-transform: translateX(-50%);
+  transform: translateX(-50%);
+}
+
+.ui.vertical.divider:before,
+.ui.vertical.divider:after {
+  position: absolute;
+  left: 50%;
+  content: '';
+  z-index: 3;
+  border-left: 1px solid rgba(34, 36, 38, 0.15);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  width: 0;
+  height: calc(100% - 1rem);
+}
+
+.ui.vertical.divider:before {
+  top: -100%;
+}
+
+.ui.vertical.divider:after {
+  top: auto;
+  bottom: 0;
+}
+
+/* Inside grid */
+
+@media only screen and (max-width: 767px) {
+  .ui.stackable.grid .ui.vertical.divider,
+  .ui.grid .stackable.row .ui.vertical.divider {
+    display: table;
+    white-space: nowrap;
+    height: auto;
+    margin: '';
+    overflow: hidden;
+    line-height: 1;
+    text-align: center;
+    position: static;
+    top: 0;
+    left: 0;
+    -webkit-transform: none;
+    transform: none;
+  }
+
+  .ui.stackable.grid .ui.vertical.divider:before,
+  .ui.grid .stackable.row .ui.vertical.divider:before,
+  .ui.stackable.grid .ui.vertical.divider:after,
+  .ui.grid .stackable.row .ui.vertical.divider:after {
+    left: 0;
+    border-left: none;
+    border-right: none;
+    content: '';
+    display: table-cell;
+    position: relative;
+    top: 50%;
+    width: 50%;
+    background-repeat: no-repeat;
+  }
+
+  .ui.stackable.grid .ui.vertical.divider:before,
+  .ui.grid .stackable.row .ui.vertical.divider:before {
+    background-position: right 1em top 50%;
+  }
+
+  .ui.stackable.grid .ui.vertical.divider:after,
+  .ui.grid .stackable.row .ui.vertical.divider:after {
+    background-position: left 1em top 50%;
+  }
+}
+
+/*--------------
+      Icon
+---------------*/
+
+.ui.divider > .icon {
+  margin: 0;
+  font-size: 1rem;
+  height: 1em;
+  vertical-align: middle;
+}
+
+/*******************************
+          Variations
+*******************************/
+
+/*--------------
+    Hidden
+---------------*/
+
+.ui.hidden.divider {
+  border-color: transparent !important;
+}
+
+.ui.hidden.divider:before,
+.ui.hidden.divider:after {
+  display: none;
+}
+
+/*--------------
+    Inverted
+---------------*/
+
+.ui.divider.inverted,
+.ui.vertical.inverted.divider,
+.ui.horizontal.inverted.divider {
+  color: #FFFFFF;
+}
+
+.ui.divider.inverted,
+.ui.divider.inverted:after,
+.ui.divider.inverted:before {
+  border-top-color: rgba(34, 36, 38, 0.15) !important;
+  border-left-color: rgba(34, 36, 38, 0.15) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.15) !important;
+  border-right-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/*--------------
+    Fitted
+---------------*/
+
+.ui.fitted.divider {
+  margin: 0;
+}
+
+/*--------------
+    Clearing
+---------------*/
+
+.ui.clearing.divider {
+  clear: both;
+}
+
+/*--------------
+    Section
+---------------*/
+
+.ui.section.divider {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+/*--------------
+     Sizes
+---------------*/
+
+.ui.divider {
+  font-size: 1rem;
+}
+
+/*******************************
+         Theme Overrides
+*******************************/
+
+.ui.horizontal.divider:before,
+.ui.horizontal.divider:after {
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABaAAAAACCAYAAACuTHuKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo1OThBRDY4OUNDMTYxMUU0OUE3NUVGOEJDMzMzMjE2NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo1OThBRDY4QUNDMTYxMUU0OUE3NUVGOEJDMzMzMjE2NyI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjU5OEFENjg3Q0MxNjExRTQ5QTc1RUY4QkMzMzMyMTY3IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU5OEFENjg4Q0MxNjExRTQ5QTc1RUY4QkMzMzMyMTY3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+VU513gAAADVJREFUeNrs0DENACAQBDBIWLGBJQby/mUcJn5sJXQmOQMAAAAAAJqt+2prAAAAAACg2xdgANk6BEVuJgyMAAAAAElFTkSuQmCC');
+}
+
+@media only screen and (max-width: 767px) {
+  .ui.stackable.grid .ui.vertical.divider:before,
+  .ui.grid .stackable.row .ui.vertical.divider:before,
+  .ui.stackable.grid .ui.vertical.divider:after,
+  .ui.grid .stackable.row .ui.vertical.divider:after {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABaAAAAACCAYAAACuTHuKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo1OThBRDY4OUNDMTYxMUU0OUE3NUVGOEJDMzMzMjE2NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo1OThBRDY4QUNDMTYxMUU0OUE3NUVGOEJDMzMzMjE2NyI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjU5OEFENjg3Q0MxNjExRTQ5QTc1RUY4QkMzMzMyMTY3IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU5OEFENjg4Q0MxNjExRTQ5QTc1RUY4QkMzMzMyMTY3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+VU513gAAADVJREFUeNrs0DENACAQBDBIWLGBJQby/mUcJn5sJXQmOQMAAAAAAJqt+2prAAAAAACg2xdgANk6BEVuJgyMAAAAAElFTkSuQmCC');
+  }
+}
+
+/*******************************
+         Site Overrides
+*******************************/
+/*!
+ * # Semantic UI 2.7.1 - Flag
+ * http://github.com/semantic-org/semantic-ui/
+ *
+ *
+ * Released under the MIT license
+ * http://opensource.org/licenses/MIT
+ *
+ */
+
+/*******************************
+             Flag
+*******************************/
+
+i.flag:not(.icon) {
+  display: inline-block;
+  width: 16px;
+  height: 11px;
+  line-height: 11px;
+  vertical-align: baseline;
+  margin: 0 0.5em 0 0;
+  text-decoration: inherit;
+  speak: none;
+  -webkit-font-smoothing: antialiased;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Sprite */
+
+i.flag:not(.icon):before {
+  display: inline-block;
+  content: '';
+  background: url("./themes/default/assets/images/flags.png") no-repeat -108px -1976px;
+  width: 16px;
+  height: 11px;
+}
+
+/* Flag Sprite Based On http://www.famfamfam.com/lab/icons/flags/ */
+
+/*******************************
+         Theme Overrides
+*******************************/
+
+i.flag.ad:before,
+i.flag.andorra:before {
+  background-position: 0 0;
+}
+
+i.flag.ae:before,
+i.flag.united.arab.emirates:before,
+i.flag.uae:before {
+  background-position: 0 -26px;
+}
+
+i.flag.af:before,
+i.flag.afghanistan:before {
+  background-position: 0 -52px;
+}
+
+i.flag.ag:before,
+i.flag.antigua:before {
+  background-position: 0 -78px;
+}
+
+i.flag.ai:before,
+i.flag.anguilla:before {
+  background-position: 0 -104px;
+}
+
+i.flag.al:before,
+i.flag.albania:before {
+  background-position: 0 -130px;
+}
+
+i.flag.am:before,
+i.flag.armenia:before {
+  background-position: 0 -156px;
+}
+
+i.flag.an:before,
+i.flag.netherlands.antilles:before {
+  background-position: 0 -182px;
+}
+
+i.flag.ao:before,
+i.flag.angola:before {
+  background-position: 0 -208px;
+}
+
+i.flag.ar:before,
+i.flag.argentina:before {
+  background-position: 0 -234px;
+}
+
+i.flag.as:before,
+i.flag.american.samoa:before {
+  background-position: 0 -260px;
+}
+
+i.flag.at:before,
+i.flag.austria:before {
+  background-position: 0 -286px;
+}
+
+i.flag.au:before,
+i.flag.australia:before {
+  background-position: 0 -312px;
+}
+
+i.flag.aw:before,
+i.flag.aruba:before {
+  background-position: 0 -338px;
+}
+
+i.flag.ax:before,
+i.flag.aland.islands:before {
+  background-position: 0 -364px;
+}
+
+i.flag.az:before,
+i.flag.azerbaijan:before {
+  background-position: 0 -390px;
+}
+
+i.flag.ba:before,
+i.flag.bosnia:before {
+  background-position: 0 -416px;
+}
+
+i.flag.bb:before,
+i.flag.barbados:before {
+  background-position: 0 -442px;
+}
+
+i.flag.bd:before,
+i.flag.bangladesh:before {
+  background-position: 0 -468px;
+}
+
+i.flag.be:before,
+i.flag.belgium:before {
+  background-position: 0 -494px;
+}
+
+i.flag.bf:before,
+i.flag.burkina.faso:before {
+  background-position: 0 -520px;
+}
+
+i.flag.bg:before,
+i.flag.bulgaria:before {
+  background-position: 0 -546px;
+}
+
+i.flag.bh:before,
+i.flag.bahrain:before {
+  background-position: 0 -572px;
+}
+
+i.flag.bi:before,
+i.flag.burundi:before {
+  background-position: 0 -598px;
+}
+
+i.flag.bj:before,
+i.flag.benin:before {
+  background-position: 0 -624px;
+}
+
+i.flag.bm:before,
+i.flag.bermuda:before {
+  background-position: 0 -650px;
+}
+
+i.flag.bn:before,
+i.flag.brunei:before {
+  background-position: 0 -676px;
+}
+
+i.flag.bo:before,
+i.flag.bolivia:before {
+  background-position: 0 -702px;
+}
+
+i.flag.br:before,
+i.flag.brazil:before {
+  background-position: 0 -728px;
+}
+
+i.flag.bs:before,
+i.flag.bahamas:before {
+  background-position: 0 -754px;
+}
+
+i.flag.bt:before,
+i.flag.bhutan:before {
+  background-position: 0 -780px;
+}
+
+i.flag.bv:before,
+i.flag.bouvet.island:before {
+  background-position: 0 -806px;
+}
+
+i.flag.bw:before,
+i.flag.botswana:before {
+  background-position: 0 -832px;
+}
+
+i.flag.by:before,
+i.flag.belarus:before {
+  background-position: 0 -858px;
+}
+
+i.flag.bz:before,
+i.flag.belize:before {
+  background-position: 0 -884px;
+}
+
+i.flag.ca:before,
+i.flag.canada:before {
+  background-position: 0 -910px;
+}
+
+i.flag.cc:before,
+i.flag.cocos.islands:before {
+  background-position: 0 -962px;
+}
+
+i.flag.cd:before,
+i.flag.congo:before {
+  background-position: 0 -988px;
+}
+
+i.flag.cf:before,
+i.flag.central.african.republic:before {
+  background-position: 0 -1014px;
+}
+
+i.flag.cg:before,
+i.flag.congo.brazzaville:before {
+  background-position: 0 -1040px;
+}
+
+i.flag.ch:before,
+i.flag.switzerland:before {
+  background-position: 0 -1066px;
+}
+
+i.flag.ci:before,
+i.flag.cote.divoire:before {
+  background-position: 0 -1092px;
+}
+
+i.flag.ck:before,
+i.flag.cook.islands:before {
+  background-position: 0 -1118px;
+}
+
+i.flag.cl:before,
+i.flag.chile:before {
+  background-position: 0 -1144px;
+}
+
+i.flag.cm:before,
+i.flag.cameroon:before {
+  background-position: 0 -1170px;
+}
+
+i.flag.cn:before,
+i.flag.china:before {
+  background-position: 0 -1196px;
+}
+
+i.flag.co:before,
+i.flag.colombia:before {
+  background-position: 0 -1222px;
+}
+
+i.flag.cr:before,
+i.flag.costa.rica:before {
+  background-position: 0 -1248px;
+}
+
+i.flag.cs:before,
+i.flag.serbia:before {
+  background-position: 0 -1274px;
+}
+
+i.flag.cu:before,
+i.flag.cuba:before {
+  background-position: 0 -1300px;
+}
+
+i.flag.cv:before,
+i.flag.cape.verde:before {
+  background-position: 0 -1326px;
+}
+
+i.flag.cx:before,
+i.flag.christmas.island:before {
+  background-position: 0 -1352px;
+}
+
+i.flag.cy:before,
+i.flag.cyprus:before {
+  background-position: 0 -1378px;
+}
+
+i.flag.cz:before,
+i.flag.czech.republic:before {
+  background-position: 0 -1404px;
+}
+
+i.flag.de:before,
+i.flag.germany:before {
+  background-position: 0 -1430px;
+}
+
+i.flag.dj:before,
+i.flag.djibouti:before {
+  background-position: 0 -1456px;
+}
+
+i.flag.dk:before,
+i.flag.denmark:before {
+  background-position: 0 -1482px;
+}
+
+i.flag.dm:before,
+i.flag.dominica:before {
+  background-position: 0 -1508px;
+}
+
+i.flag.do:before,
+i.flag.dominican.republic:before {
+  background-position: 0 -1534px;
+}
+
+i.flag.dz:before,
+i.flag.algeria:before {
+  background-position: 0 -1560px;
+}
+
+i.flag.ec:before,
+i.flag.ecuador:before {
+  background-position: 0 -1586px;
+}
+
+i.flag.ee:before,
+i.flag.estonia:before {
+  background-position: 0 -1612px;
+}
+
+i.flag.eg:before,
+i.flag.egypt:before {
+  background-position: 0 -1638px;
+}
+
+i.flag.eh:before,
+i.flag.western.sahara:before {
+  background-position: 0 -1664px;
+}
+
+i.flag.gb.eng:before,
+i.flag.england:before {
+  background-position: 0 -1690px;
+}
+
+i.flag.er:before,
+i.flag.eritrea:before {
+  background-position: 0 -1716px;
+}
+
+i.flag.es:before,
+i.flag.spain:before {
+  background-position: 0 -1742px;
+}
+
+i.flag.et:before,
+i.flag.ethiopia:before {
+  background-position: 0 -1768px;
+}
+
+i.flag.eu:before,
+i.flag.european.union:before {
+  background-position: 0 -1794px;
+}
+
+i.flag.fi:before,
+i.flag.finland:before {
+  background-position: 0 -1846px;
+}
+
+i.flag.fj:before,
+i.flag.fiji:before {
+  background-position: 0 -1872px;
+}
+
+i.flag.fk:before,
+i.flag.falkland.islands:before {
+  background-position: 0 -1898px;
+}
+
+i.flag.fm:before,
+i.flag.micronesia:before {
+  background-position: 0 -1924px;
+}
+
+i.flag.fo:before,
+i.flag.faroe.islands:before {
+  background-position: 0 -1950px;
+}
+
+i.flag.fr:before,
+i.flag.france:before {
+  background-position: 0 -1976px;
+}
+
+i.flag.ga:before,
+i.flag.gabon:before {
+  background-position: -36px 0;
+}
+
+i.flag.gb:before,
+i.flag.uk:before,
+i.flag.united.kingdom:before {
+  background-position: -36px -26px;
+}
+
+i.flag.gd:before,
+i.flag.grenada:before {
+  background-position: -36px -52px;
+}
+
+i.flag.ge:before,
+i.flag.georgia:before {
+  background-position: -36px -78px;
+}
+
+i.flag.gf:before,
+i.flag.french.guiana:before {
+  background-position: -36px -104px;
+}
+
+i.flag.gh:before,
+i.flag.ghana:before {
+  background-position: -36px -130px;
+}
+
+i.flag.gi:before,
+i.flag.gibraltar:before {
+  background-position: -36px -156px;
+}
+
+i.flag.gl:before,
+i.flag.greenland:before {
+  background-position: -36px -182px;
+}
+
+i.flag.gm:before,
+i.flag.gambia:before {
+  background-position: -36px -208px;
+}
+
+i.flag.gn:before,
+i.flag.guinea:before {
+  background-position: -36px -234px;
+}
+
+i.flag.gp:before,
+i.flag.guadeloupe:before {
+  background-position: -36px -260px;
+}
+
+i.flag.gq:before,
+i.flag.equatorial.guinea:before {
+  background-position: -36px -286px;
+}
+
+i.flag.gr:before,
+i.flag.greece:before {
+  background-position: -36px -312px;
+}
+
+i.flag.gs:before,
+i.flag.sandwich.islands:before {
+  background-position: -36px -338px;
+}
+
+i.flag.gt:before,
+i.flag.guatemala:before {
+  background-position: -36px -364px;
+}
+
+i.flag.gu:before,
+i.flag.guam:before {
+  background-position: -36px -390px;
+}
+
+i.flag.gw:before,
+i.flag.guinea-bissau:before {
+  background-position: -36px -416px;
+}
+
+i.flag.gy:before,
+i.flag.guyana:before {
+  background-position: -36px -442px;
+}
+
+i.flag.hk:before,
+i.flag.hong.kong:before {
+  background-position: -36px -468px;
+}
+
+i.flag.hm:before,
+i.flag.heard.island:before {
+  background-position: -36px -494px;
+}
+
+i.flag.hn:before,
+i.flag.honduras:before {
+  background-position: -36px -520px;
+}
+
+i.flag.hr:before,
+i.flag.croatia:before {
+  background-position: -36px -546px;
+}
+
+i.flag.ht:before,
+i.flag.haiti:before {
+  background-position: -36px -572px;
+}
+
+i.flag.hu:before,
+i.flag.hungary:before {
+  background-position: -36px -598px;
+}
+
+i.flag.id:before,
+i.flag.indonesia:before {
+  background-position: -36px -624px;
+}
+
+i.flag.ie:before,
+i.flag.ireland:before {
+  background-position: -36px -650px;
+}
+
+i.flag.il:before,
+i.flag.israel:before {
+  background-position: -36px -676px;
+}
+
+i.flag.in:before,
+i.flag.india:before {
+  background-position: -36px -702px;
+}
+
+i.flag.io:before,
+i.flag.indian.ocean.territory:before {
+  background-position: -36px -728px;
+}
+
+i.flag.iq:before,
+i.flag.iraq:before {
+  background-position: -36px -754px;
+}
+
+i.flag.ir:before,
+i.flag.iran:before {
+  background-position: -36px -780px;
+}
+
+i.flag.is:before,
+i.flag.iceland:before {
+  background-position: -36px -806px;
+}
+
+i.flag.it:before,
+i.flag.italy:before {
+  background-position: -36px -832px;
+}
+
+i.flag.jm:before,
+i.flag.jamaica:before {
+  background-position: -36px -858px;
+}
+
+i.flag.jo:before,
+i.flag.jordan:before {
+  background-position: -36px -884px;
+}
+
+i.flag.jp:before,
+i.flag.japan:before {
+  background-position: -36px -910px;
+}
+
+i.flag.ke:before,
+i.flag.kenya:before {
+  background-position: -36px -936px;
+}
+
+i.flag.kg:before,
+i.flag.kyrgyzstan:before {
+  background-position: -36px -962px;
+}
+
+i.flag.kh:before,
+i.flag.cambodia:before {
+  background-position: -36px -988px;
+}
+
+i.flag.ki:before,
+i.flag.kiribati:before {
+  background-position: -36px -1014px;
+}
+
+i.flag.km:before,
+i.flag.comoros:before {
+  background-position: -36px -1040px;
+}
+
+i.flag.kn:before,
+i.flag.saint.kitts.and.nevis:before {
+  background-position: -36px -1066px;
+}
+
+i.flag.kp:before,
+i.flag.north.korea:before {
+  background-position: -36px -1092px;
+}
+
+i.flag.kr:before,
+i.flag.south.korea:before {
+  background-position: -36px -1118px;
+}
+
+i.flag.kw:before,
+i.flag.kuwait:before {
+  background-position: -36px -1144px;
+}
+
+i.flag.ky:before,
+i.flag.cayman.islands:before {
+  background-position: -36px -1170px;
+}
+
+i.flag.kz:before,
+i.flag.kazakhstan:before {
+  background-position: -36px -1196px;
+}
+
+i.flag.la:before,
+i.flag.laos:before {
+  background-position: -36px -1222px;
+}
+
+i.flag.lb:before,
+i.flag.lebanon:before {
+  background-position: -36px -1248px;
+}
+
+i.flag.lc:before,
+i.flag.saint.lucia:before {
+  background-position: -36px -1274px;
+}
+
+i.flag.li:before,
+i.flag.liechtenstein:before {
+  background-position: -36px -1300px;
+}
+
+i.flag.lk:before,
+i.flag.sri.lanka:before {
+  background-position: -36px -1326px;
+}
+
+i.flag.lr:before,
+i.flag.liberia:before {
+  background-position: -36px -1352px;
+}
+
+i.flag.ls:before,
+i.flag.lesotho:before {
+  background-position: -36px -1378px;
+}
+
+i.flag.lt:before,
+i.flag.lithuania:before {
+  background-position: -36px -1404px;
+}
+
+i.flag.lu:before,
+i.flag.luxembourg:before {
+  background-position: -36px -1430px;
+}
+
+i.flag.lv:before,
+i.flag.latvia:before {
+  background-position: -36px -1456px;
+}
+
+i.flag.ly:before,
+i.flag.libya:before {
+  background-position: -36px -1482px;
+}
+
+i.flag.ma:before,
+i.flag.morocco:before {
+  background-position: -36px -1508px;
+}
+
+i.flag.mc:before,
+i.flag.monaco:before {
+  background-position: -36px -1534px;
+}
+
+i.flag.md:before,
+i.flag.moldova:before {
+  background-position: -36px -1560px;
+}
+
+i.flag.me:before,
+i.flag.montenegro:before {
+  background-position: -36px -1586px;
+}
+
+i.flag.mg:before,
+i.flag.madagascar:before {
+  background-position: -36px -1613px;
+}
+
+i.flag.mh:before,
+i.flag.marshall.islands:before {
+  background-position: -36px -1639px;
+}
+
+i.flag.mk:before,
+i.flag.macedonia:before {
+  background-position: -36px -1665px;
+}
+
+i.flag.ml:before,
+i.flag.mali:before {
+  background-position: -36px -1691px;
+}
+
+i.flag.mm:before,
+i.flag.myanmar:before,
+i.flag.burma:before {
+  background-position: -36px -1717px;
+}
+
+i.flag.mn:before,
+i.flag.mongolia:before {
+  background-position: -36px -1743px;
+}
+
+i.flag.mo:before,
+i.flag.macau:before {
+  background-position: -36px -1769px;
+}
+
+i.flag.mp:before,
+i.flag.northern.mariana.islands:before {
+  background-position: -36px -1795px;
+}
+
+i.flag.mq:before,
+i.flag.martinique:before {
+  background-position: -36px -1821px;
+}
+
+i.flag.mr:before,
+i.flag.mauritania:before {
+  background-position: -36px -1847px;
+}
+
+i.flag.ms:before,
+i.flag.montserrat:before {
+  background-position: -36px -1873px;
+}
+
+i.flag.mt:before,
+i.flag.malta:before {
+  background-position: -36px -1899px;
+}
+
+i.flag.mu:before,
+i.flag.mauritius:before {
+  background-position: -36px -1925px;
+}
+
+i.flag.mv:before,
+i.flag.maldives:before {
+  background-position: -36px -1951px;
+}
+
+i.flag.mw:before,
+i.flag.malawi:before {
+  background-position: -36px -1977px;
+}
+
+i.flag.mx:before,
+i.flag.mexico:before {
+  background-position: -72px 0;
+}
+
+i.flag.my:before,
+i.flag.malaysia:before {
+  background-position: -72px -26px;
+}
+
+i.flag.mz:before,
+i.flag.mozambique:before {
+  background-position: -72px -52px;
+}
+
+i.flag.na:before,
+i.flag.namibia:before {
+  background-position: -72px -78px;
+}
+
+i.flag.nc:before,
+i.flag.new.caledonia:before {
+  background-position: -72px -104px;
+}
+
+i.flag.ne:before,
+i.flag.niger:before {
+  background-position: -72px -130px;
+}
+
+i.flag.nf:before,
+i.flag.norfolk.island:before {
+  background-position: -72px -156px;
+}
+
+i.flag.ng:before,
+i.flag.nigeria:before {
+  background-position: -72px -182px;
+}
+
+i.flag.ni:before,
+i.flag.nicaragua:before {
+  background-position: -72px -208px;
+}
+
+i.flag.nl:before,
+i.flag.netherlands:before {
+  background-position: -72px -234px;
+}
+
+i.flag.no:before,
+i.flag.norway:before {
+  background-position: -72px -260px;
+}
+
+i.flag.np:before,
+i.flag.nepal:before {
+  background-position: -72px -286px;
+}
+
+i.flag.nr:before,
+i.flag.nauru:before {
+  background-position: -72px -312px;
+}
+
+i.flag.nu:before,
+i.flag.niue:before {
+  background-position: -72px -338px;
+}
+
+i.flag.nz:before,
+i.flag.new.zealand:before {
+  background-position: -72px -364px;
+}
+
+i.flag.om:before,
+i.flag.oman:before {
+  background-position: -72px -390px;
+}
+
+i.flag.pa:before,
+i.flag.panama:before {
+  background-position: -72px -416px;
+}
+
+i.flag.pe:before,
+i.flag.peru:before {
+  background-position: -72px -442px;
+}
+
+i.flag.pf:before,
+i.flag.french.polynesia:before {
+  background-position: -72px -468px;
+}
+
+i.flag.pg:before,
+i.flag.new.guinea:before {
+  background-position: -72px -494px;
+}
+
+i.flag.ph:before,
+i.flag.philippines:before {
+  background-position: -72px -520px;
+}
+
+i.flag.pk:before,
+i.flag.pakistan:before {
+  background-position: -72px -546px;
+}
+
+i.flag.pl:before,
+i.flag.poland:before {
+  background-position: -72px -572px;
+}
+
+i.flag.pm:before,
+i.flag.saint.pierre:before {
+  background-position: -72px -598px;
+}
+
+i.flag.pn:before,
+i.flag.pitcairn.islands:before {
+  background-position: -72px -624px;
+}
+
+i.flag.pr:before,
+i.flag.puerto.rico:before {
+  background-position: -72px -650px;
+}
+
+i.flag.ps:before,
+i.flag.palestine:before {
+  background-position: -72px -676px;
+}
+
+i.flag.pt:before,
+i.flag.portugal:before {
+  background-position: -72px -702px;
+}
+
+i.flag.pw:before,
+i.flag.palau:before {
+  background-position: -72px -728px;
+}
+
+i.flag.py:before,
+i.flag.paraguay:before {
+  background-position: -72px -754px;
+}
+
+i.flag.qa:before,
+i.flag.qatar:before {
+  background-position: -72px -780px;
+}
+
+i.flag.re:before,
+i.flag.reunion:before {
+  background-position: -72px -806px;
+}
+
+i.flag.ro:before,
+i.flag.romania:before {
+  background-position: -72px -832px;
+}
+
+i.flag.rs:before,
+i.flag.serbia:before {
+  background-position: -72px -858px;
+}
+
+i.flag.ru:before,
+i.flag.russia:before {
+  background-position: -72px -884px;
+}
+
+i.flag.rw:before,
+i.flag.rwanda:before {
+  background-position: -72px -910px;
+}
+
+i.flag.sa:before,
+i.flag.saudi.arabia:before {
+  background-position: -72px -936px;
+}
+
+i.flag.sb:before,
+i.flag.solomon.islands:before {
+  background-position: -72px -962px;
+}
+
+i.flag.sc:before,
+i.flag.seychelles:before {
+  background-position: -72px -988px;
+}
+
+i.flag.gb.sct:before,
+i.flag.scotland:before {
+  background-position: -72px -1014px;
+}
+
+i.flag.sd:before,
+i.flag.sudan:before {
+  background-position: -72px -1040px;
+}
+
+i.flag.se:before,
+i.flag.sweden:before {
+  background-position: -72px -1066px;
+}
+
+i.flag.sg:before,
+i.flag.singapore:before {
+  background-position: -72px -1092px;
+}
+
+i.flag.sh:before,
+i.flag.saint.helena:before {
+  background-position: -72px -1118px;
+}
+
+i.flag.si:before,
+i.flag.slovenia:before {
+  background-position: -72px -1144px;
+}
+
+i.flag.sj:before,
+i.flag.svalbard:before,
+i.flag.jan.mayen:before {
+  background-position: -72px -1170px;
+}
+
+i.flag.sk:before,
+i.flag.slovakia:before {
+  background-position: -72px -1196px;
+}
+
+i.flag.sl:before,
+i.flag.sierra.leone:before {
+  background-position: -72px -1222px;
+}
+
+i.flag.sm:before,
+i.flag.san.marino:before {
+  background-position: -72px -1248px;
+}
+
+i.flag.sn:before,
+i.flag.senegal:before {
+  background-position: -72px -1274px;
+}
+
+i.flag.so:before,
+i.flag.somalia:before {
+  background-position: -72px -1300px;
+}
+
+i.flag.sr:before,
+i.flag.suriname:before {
+  background-position: -72px -1326px;
+}
+
+i.flag.st:before,
+i.flag.sao.tome:before {
+  background-position: -72px -1352px;
+}
+
+i.flag.sv:before,
+i.flag.el.salvador:before {
+  background-position: -72px -1378px;
+}
+
+i.flag.sy:before,
+i.flag.syria:before {
+  background-position: -72px -1404px;
+}
+
+i.flag.sz:before,
+i.flag.swaziland:before {
+  background-position: -72px -1430px;
+}
+
+i.flag.tc:before,
+i.flag.caicos.islands:before {
+  background-position: -72px -1456px;
+}
+
+i.flag.td:before,
+i.flag.chad:before {
+  background-position: -72px -1482px;
+}
+
+i.flag.tf:before,
+i.flag.french.territories:before {
+  background-position: -72px -1508px;
+}
+
+i.flag.tg:before,
+i.flag.togo:before {
+  background-position: -72px -1534px;
+}
+
+i.flag.th:before,
+i.flag.thailand:before {
+  background-position: -72px -1560px;
+}
+
+i.flag.tj:before,
+i.flag.tajikistan:before {
+  background-position: -72px -1586px;
+}
+
+i.flag.tk:before,
+i.flag.tokelau:before {
+  background-position: -72px -1612px;
+}
+
+i.flag.tl:before,
+i.flag.timorleste:before {
+  background-position: -72px -1638px;
+}
+
+i.flag.tm:before,
+i.flag.turkmenistan:before {
+  background-position: -72px -1664px;
+}
+
+i.flag.tn:before,
+i.flag.tunisia:before {
+  background-position: -72px -1690px;
+}
+
+i.flag.to:before,
+i.flag.tonga:before {
+  background-position: -72px -1716px;
+}
+
+i.flag.tr:before,
+i.flag.turkey:before {
+  background-position: -72px -1742px;
+}
+
+i.flag.tt:before,
+i.flag.trinidad:before {
+  background-position: -72px -1768px;
+}
+
+i.flag.tv:before,
+i.flag.tuvalu:before {
+  background-position: -72px -1794px;
+}
+
+i.flag.tw:before,
+i.flag.taiwan:before {
+  background-position: -72px -1820px;
+}
+
+i.flag.tz:before,
+i.flag.tanzania:before {
+  background-position: -72px -1846px;
+}
+
+i.flag.ua:before,
+i.flag.ukraine:before {
+  background-position: -72px -1872px;
+}
+
+i.flag.ug:before,
+i.flag.uganda:before {
+  background-position: -72px -1898px;
+}
+
+i.flag.um:before,
+i.flag.us.minor.islands:before {
+  background-position: -72px -1924px;
+}
+
+i.flag.us:before,
+i.flag.america:before,
+i.flag.united.states:before {
+  background-position: -72px -1950px;
+}
+
+i.flag.uy:before,
+i.flag.uruguay:before {
+  background-position: -72px -1976px;
+}
+
+i.flag.uz:before,
+i.flag.uzbekistan:before {
+  background-position: -108px 0;
+}
+
+i.flag.va:before,
+i.flag.vatican.city:before {
+  background-position: -108px -26px;
+}
+
+i.flag.vc:before,
+i.flag.saint.vincent:before {
+  background-position: -108px -52px;
+}
+
+i.flag.ve:before,
+i.flag.venezuela:before {
+  background-position: -108px -78px;
+}
+
+i.flag.vg:before,
+i.flag.british.virgin.islands:before {
+  background-position: -108px -104px;
+}
+
+i.flag.vi:before,
+i.flag.us.virgin.islands:before {
+  background-position: -108px -130px;
+}
+
+i.flag.vn:before,
+i.flag.vietnam:before {
+  background-position: -108px -156px;
+}
+
+i.flag.vu:before,
+i.flag.vanuatu:before {
+  background-position: -108px -182px;
+}
+
+i.flag.gb.wls:before,
+i.flag.wales:before {
+  background-position: -108px -208px;
+}
+
+i.flag.wf:before,
+i.flag.wallis.and.futuna:before {
+  background-position: -108px -234px;
+}
+
+i.flag.ws:before,
+i.flag.samoa:before {
+  background-position: -108px -260px;
+}
+
+i.flag.ye:before,
+i.flag.yemen:before {
+  background-position: -108px -286px;
+}
+
+i.flag.yt:before,
+i.flag.mayotte:before {
+  background-position: -108px -312px;
+}
+
+i.flag.za:before,
+i.flag.south.africa:before {
+  background-position: -108px -338px;
+}
+
+i.flag.zm:before,
+i.flag.zambia:before {
+  background-position: -108px -364px;
+}
+
+i.flag.zw:before,
+i.flag.zimbabwe:before {
+  background-position: -108px -390px;
+}
+
+/*******************************
+         Site Overrides
+*******************************/
+/*!
+ * # Semantic UI 2.7.1 - Header
+ * http://github.com/semantic-org/semantic-ui/
+ *
+ *
+ * Released under the MIT license
+ * http://opensource.org/licenses/MIT
+ *
+ */
+
+/*******************************
+            Header
+*******************************/
+
+/* Standard */
+
+.ui.header {
+  border: none;
+  margin: calc(2rem - 0.1428571428571429em) 0 1rem;
+  padding: 0 0;
+  font-family: 'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+  font-weight: bold;
+  line-height: 1.28571429em;
+  text-transform: none;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.ui.header:first-child {
+  margin-top: -0.14285714em;
+}
+
+.ui.header:last-child {
+  margin-bottom: 0;
+}
+
+/*--------------
+   Sub Header
+---------------*/
+
+.ui.header .sub.header {
+  display: block;
+  font-weight: normal;
+  padding: 0;
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.2em;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+/*--------------
+      Icon
+---------------*/
+
+.ui.header > .icon {
+  display: table-cell;
+  opacity: 1;
+  font-size: 1.5em;
+  padding-top: 0;
+  vertical-align: middle;
+}
+
+/* With Text Node */
+
+.ui.header .icon:only-child {
+  display: inline-block;
+  padding: 0;
+  margin-right: 0.75rem;
+}
+
+/*-------------------
+        Image
+--------------------*/
+
+.ui.header > .image:not(.icon),
+.ui.header > img {
+  display: inline-block;
+  margin-top: 0.14285714em;
+  width: 2.5em;
+  height: auto;
+  vertical-align: middle;
+}
+
+.ui.header > .image:not(.icon):only-child,
+.ui.header > img:only-child {
+  margin-right: 0.75rem;
+}
+
+/*--------------
+     Content
+---------------*/
+
+.ui.header .content {
+  display: inline-block;
+  vertical-align: top;
+}
+
+/* After Image */
+
+.ui.header > img + .content,
+.ui.header > .image + .content {
+  padding-left: 0.75rem;
+  vertical-align: middle;
+}
+
+/* After Icon */
+
+.ui.header > .icon + .content {
+  padding-left: 0.75rem;
+  display: table-cell;
+  vertical-align: middle;
+}
+
+/*--------------
+ Loose Coupling
+---------------*/
+
+.ui.header .ui.label {
+  font-size: '';
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+/* Positioning */
+
+.ui.header + p {
+  margin-top: 0;
+}
+
+/*******************************
+            Types
+*******************************/
+
+/*--------------
+     Page
+---------------*/
+
+h1.ui.header {
+  font-size: 2rem;
+}
+
+h2.ui.header {
+  font-size: 1.71428571rem;
+}
+
+h3.ui.header {
+  font-size: 1.28571429rem;
+}
+
+h4.ui.header {
+  font-size: 1.07142857rem;
+}
+
+h5.ui.header {
+  font-size: 1rem;
+}
+
+/* Sub Header */
+
+h1.ui.header .sub.header {
+  font-size: 1.14285714rem;
+}
+
+h2.ui.header .sub.header {
+  font-size: 1.14285714rem;
+}
+
+h3.ui.header .sub.header {
+  font-size: 1rem;
+}
+
+h4.ui.header .sub.header {
+  font-size: 1rem;
+}
+
+h5.ui.header .sub.header {
+  font-size: 0.92857143rem;
+}
+
+/*--------------
+ Content Heading
+---------------*/
+
+.ui.huge.header {
+  min-height: 1em;
+  font-size: 2em;
+}
+
+.ui.large.header {
+  font-size: 1.71428571em;
+}
+
+.ui.medium.header {
+  font-size: 1.28571429em;
+}
+
+.ui.small.header {
+  font-size: 1.07142857em;
+}
+
+.ui.tiny.header {
+  font-size: 1em;
+}
+
+/* Sub Header */
+
+.ui.huge.header .sub.header {
+  font-size: 1.14285714rem;
+}
+
+.ui.large.header .sub.header {
+  font-size: 1.14285714rem;
+}
+
+.ui.header .sub.header {
+  font-size: 1rem;
+}
+
+.ui.small.header .sub.header {
+  font-size: 1rem;
+}
+
+.ui.tiny.header .sub.header {
+  font-size: 0.92857143rem;
+}
+
+/*--------------
+   Sub Heading
+---------------*/
+
+.ui.sub.header {
+  padding: 0;
+  margin-bottom: 0.14285714rem;
+  font-weight: bold;
+  font-size: 0.85714286em;
+  text-transform: uppercase;
+  color: '';
+}
+
+.ui.small.sub.header {
+  font-size: 0.78571429em;
+}
+
+.ui.large.sub.header {
+  font-size: 0.92857143em;
+}
+
+.ui.huge.sub.header {
+  font-size: 1em;
+}
+
+/*-------------------
+        Icon
+--------------------*/
+
+.ui.icon.header {
+  display: inline-block;
+  text-align: center;
+  margin: 2rem 0 1rem;
+}
+
+.ui.icon.header:after {
+  content: '';
+  display: block;
+  height: 0;
+  clear: both;
+  visibility: hidden;
+}
+
+.ui.icon.header:first-child {
+  margin-top: 0;
+}
+
+.ui.icon.header .icon {
+  float: none;
+  display: block;
+  width: auto;
+  height: auto;
+  line-height: 1;
+  padding: 0;
+  font-size: 3em;
+  margin: 0 auto 0.5rem;
+  opacity: 1;
+}
+
+.ui.icon.header .corner.icon {
+  font-size: calc(3em * 0.45);
+}
+
+.ui.icon.header .content {
+  display: block;
+  padding: 0;
+}
+
+.ui.icon.header .circular.icon {
+  font-size: 2em;
+}
+
+.ui.icon.header .square.icon {
+  font-size: 2em;
+}
+
+.ui.block.icon.header .icon {
+  margin-bottom: 0;
+}
+
+.ui.icon.header.aligned {
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+}
+
+/*******************************
+            States
+*******************************/
+
+.ui.disabled.header {
+  opacity: 0.45;
+}
+
+/*******************************
+           Variations
+*******************************/
+
+/*-------------------
+      Inverted
+--------------------*/
+
+.ui.inverted.header {
+  color: #FFFFFF;
+}
+
+.ui.inverted.header .sub.header {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.ui.inverted.attached.header {
+  background: #545454 -webkit-gradient(linear, left top, left bottom, from(transparent), to(rgba(0, 0, 0, 0.05)));
+  background: #545454 -webkit-linear-gradient(transparent, rgba(0, 0, 0, 0.05));
+  background: #545454 linear-gradient(transparent, rgba(0, 0, 0, 0.05));
+  -webkit-box-shadow: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
+.ui.inverted.block.header {
+  background: #545454 -webkit-gradient(linear, left top, left bottom, from(transparent), to(rgba(0, 0, 0, 0.05)));
+  background: #545454 -webkit-linear-gradient(transparent, rgba(0, 0, 0, 0.05));
+  background: #545454 linear-gradient(transparent, rgba(0, 0, 0, 0.05));
+  -webkit-box-shadow: none;
+  box-shadow: none;
+  border-bottom: none;
+}
+
+/*-------------------
+       Colors
+--------------------*/
+
+.ui.primary.header {
+  color: #2185D0;
+}
+
+a.ui.primary.header:hover {
+  color: #1678c2;
+}
+
+.ui.primary.dividing.header {
+  border-bottom: 2px solid #2185D0;
+}
+
+.ui.inverted.primary.header.header.header {
+  color: #54C8FF;
+}
+
+a.ui.inverted.primary.header.header.header:hover {
+  color: #21b8ff;
+}
+
+.ui.inverted.primary.dividing.header {
+  border-bottom: 2px solid #54C8FF;
+}
+
+.ui.secondary.header {
+  color: #1B1C1D;
+}
+
+a.ui.secondary.header:hover {
+  color: #27292a;
+}
+
+.ui.secondary.dividing.header {
+  border-bottom: 2px solid #1B1C1D;
+}
+
+.ui.inverted.secondary.header.header.header {
+  color: #545454;
+}
+
+a.ui.inverted.secondary.header.header.header:hover {
+  color: #6e6e6e;
+}
+
+.ui.inverted.secondary.dividing.header {
+  border-bottom: 2px solid #545454;
+}
+
+.ui.red.header {
+  color: #DB2828;
+}
+
+a.ui.red.header:hover {
+  color: #d01919;
+}
+
+.ui.red.dividing.header {
+  border-bottom: 2px solid #DB2828;
+}
+
+.ui.inverted.red.header.header.header {
+  color: #FF695E;
+}
+
+a.ui.inverted.red.header.header.header:hover {
+  color: #ff392b;
+}
+
+.ui.inverted.red.dividing.header {
+  border-bottom: 2px solid #FF695E;
+}
+
+.ui.orange.header {
+  color: #F2711C;
+}
+
+a.ui.orange.header:hover {
+  color: #f26202;
+}
+
+.ui.orange.dividing.header {
+  border-bottom: 2px solid #F2711C;
+}
+
+.ui.inverted.orange.header.header.header {
+  color: #FF851B;
+}
+
+a.ui.inverted.orange.header.header.header:hover {
+  color: #e76b00;
+}
+
+.ui.inverted.orange.dividing.header {
+  border-bottom: 2px solid #FF851B;
+}
+
+.ui.yellow.header {
+  color: #FBBD08;
+}
+
+a.ui.yellow.header:hover {
+  color: #eaae00;
+}
+
+.ui.yellow.dividing.header {
+  border-bottom: 2px solid #FBBD08;
+}
+
+.ui.inverted.yellow.header.header.header {
+  color: #FFE21F;
+}
+
+a.ui.inverted.yellow.header.header.header:hover {
+  color: #ebcd00;
+}
+
+.ui.inverted.yellow.dividing.header {
+  border-bottom: 2px solid #FFE21F;
+}
+
+.ui.olive.header {
+  color: #B5CC18;
+}
+
+a.ui.olive.header:hover {
+  color: #a7bd0d;
+}
+
+.ui.olive.dividing.header {
+  border-bottom: 2px solid #B5CC18;
+}
+
+.ui.inverted.olive.header.header.header {
+  color: #D9E778;
+}
+
+a.ui.inverted.olive.header.header.header:hover {
+  color: #d2e745;
+}
+
+.ui.inverted.olive.dividing.header {
+  border-bottom: 2px solid #D9E778;
+}
+
+.ui.green.header {
+  color: #21BA45;
+}
+
+a.ui.green.header:hover {
+  color: #16ab39;
+}
+
+.ui.green.dividing.header {
+  border-bottom: 2px solid #21BA45;
+}
+
+.ui.inverted.green.header.header.header {
+  color: #2ECC40;
+}
+
+a.ui.inverted.green.header.header.header:hover {
+  color: #1ea92e;
+}
+
+.ui.inverted.green.dividing.header {
+  border-bottom: 2px solid #2ECC40;
+}
+
+.ui.teal.header {
+  color: #00B5AD;
+}
+
+a.ui.teal.header:hover {
+  color: #009c95;
+}
+
+.ui.teal.dividing.header {
+  border-bottom: 2px solid #00B5AD;
+}
+
+.ui.inverted.teal.header.header.header {
+  color: #6DFFFF;
+}
+
+a.ui.inverted.teal.header.header.header:hover {
+  color: #3affff;
+}
+
+.ui.inverted.teal.dividing.header {
+  border-bottom: 2px solid #6DFFFF;
+}
+
+.ui.blue.header {
+  color: #2185D0;
+}
+
+a.ui.blue.header:hover {
+  color: #1678c2;
+}
+
+.ui.blue.dividing.header {
+  border-bottom: 2px solid #2185D0;
+}
+
+.ui.inverted.blue.header.header.header {
+  color: #54C8FF;
+}
+
+a.ui.inverted.blue.header.header.header:hover {
+  color: #21b8ff;
+}
+
+.ui.inverted.blue.dividing.header {
+  border-bottom: 2px solid #54C8FF;
+}
+
+.ui.violet.header {
+  color: #6435C9;
+}
+
+a.ui.violet.header:hover {
+  color: #5829bb;
+}
+
+.ui.violet.dividing.header {
+  border-bottom: 2px solid #6435C9;
+}
+
+.ui.inverted.violet.header.header.header {
+  color: #A291FB;
+}
+
+a.ui.inverted.violet.header.header.header:hover {
+  color: #745aff;
+}
+
+.ui.inverted.violet.dividing.header {
+  border-bottom: 2px solid #A291FB;
+}
+
+.ui.purple.header {
+  color: #A333C8;
+}
+
+a.ui.purple.header:hover {
+  color: #9627ba;
+}
+
+.ui.purple.dividing.header {
+  border-bottom: 2px solid #A333C8;
+}
+
+.ui.inverted.purple.header.header.header {
+  color: #DC73FF;
+}
+
+a.ui.inverted.purple.header.header.header:hover {
+  color: #cf40ff;
+}
+
+.ui.inverted.purple.dividing.header {
+  border-bottom: 2px solid #DC73FF;
+}
+
+.ui.pink.header {
+  color: #E03997;
+}
+
+a.ui.pink.header:hover {
+  color: #e61a8d;
+}
+
+.ui.pink.dividing.header {
+  border-bottom: 2px solid #E03997;
+}
+
+.ui.inverted.pink.header.header.header {
+  color: #FF8EDF;
+}
+
+a.ui.inverted.pink.header.header.header:hover {
+  color: #ff5bd1;
+}
+
+.ui.inverted.pink.dividing.header {
+  border-bottom: 2px solid #FF8EDF;
+}
+
+.ui.brown.header {
+  color: #A5673F;
+}
+
+a.ui.brown.header:hover {
+  color: #975b33;
+}
+
+.ui.brown.dividing.header {
+  border-bottom: 2px solid #A5673F;
+}
+
+.ui.inverted.brown.header.header.header {
+  color: #D67C1C;
+}
+
+a.ui.inverted.brown.header.header.header:hover {
+  color: #b0620f;
+}
+
+.ui.inverted.brown.dividing.header {
+  border-bottom: 2px solid #D67C1C;
+}
+
+.ui.grey.header {
+  color: #767676;
+}
+
+a.ui.grey.header:hover {
+  color: #838383;
+}
+
+.ui.grey.dividing.header {
+  border-bottom: 2px solid #767676;
+}
+
+.ui.inverted.grey.header.header.header {
+  color: #DCDDDE;
+}
+
+a.ui.inverted.grey.header.header.header:hover {
+  color: #c2c4c5;
+}
+
+.ui.inverted.grey.dividing.header {
+  border-bottom: 2px solid #DCDDDE;
+}
+
+.ui.black.header {
+  color: #1B1C1D;
+}
+
+a.ui.black.header:hover {
+  color: #27292a;
+}
+
+.ui.black.dividing.header {
+  border-bottom: 2px solid #1B1C1D;
+}
+
+.ui.inverted.black.header.header.header {
+  color: #545454;
+}
+
+a.ui.inverted.black.header.header.header:hover {
+  color: #000000;
+}
+
+.ui.inverted.black.dividing.header {
+  border-bottom: 2px solid #545454;
+}
+
+/*-------------------
+       Aligned
+--------------------*/
+
+.ui.left.aligned.header {
+  text-align: left;
+}
+
+.ui.right.aligned.header {
+  text-align: right;
+}
+
+.ui.centered.header,
+.ui.center.aligned.header {
+  text-align: center;
+}
+
+.ui.justified.header {
+  text-align: justify;
+}
+
+.ui.justified.header:after {
+  display: inline-block;
+  content: '';
+  width: 100%;
+}
+
+/*-------------------
+       Floated
+--------------------*/
+
+.ui.floated.header,
+.ui[class*="left floated"].header {
+  float: left;
+  margin-top: 0;
+  margin-right: 0.5em;
+}
+
+.ui[class*="right floated"].header {
+  float: right;
+  margin-top: 0;
+  margin-left: 0.5em;
+}
+
+/*-------------------
+       Fitted
+--------------------*/
+
+.ui.fitted.header {
+  padding: 0;
+}
+
+/*-------------------
+      Dividing
+--------------------*/
+
+.ui.dividing.header {
+  padding-bottom: 0.21428571rem;
+  border-bottom: 1px solid rgba(34, 36, 38, 0.15);
+}
+
+.ui.dividing.header .sub.header {
+  padding-bottom: 0.21428571rem;
+}
+
+.ui.dividing.header .icon {
+  margin-bottom: 0;
+}
+
+.ui.inverted.dividing.header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+/*-------------------
+        Block
+--------------------*/
+
+.ui.block.header {
+  background: #F3F4F5;
+  padding: 0.78571429rem 1rem;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+  border: 1px solid #D4D4D5;
+  border-radius: 0.28571429rem;
+}
+
+.ui.tiny.block.header {
+  font-size: 0.85714286rem;
+}
+
+.ui.small.block.header {
+  font-size: 0.92857143rem;
+}
+
+.ui.block.header:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
+  font-size: 1rem;
+}
+
+.ui.large.block.header {
+  font-size: 1.14285714rem;
+}
+
+.ui.huge.block.header {
+  font-size: 1.42857143rem;
+}
+
+/*-------------------
+       Attached
+--------------------*/
+
+.ui.attached.header {
+  background: #FFFFFF;
+  padding: 0.78571429rem 1rem;
+  margin: 0 -1px 0 -1px;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+  border: 1px solid #D4D4D5;
+  border-radius: 0;
+}
+
+.ui.attached.block.header {
+  background: #F3F4F5;
+}
+
+.ui.attached:not(.top).header {
+  border-top: none;
+}
+
+.ui.top.attached.header {
+  border-radius: 0.28571429rem 0.28571429rem 0 0;
+}
+
+.ui.bottom.attached.header {
+  border-radius: 0 0 0.28571429rem 0.28571429rem;
+}
+
+/* Attached Sizes */
+
+.ui.tiny.attached.header {
+  font-size: 0.85714286em;
+}
+
+.ui.small.attached.header {
+  font-size: 0.92857143em;
+}
+
+.ui.attached.header:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
+  font-size: 1em;
+}
+
+.ui.large.attached.header {
+  font-size: 1.14285714em;
+}
+
+.ui.huge.attached.header {
+  font-size: 1.42857143em;
+}
+
+/*-------------------
+        Sizing
+--------------------*/
+
+.ui.header:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
+  font-size: 1.28571429em;
+}
 
 /*******************************
          Theme Overrides
@@ -5877,8 +8308,8 @@ body .ui.inverted::-webkit-scrollbar-thumb:hover {
 
 @font-face {
   font-family: 'Icons';
-  src: url("themes/default/assets/fonts/icons.eot");
-  src: url("themes/default/assets/fonts/icons.eot?#iefix") format('embedded-opentype'), url("themes/default/assets/fonts/icons.woff2") format('woff2'), url("themes/default/assets/fonts/icons.woff") format('woff'), url("themes/default/assets/fonts/icons.ttf") format('truetype'), url("themes/default/assets/fonts/icons.svg#icons") format('svg');
+  src: url("./themes/default/assets/fonts/icons.eot");
+  src: url("./themes/default/assets/fonts/icons.eot?#iefix") format('embedded-opentype'), url("./themes/default/assets/fonts/icons.woff2") format('woff2'), url("./themes/default/assets/fonts/icons.woff") format('woff'), url("./themes/default/assets/fonts/icons.ttf") format('truetype'), url("./themes/default/assets/fonts/icons.svg#icons") format('svg');
   font-style: normal;
   font-weight: normal;
   font-variant: normal;
@@ -11100,8 +13531,8 @@ i.icon.write:before {
 
 @font-face {
   font-family: 'outline-icons';
-  src: url("themes/default/assets/fonts/outline-icons.eot");
-  src: url("themes/default/assets/fonts/outline-icons.eot?#iefix") format('embedded-opentype'), url("themes/default/assets/fonts/outline-icons.woff2") format('woff2'), url("themes/default/assets/fonts/outline-icons.woff") format('woff'), url("themes/default/assets/fonts/outline-icons.ttf") format('truetype'), url("themes/default/assets/fonts/outline-icons.svg#icons") format('svg');
+  src: url("./themes/default/assets/fonts/outline-icons.eot");
+  src: url("./themes/default/assets/fonts/outline-icons.eot?#iefix") format('embedded-opentype'), url("./themes/default/assets/fonts/outline-icons.woff2") format('woff2'), url("./themes/default/assets/fonts/outline-icons.woff") format('woff'), url("./themes/default/assets/fonts/outline-icons.ttf") format('truetype'), url("./themes/default/assets/fonts/outline-icons.svg#icons") format('svg');
   font-style: normal;
   font-weight: normal;
   font-variant: normal;
@@ -11746,8 +14177,8 @@ i.icon.star.empty:before {
 
 @font-face {
   font-family: 'brand-icons';
-  src: url("themes/default/assets/fonts/brand-icons.eot");
-  src: url("themes/default/assets/fonts/brand-icons.eot?#iefix") format('embedded-opentype'), url("themes/default/assets/fonts/brand-icons.woff2") format('woff2'), url("themes/default/assets/fonts/brand-icons.woff") format('woff'), url("themes/default/assets/fonts/brand-icons.ttf") format('truetype'), url("themes/default/assets/fonts/brand-icons.svg#icons") format('svg');
+  src: url("./themes/default/assets/fonts/brand-icons.eot");
+  src: url("./themes/default/assets/fonts/brand-icons.eot?#iefix") format('embedded-opentype'), url("./themes/default/assets/fonts/brand-icons.woff2") format('woff2'), url("./themes/default/assets/fonts/brand-icons.woff") format('woff'), url("./themes/default/assets/fonts/brand-icons.ttf") format('truetype'), url("./themes/default/assets/fonts/brand-icons.svg#icons") format('svg');
   font-style: normal;
   font-weight: normal;
   font-variant: normal;

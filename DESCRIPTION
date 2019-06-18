@@ -40,11 +40,11 @@ Imports:
     sodium
 ImportComments:
  shinycssloaders - loading animations
- custom version based on Gao Zheng's 'transparent' background version
- installed with devtools::install_github('DavidPatShuiFong/shinycssloaders')
+  custom version based on Gao Zheng's 'transparent' background version
+  installed with devtools::install_github('DavidPatShuiFong/shinycssloaders')
  DTedit - datatable edit wrapper.
- substantially based on jbryer/DTedit
- install with devtools::install_github('DavidPatShuiFong/DTedit')
+  substantially based on jbryer/DTedit
+  install with devtools::install_github('DavidPatShuiFong/DTedit')
 Collate: 
     'DailyMeasure.R'
     'calculation_definitions.R'

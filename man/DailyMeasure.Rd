@@ -5,7 +5,14 @@
 \title{DailyMeasure
 (C) David Fong, 2019}
 \usage{
-DailyMeasure()
+DailyMeasure(appmode = "", launch.browser = TRUE)
+}
+\arguments{
+\item{appmode}{set to "chrome" if wanting to launch chrome in app mode
+app-mode has not forward/back buttons, tabs, or address-bar}
+
+\item{launch.browser=TRUE}{normally launches a web-browser. within
+Rstudio, launch.browser=FALSE will start a RStudio browser.}
 }
 \value{
 None

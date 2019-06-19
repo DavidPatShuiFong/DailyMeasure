@@ -14,7 +14,6 @@ LazyData: true
 ByteCompile: true
 RoxygenNote: 6.1.1
 Imports:
-    tidyverse,
     dplyr,
     dbplyr,
     tidyr,

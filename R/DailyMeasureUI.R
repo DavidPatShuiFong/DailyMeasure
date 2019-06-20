@@ -27,8 +27,8 @@ DailyMeasureUI <- function() {
 				menuItem("Cancer Screening", tabName = "cancerscreen", icon = icon("x-ray")),
 				menuItem("Billings", tabName = "billings", icon = icon("receipt")),
 				menuItem("CDM items", tabName = "cdm", icon = icon("file-medical-alt")),
-				menuItem("Configuration", tabName = "configuration", icon = icon("wrench")),
-				menuItem("Test", tabName = "test")
+				menuItem("Configuration", tabName = "configuration", icon = icon("wrench"))
+				# menuItem("Test", tabName = "test")
 			)
 		),
 
@@ -185,11 +185,11 @@ DailyMeasureUI <- function() {
 										         passwordConfig_UI("password_config"))
 										)
 									)
-								)) #,
-				#tabItem(tabName = "test",
-				#				fluidRow(column(width = 12, align = "center", h2("Test frame"))),
-				#				fluidRow(column(width = 12, DT::DTOutput("test_dt")))
-				#)
+								)),
+				tabItem(tabName = "test",
+								fluidRow(column(width = 12, align = "center", h2("Test frame"))),
+								fluidRow(column(width = 12, DT::DTOutput("test_dt")))
+				)
 			)
 		)
 	)

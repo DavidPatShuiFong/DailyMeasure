@@ -433,8 +433,6 @@ userconfig_enableRestrictions <- function (input, out, session,
 #'
 #' user configuration module - user interface function
 #'
-#' Editable datatable with list of servers
-#'
 #' @param id module ID (used in conjunction with 'callModule')
 #'
 #' @return Shiny user interface element

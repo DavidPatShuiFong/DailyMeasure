@@ -48,23 +48,23 @@ hrmin <- function(t) {
 #'
 #' @return - the encrypted text
 simple_encode <- function (msg, key = NULL, nonce = NULL) {
-	if (is.null(nonce)) {
-		# non-secret unique data 'nonce' used to randomize the cipher
-		nonce <- sodium::hex2bin("89:63:73:bc:dc:eb:98:14:59:ce:17:4f:6e:0a:75:15:83:0c:36:00:f2:6e:f7:07")
-		# the 24 bytes of hexadecimal digits created by paste0(random(24), collapse = ":")
-	}
-	if (is.null(key)) {
-		if (nchar(Sys.getenv("DailyMeasure_Value2"))>0) {
-			# if not set then the number of characters will be zero
-			key <- Sys.getenv("DailyMeasure_value2")
-			# this can be set in .Renviron
-		} else {
-			key <- "noncenonce"
-		}
-	}
-	key <- sodium::hash(charToRaw(key))
-	return(jsonlite::base64_enc(
-		sodium::data_encrypt(charToRaw(msg), key, nonce)))
+  if (is.null(nonce)) {
+    # non-secret unique data 'nonce' used to randomize the cipher
+    nonce <- sodium::hex2bin("89:63:73:bc:dc:eb:98:14:59:ce:17:4f:6e:0a:75:15:83:0c:36:00:f2:6e:f7:07")
+    # the 24 bytes of hexadecimal digits created by paste0(random(24), collapse = ":")
+  }
+  if (is.null(key)) {
+    if (nchar(Sys.getenv("DailyMeasure_Value2"))>0) {
+      # if not set then the number of characters will be zero
+      key <- Sys.getenv("DailyMeasure_value2")
+      # this can be set in .Renviron
+    } else {
+      key <- "noncenonce"
+    }
+  }
+  key <- sodium::hash(charToRaw(key))
+  return(jsonlite::base64_enc(
+    sodium::data_encrypt(charToRaw(msg), key, nonce)))
 }
 
 #' Simple decoder
@@ -80,25 +80,25 @@ simple_encode <- function (msg, key = NULL, nonce = NULL) {
 #'
 #' @return - the encrypted text
 simple_decode <- function(msg, key = NULL, nonce = NULL) {
-	if (is.null(nonce)) {
-		# non-secret unique data 'nonce' used to randomize the cipher
-		nonce <- sodium::hex2bin("89:63:73:bc:dc:eb:98:14:59:ce:17:4f:6e:0a:75:15:83:0c:36:00:f2:6e:f7:07")
-		# the 24 bytes of hexadecimal digits created by paste0(random(24), collapse = ":")
-	}
-	if (is.null(key)) {
-		if (nchar(Sys.getenv("DailyMeasure_Value2"))>0) {
-			# if not set then the number of characters will be zero
-			key <- Sys.getenv("DailyMeasure_value2")
-			# this can be set in .Renviron
-			# or with Sys.setenv(DailyMeasure_value2="password")
-		} else {
-			key <- "noncenonce"
-		}
-	}
-	key <- sodium::hash(charToRaw(key))
-	return(rawToChar(sodium::data_decrypt(
-		jsonlite::base64_dec(msg),key, nonce)
-	))
+  if (is.null(nonce)) {
+    # non-secret unique data 'nonce' used to randomize the cipher
+    nonce <- sodium::hex2bin("89:63:73:bc:dc:eb:98:14:59:ce:17:4f:6e:0a:75:15:83:0c:36:00:f2:6e:f7:07")
+    # the 24 bytes of hexadecimal digits created by paste0(random(24), collapse = ":")
+  }
+  if (is.null(key)) {
+    if (nchar(Sys.getenv("DailyMeasure_Value2"))>0) {
+      # if not set then the number of characters will be zero
+      key <- Sys.getenv("DailyMeasure_value2")
+      # this can be set in .Renviron
+      # or with Sys.setenv(DailyMeasure_value2="password")
+    } else {
+      key <- "noncenonce"
+    }
+  }
+  key <- sodium::hash(charToRaw(key))
+  return(rawToChar(sodium::data_decrypt(
+    jsonlite::base64_dec(msg),key, nonce)
+  ))
 }
 
 #' Simple tagger

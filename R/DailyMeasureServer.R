@@ -15,12 +15,29 @@ NULL
 #'
 #' @return None
 #'
+#' @include calculation_definitions.R
+#' needed for simple encode/decode
 DailyMeasureServer <- function(input, output, session) {
 
   # IMPORTANT!
   # this is needed to terminate the R process when the
   # shiny app session ends. Otherwise, you end up with a zombie process
   session$onSessionEnded(function() {
+
+    if (is.environment(isolate(config_pool()))) {
+      if (DBI::dbIsValid(isolate(config_pool()))) {
+        # if emrpool() is defined as a database, then close it
+        pool::poolClose(isolate(config_pool()))
+      }
+    }
+
+    if (is.environment(isolate(emrpool()))) {
+      if (DBI::dbIsValid(isolate(emrpool()))) {
+        # if emrpool() is defined as a database, then close it
+        pool::poolClose(isolate(emrpool()))
+      }
+    }
+
     stopApp()
   })
 
@@ -28,19 +45,36 @@ DailyMeasureServer <- function(input, output, session) {
 
   ##### Configuration file ######################################################
 
-  if (configr::is.yaml.file('./DailyMeasure_cfg.yaml')) {
+  # User configuration file path
+  # (this config file contains a pointer to the .sqlite configuration file path)
+
+  if (grepl("Program Files", normalizePath(R.home()))) {
+    # this is a system-wide install
+    yaml_config_filepath <- "~/.DailyMeasure_cfg.yaml"
+    sql_config_filepath <- "~/.DailyMeasure_cfg.sqlite"
+    # store in user's home directory
+  } else {
+    # this is a 'local' user install, not a system-wide install
+    # e.g. C:/Users/MyName/AppData/Programs/...
+    # as opposed to 'C:/Program Files/...'
+    yaml_config_filepath <- "./DailyMeasure_cfg.yaml"
+    sql_config_filepath <- "~/.DailyMeasure_cfg.sqlite"
+    # this file can be stored in the AppData folder, out of sight of the user
+  }
+
+  if (configr::is.yaml.file(yaml_config_filepath)) {
     # if config file exists and is a YAML-type file
-    local_config <- configr::read.config("./DailyMeasure_cfg.yaml")
+    local_config <- configr::read.config(yaml_config_filepath)
     # config in local location
   } else {
     # local config file does not exist. possibly first-run
     local_config <- list()
-    local_config$config_file <- c("./DailyMeasure_cfg.sqlite")
+    local_config$config_file <- sql_config_filepath
     # main configuration file, could be set to 'common location'
     # write the (minimalist) local config file
     configr::write.config(
       local_config,
-      file.path = "./DailyMeasure_cfg.yaml",
+      file.path = yaml_config_filepath,
       write.type = "yaml"
     )
   }
@@ -70,7 +104,18 @@ DailyMeasureServer <- function(input, output, session) {
                        Fullname = character(), AuthIdentity = character(),
                        Location = character(),
                        Attributes = character(),
+                       Password = character(),
                        stringsAsFactors = FALSE))
+
+  UserRestrictions <- reactiveVal(
+    value = data.frame(uid = integer(),
+                       Restriction = character(),
+                       stringsAsFactors = FALSE))
+  # this lists the 'enabled' restrictions,
+  #  relevant to the 'Attributes' field of 'UserConfig'
+  # without the restriction, all users have the 'permission'
+  #  for the 'non-specified' action
+  # use 'uid' rather than 'id', because 'id' is later used to identify the restrictions...
 
   configuration_file_path(local_config$config_file)
 
@@ -110,7 +155,7 @@ DailyMeasureServer <- function(input, output, session) {
         # if table exists in config_pool database
         columns <- config_pool() %>% tbl(tablename) %>% colnames()
         # list of column (variable) names
-        data <- config_pool() %>% tbl("Server") %>% collect()
+        data <- config_pool() %>% tbl(tablename) %>% collect()
         # get a copy of the table's data
       } else {
         # table does not exist, needs to be created
@@ -164,7 +209,15 @@ DailyMeasureServer <- function(input, output, session) {
                                c("Fullname", "character"),
                                c("AuthIdentity", "character"),
                                c("Location", "character"),
+                               c("Password", "character"),
                                c("Attributes", "character")))
+
+    initialize_data_table(config_pool, "UserRestrictions",
+                          list(c("uid", "integer"),
+                               c("Restriction", "character")))
+    # list of restrictions for users
+    # use of 'uid' rather than 'id'
+    # (this relates to the 'Attributes' field in "Users")
   })
 
   ### database initialization
@@ -198,15 +251,15 @@ DailyMeasureServer <- function(input, output, session) {
       print("Initializing EMR database")
       shinytoastr::toastr_info(
         "Opening link to Best Practice", closeButton = TRUE,
-        position = "top-center", title = "Best Practice database")
+        position = "bottom-center", title = "Best Practice database")
       emrpool(tryCatch(pool::dbPool(
         odbc::odbc(), driver = "SQL Server",
         server = server$Address, database = server$Database,
-        uid = server$UserID, pwd = server$dbPassword),
+        uid = server$UserID, pwd = simple_decode(server$dbPassword)),
         error = function(e) {
           shinytoastr::toastr_error(
             paste0(e), title = "Error opening Best Practice database",
-            closeButton = TRUE, position = "top-center",
+            closeButton = TRUE, position = "bottom-center",
             timeOut = 0) # stays open until clicked
           # SweetAlert from shinyWidgets not working as of June/2019
           # (including in shinyWidget's gallery)
@@ -281,6 +334,7 @@ DailyMeasureServer <- function(input, output, session) {
                  # in UserConfig, there can be multiple Locations/Attributes per user
                  collect() %>% mutate(Location = stringr::str_split(Location, ";"),
                                       Attributes = stringr::str_split(Attributes, ";")))
+    UserRestrictions(config_pool() %>% tbl("UserRestrictions") %>% collect())
   })
 
   ### emr database variables
@@ -416,24 +470,57 @@ DailyMeasureServer <- function(input, output, session) {
   # list of clinicians shown depends on 'practice location' chosen
   clinician_choice_list <- reactiveVal()
 
-  observeEvent(
-    c(db$dbversion, input$location),
-    {
-      if (!is.null(input$location)) { # only if initialized
-        clinician_choice_list(
-          if (isolate(input$location) == 'All') {
-            UserFullConfig()$Fullname
+  view_restrictions <- list(
+    # if a view restriction is active, then by default users
+    # can only see patients in their own appointment book for
+    # the specified topic
+    # this restriction does not apply if the user has the
+    # 'Global' attribute for the topic in the user's attribute list
+    list(restriction = "GlobalActionView",
+         tabs_to_hide = list("immunization", "cancerscreen")),
+    list(restriction = "GlobalBillView",
+         tabs_to_hide = list("billings")),
+    list(restriction = "GlobalCDMView",
+         tabs_to_hide = list("cdm"))
+  )
+
+  observeEvent(c(db$dbversion, input$location, UserRestrictions(), input$sidebartabs), {
+    # respond to database initialization or change in input choice
+    # respond to change in UserRestrictions and which sidebartab is selected
+    validate(
+      need(!is.null(input$location), "Locations not available")
+    )
+    if (isolate(input$location) == 'All') {
+      # note that 'ifelse' only returns result in the
+      # same 'shape' as the comparison statement
+      clinician_list <- UserFullConfig()$Fullname
+    } else {
+      clinician_list <- subset(UserConfig()$Fullname,
+                               sapply(UserConfig()$Location,
+                                      function (y) input$location %in% y))
+      # filter clinicians by location choice
+      # it is possible for a clinician to have multiple locations
+      # initially, $Location might include a lot of NA
+    }
+
+    for (restriction in view_restrictions) {
+      # go through list of view restrictions
+      if (restriction$restriction %in% unlist(UserRestrictions()$Restriction)) {
+        # if the restriction has been activated
+        if (input$sidebartabs %in% restriction$tabs_to_hide) {
+          # if the relevant tab is being shown
+          if (!(restriction$restriction %in% unlist(LoggedInUser()$Attributes))) {
+            # if the current user does not have this 'Global' attribute
+            # then can only view one's own appointments
+            clinician_list <- subset(clinician_list,
+                                     clinician_list == LoggedInUser()$Fullname)
           }
-          else {
-            subset(UserConfig()$Fullname,
-                   sapply(UserConfig()$Location,
-                          function (y) input$location %in% y))
-            # initially, $Location might include a lot of NA
-          }
-        )
-        # note that 'ifelse' only returns result in the same 'shape' as the comparison statement
+        }
       }
-    })
+    }
+
+    clinician_choice_list(clinician_list)
+  })
 
   output$clinicianList <- renderUI({
     choice_list <- clinician_choice_list()
@@ -499,12 +586,18 @@ DailyMeasureServer <- function(input, output, session) {
       filter(Provider %in% input$clinicians)
     # note that dbplyr does not evaluate manipulated expressions, hence the use of 'local()'
     # a database filter on an empty list after %in% will result in an error message
+    #
+    # this reactive is not "collect()"ed because it is joined to other
+    # filtered database lists prior to 'collection'
   })
 
   appointments_filtered_time <- reactive({
     # changes times to more R (and visually) friendly formats
     appointments_filtered() %>%
       collect() %>% # force read of database required before mutations
+      filter(Provider %in% clinician_choice_list()) %>% # this also requires collect()
+      # clinicians_choice_list() may have been changed by different tab selection and
+      # view permission before input$clinicians has actually been changed
       mutate(AppointmentTime = hrmin(AppointmentTime),
              AppointmentDate = as.Date(substr(AppointmentDate,1,10))) %>%
       arrange(AppointmentDate, AppointmentTime)
@@ -820,9 +913,20 @@ DailyMeasureServer <- function(input, output, session) {
     if (!is.integer(input$choose_configuration_file)) {
       # if input$choose_configuration_file is an integer,
       # it is just the 'click' event on the filechoose button
-      inFile <- parseFilePaths(volumes, input$choose_configuration_file)
+      inFile <- shinyFiles::parseFilePaths(volumes, input$choose_configuration_file)
       file_name <- paste(inFile$datapath)
       configuration_file_path(file_name)
+
+      # write SQLite location back into yaml_config_filepath
+      sql_config_filepath <- file_name
+      local_config$config_file <- sql_config_filepath
+      # main configuration file, could be set to 'common location'
+      # write the (minimalist) local config file
+      configr::write.config(
+        local_config,
+        file.path = yaml_config_filepath,
+        write.type = "yaml"
+      )
     }
   })
 
@@ -862,20 +966,166 @@ DailyMeasureServer <- function(input, output, session) {
   })
 
   userconfig_change <- callModule(userconfig_datatable, "userconfig_dt",
-                                  UserConfig, UserFullConfig,
+                                  UserConfig, UserFullConfig, UserRestrictions,
                                   location_list_names, db, config_pool)
 
+  ###### user configuration of their own password #######################
+  callModule(passwordConfig_server, "password_config",
+             UserConfig, LoggedInUser,
+             config_pool)
+
+  ###### display of panels etc. change depending on logged in user ######
+  LoggedInUser <- reactiveVal()
+  observeEvent(UserConfig(), ignoreNULL = TRUE, {
+    LoggedInUser(UserConfig()[UserConfig()$AuthIdentity == Sys.info()[["user"]],])
+  })
+
+  authenticated <- reactiveVal(FALSE)
+  # has the current log-in use been identified and authenticated yet?
+
+  observeEvent(c(LoggedInUser(), UserRestrictions()), {
+    validate(
+      need(LoggedInUser(), "No user information")
+    )
+    if ("ServerAdmin" %in% unlist(UserRestrictions()$Restriction)) {
+      # only some users allowed to see/change server settings
+      if ("ServerAdmin" %in% unlist(LoggedInUser()$Attributes)) {
+        showTab("tab_config", "ServerPanel")
+      } else {
+        hideTab("tab_config", "ServerPanel")
+      }
+    } else {
+      showTab("tab_config", "ServerPanel")
+    }
+    if ("UserAdmin" %in% unlist(UserRestrictions()$Restriction)) {
+      # only some users allowed to see/change user settings
+      if ("UserAdmin" %in% unlist(LoggedInUser()$Attributes)) {
+        showTab("tab_config", "LocationsPanel")
+        # also change ability to view locations panel
+        showTab("tab_config", "UsersPanel")
+      } else {
+        hideTab("tab_config", "LocationsPanel")
+        hideTab("tab_config", "UsersPanel")
+        browser()
+      }
+    } else {
+      showTab("tab_config", "LocationsPanel")
+      showTab("tab_config", "UsersPanel")
+    }
+    if (nrow(LoggedInUser()) > 0) {
+      # user has been identified
+      showTab("tab_config", "PasswordPanel")
+      # only 'identified' and configured users can set a password
+    } else {
+      # no user identified
+      hideTab("tab_config", "PasswordPanel")
+    }
+  })
+
+  ####### User login #######################################################
+  observeEvent(c(LoggedInUser(), UserRestrictions()), {
+    # need to know that user identification has occurred
+    # and that restrictions have been read
+    validate(
+      need(LoggedInUser(), "No user information")
+    )
+    if ("RequirePasswords" %in% unlist(UserRestrictions()$Restriction) &
+        authenticated() == FALSE & nrow(UserConfig()) > 0) {
+      # passwords are required, not yet authenticated
+      # and information about users has been read in
+      if (nrow(LoggedInUser()) > 0) {
+        # user has been identified
+        if (is.na(LoggedInUser()$Password) || (nchar(LoggedInUser()$Password) == 0)) {
+          # empty or NA password, then asking for new password
+          showModal(modalDialog(
+            title="New password",
+            tagList(
+              paste("Password required for user ", LoggedInUser()$Fullname, "."),
+              HTML("You need to set a password<br><br>"),
+              passwordInput("password1", label = "Enter Password", value = ""),
+              br(),
+              passwordInput("password2", label = "Confirm Password", value = "")
+            ),
+            footer = tagList(actionButton("confirmNewPassword", "Confirm"))
+          ))
+        } else {
+          showModal(modalDialog(
+            title="Password required",
+            tagList(
+              paste("Password required for user ", LoggedInUser()$Fullname, "."),
+              HTML("<br><br>Please enter your password!<br>
+              Click the 'Enter' button after typing in your password.<br><br>
+              This is not (or shouldn't be!) your Windows or Best Practice password<br><br>"),
+              passwordInput("password", label = "Password", value = "")
+            ),
+            footer = tagList(actionButton("confirmPassword", "Enter"))
+          ))
+        }
+      } else {
+        # no user identified! but password required
+        # will need to stop
+        showModal(modalDialog(
+          title="Password required",
+          tagList(
+            "User not recognized!",
+            br(),
+            "Please contact your systems administrator."
+          ),
+          footer = tagList()
+        ))
+      }
+    }
+  })
+
+  observeEvent(input$confirmNewPassword, {
+    if (input$password1 != input$password2) {
+      shinytoastr::toastr_error("Passwords must match",
+                                closeButton = TRUE)
+    } else if (nchar(input$password1) < 6) {
+      shinytoastr::toastr_error("Password must be at least six (6) characters long")
+    } else {
+      setPassword(input$password1, UserConfig, LoggedInUser, config_pool)
+      # this function is found in calculation_definitions.R
+      removeModal()
+      authenticated(TRUE)
+      shinytoastr::toastr_success(message = "Password set and Successful login",
+                                  title = "Welcome back!",
+                                  position = "bottom-left")
+    }
+  })
+
+  input_password_CR <- reactiveVal(0)
+
+  observeEvent(c(input$confirmPassword), {
+    validate(
+      need(nchar(input$password) > 0, "No password entered")
+    )
+    if (!simple_tag_compare(input$password, LoggedInUser()$Password)) {
+      shinytoastr::toastr_error("Wrong password",
+                                closeButton = TRUE)
+    } else {
+      # successful login
+      removeModal()
+      authenticated(TRUE)
+      shinytoastr::toastr_success(message = paste("Successful login for",
+                                                  LoggedInUser()$Fullname),
+                                  title = "Welcome back!",
+                                  position = "bottom-left")
+    }
+  })
+
+  ###### Render user information on top-right header ##########################
   output$user <- shinydashboardPlus::renderUser({
     shinydashboardPlus::dashboardUser(
-      name = UserConfig()$Fullname[UserConfig()$AuthIdentity == Sys.info()[["user"]]],
+      name = LoggedInUser()$Fullname,
       src = 'icons/user-avatar.svg', # this depends on addResourcePath in zzz.R
-      subtitle = Sys.info()[["user"]],
+      subtitle = Sys.info()[["user"]], # not necessarily an identified user
       fluidRow(
         shinydashboardPlus::dashboardUserItem(
           width = 6,
           shinydashboardPlus::descriptionBlock(
             text = paste0(
-              unlist(UserConfig()$Location[UserConfig()$AuthIdentity == Sys.info()[["user"]]]),
+              unlist(LoggedInUser()$Location),
               collapse = ", "),
             right_border = TRUE,
             margin_bottom = TRUE)
@@ -884,7 +1134,7 @@ DailyMeasureServer <- function(input, output, session) {
           width = 6,
           shinydashboardPlus::descriptionBlock(
             text = paste0(
-              unlist(UserConfig()$Attributes[UserConfig()$AuthIdentity == Sys.info()[["user"]]]),
+              unlist(LoggedInUser()$Attributes),
               collapse = ", "),
             right_border = FALSE,
             margin_bottom = TRUE)

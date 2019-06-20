@@ -14,7 +14,6 @@ LazyData: true
 ByteCompile: true
 RoxygenNote: 6.1.1
 Imports:
-    tidyverse,
     dplyr,
     dbplyr,
     tidyr,
@@ -35,23 +34,25 @@ Imports:
     lubridate,
     DTedit,
     stringr,
-    magrittr
+    magrittr,
+    jsonlite,
+    sodium
 ImportComments:
  shinycssloaders - loading animations
- custom version based on Gao Zheng's 'transparent' background version
- installed with devtools::install_github('DavidPatShuiFong/shinycssloaders')
+  custom version based on Gao Zheng's 'transparent' background version
+  installed with devtools::install_github('DavidPatShuiFong/shinycssloaders')
  DTedit - datatable edit wrapper.
- substantially based on jbryer/DTedit
- install with devtools::install_github('DavidPatShuiFong/DTedit')
+  substantially based on jbryer/DTedit
+  install with devtools::install_github('DavidPatShuiFong/DTedit')
 Collate: 
     'DailyMeasure.R'
+    'calculation_definitions.R'
     'DailyMeasureServer.R'
     'module_Configuration.R'
     'fomantic_definitions.R'
     'module_CDM.R'
     'module_Billings.R'
     'module_CancerScreen.R'
-    'calculation_definitions.R'
     'module_Immunization.R'
     'module_Appointments.R'
     'DailyMeasureUI.R'

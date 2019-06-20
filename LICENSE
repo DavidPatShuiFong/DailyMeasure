@@ -7,8 +7,10 @@ Proprietary. All rights reserved.
 All OTHER software modified, included or bundled with this "DailyMeasure" is freely
 available for distribution under various licenses. Not all of these licenses are
 'open source' licenses, and there may be restrictions on modification, re-use or sale.
-Details of these licenses, and copies of those licenses, follow below.
 
+Details of these licenses, and copies of those licenses, follow below.
+Some software modified, included or bundled contain licensing details which
+are described in separate files in the "LICENSEdetails" folder.
 
 Inno Setup
 ==========
@@ -48,6 +50,20 @@ https://cran.r-project.org/web/packages/odbc
 configr
 https://cran.r-project.org/web/packages/configr/
 
+jsonlite
+https://github.com/jeroen/jsonlite/
+
+magrittr
+https://magrittr.tidyverse.org/
+
+sodium
+https://cran.r-project.org/web/packages/sodium
+
+fomantic-UI
+a modified version of fomantic-UI is used
+https://github.com/fomantic/Fomantic-U
+(fomantic-UI, in turn, is a fork of semantic-UI)
+
 GNU General Public License v2 (GPL v2)
 ======================================
 
@@ -66,6 +82,21 @@ shinydashboardPlus
 https://github.com/RinteRface/shinydashboardPlus
 other licensing details in LICENSE.shinydashboardplus
 
+lubridate
+https://lubridate.tidyverse.org/
+
+stringr
+https://stringr.tidyverse.org/
+
+
+GNU Lesser General Public License
+=================================
+
+DTedit
+modified version of DTedit is used.
+original version https://github.com/jbryer/DTedit
+full source-code of my modified version available at
+https://github.com/DavidPatShuiFong/DTedit
 
 GNU Lesser General Public License v3 (LGPL v3)
 ==============================================
@@ -73,12 +104,20 @@ GNU Lesser General Public License v3 (LGPL v3)
 DBI
 https://cran.r-project.org/web/packages/DBI/
 
+RSQLite
+https://rsqlite.r-dbi.org/
 
 shiny
 ======================================
 
 https://github.com/rstudio/shiny
 other licensing details in LICENSE.shiny
+
+DT
+======================================
+
+https://github.com/rstudio/DT
+other licensing details in LICENSE.DT
 
 
 GNU General Public License v3 (GPL v3)
@@ -97,14 +136,13 @@ https://cran.r-project.org/web/packages/shinycssloaders/
 pool
 https://cran.r-project.org/web/packages/pool/
 
-GNU Affer General Public License (AGPL v3)
-==========================================
+GNU Affero General Public License (AGPL v3)
+===========================================
 
 shinyjs
 https://github.com/daattali/shinyjs
 
-RSQLite
-https://cran.r-project.org/web/packages/RSQLite/
+
 
 
 

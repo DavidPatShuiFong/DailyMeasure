@@ -33,13 +33,13 @@ hrmin <- function(t) {
 }
 
 # code for encoding/decoding. not 'very' secret
-# requires libraries base64enc (partly for obfuscation)
+# requires libraries jsonlite (provides base64enc partly for obfuscation)
 # and sodium
 
 #' Simple encoder
 #'
 #' Simple encode of text strings, will output a text string.
-#' Uses sodium library and base64enc. Has some defaults, but
+#' Uses sodium library and base64_enc/dec from jsonlite. Has some defaults, but
 #' will also take command-line arguments or read from environment
 #'
 #' @param msg the text to encode
@@ -63,14 +63,14 @@ simple_encode <- function (msg, key = NULL, nonce = NULL) {
 		}
 	}
 	key <- sodium::hash(charToRaw(key))
-	return(base64enc::base64encode(
+	return(jsonlite::base64_enc(
 		sodium::data_encrypt(charToRaw(msg), key, nonce)))
 }
 
 #' Simple decoder
 #'
 #' Simple decoder of text strings, will output a text string.
-#' Uses sodium library and base64enc. Has some defaults, but
+#' Uses sodium library and base64_enc/dec from jsonlite. Has some defaults, but
 #' will also take command-line arguments or read from environment.
 #' Componaion function to simple_encode
 #'
@@ -97,7 +97,7 @@ simple_decode <- function(msg, key = NULL, nonce = NULL) {
 	}
 	key <- sodium::hash(charToRaw(key))
 	return(rawToChar(sodium::data_decrypt(
-		base64enc::base64decode(msg),key, nonce)
+		jsonlite::base64_dec(msg),key, nonce)
 	))
 }
 

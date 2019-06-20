@@ -35,7 +35,7 @@ Imports:
     DTedit,
     stringr,
     magrittr,
-    base64enc,
+    jsonlite,
     sodium
 ImportComments:
  shinycssloaders - loading animations

@@ -396,11 +396,14 @@ restrictionTypes <- list(
   list(
     id = "ServerAdmin", label = "Server Administrator",
     Description = "Only ServerAdmin users can change database server settings",
-    callback = function (state, AttributeList) {
+    userAttribute = TRUE,
+    # is this actually a userattribute
+    callback = function (state, AttributeList, anyPassword) {
       # these callbacks have no immediate access to the parent environment
       # only called if state is changed from the old state
       # @param state          : attempted new state
       # @param AttributeList  : current list of user attributes in use
+      # @param anyPassword    : any passwords TRUE or FALSE
       #
       # @return newstate      : returns 'state', if permissible
       #
@@ -437,11 +440,13 @@ restrictionTypes <- list(
   list(
     id = "UserAdmin", label = "User Administrator",
     Description = "Only UserAdmin users can change user permissions",
-    callback = function (state, AttributeList) {
+    userAttribute = TRUE,
+    callback = function (state, AttributeList, anyPassword) {
       # these callbacks have no immediate access to the parent environment
       # only called if state is changed from the old state
       # @param state          : attempted new state
       # @param AttributeList  : current list of user attributes in use
+      # @param anyPassword    : any passwords TRUE or FALSE
       #
       # @return newstate      : returns 'state', if permissible
       #
@@ -476,14 +481,16 @@ restrictionTypes <- list(
   list(
     id = "GlobalActionView", label = "Global Action View",
     Description = "GlobalActionView users can view actions in 'other' appointment lists",
-    callback = function (state, AttributeList) {
+    userAttribute = TRUE,
+    callback = function (state, AttributeList, anyPassword) {
       # this can always be set/unset
       return(state)}
   ),
   list(
     id = "GlobalBillView", label = "Global Bill View",
-    Description = "GlobalBillView users can view billing status in 'other' appointment listss",
-    callback = function (state, AttributeList) {
+    Description = "GlobalBillView users can view billing status in 'other' appointment lists",
+    userAttribute = TRUE,
+    callback = function (state, AttributeList, anyPassword) {
       # this can always be set/unset
       return(state)
     }
@@ -491,9 +498,52 @@ restrictionTypes <- list(
   list(
     id = "GlobalCDMView", label = "Global CDM View",
     Description = "GlobalCDMView users can view CDM status in 'other' appointment lists",
-    callback = function (state, AttributeList) {
+    userAttribute = TRUE,
+    callback = function (state, AttributeList, anyPassword) {
       # this can always be set/unset
       return(state)
+    }
+  ),
+  list(
+    id = "RequirePasswords", label = "Require Passwords",
+    Description = "Password required from all users",
+    userAttribute = FALSE,
+    # 'RequirePasswords' is not actually a user attribute
+    callback = function (state, AttributeList, anyPassword) {
+      # these callbacks have no immediate access to the parent environment
+      # only called if state is changed from the old state
+      # @param state          : attempted new state
+      # @param AttributeList  : current list of user attributes in use
+      # @param anyPassword    : any passwords TRUE or FALSE
+      #
+      # @return newstate      : returns 'state', if permissible
+      #
+      # note that this function does not change UserRestrictions()
+      # changing UserRestrictions() is the responsibility of the calling function
+      newstate = state
+      if (state == TRUE) {
+        # if trying to turn on RequirePasswords restriction
+        if (anyPassword == FALSE) {
+          # no user is listed as having a password!
+          # if this restriction is established, no one will be able to log in
+          shinytoastr::toastr_error(
+            "A least one user must have a password to enable the 'Require Passwords' restriction.",
+            title = "Can't enable 'Require Passwords' restriction",
+            closeButton = TRUE, position = "top-center",
+            timeOut = 5000) # stays open five seconds
+          newstate = FALSE
+        } else {
+          newstate = TRUE
+          # allow RequirePassword
+        }
+      } else {
+        shinytoastr::toastr_warning(
+          "Without this restriction, users do not require passwords",
+          title = "Disabling 'Require Passwords' restriction",
+          closeButton = TRUE, position = "top-center",
+          timeOut = 5000) # stays open five seconds
+      }
+      return(newstate)
     }
   )
 )
@@ -516,6 +566,16 @@ userconfig_datatableUI <- function(id) {
         title = "User settings",
         width = 12,
         DTedit::dteditUI(ns("userconfigs"))
+      ),
+      tabPanel(
+        title = "Reset password",
+        width = 12,
+        wellPanel(
+          "Only configured users can have passwords reset (or set)",
+          br(), br(),
+          uiOutput(ns("ConfiguredUserList")),
+          br(),
+          actionButton(ns('reset_password'), 'Reset Password', icon('broom'), class = 'btn btn-primary'))
       ),
       tabPanel(
         title = "Enabled Restrictions",
@@ -563,10 +623,70 @@ userconfig_datatable <- function(input, output, session,
                               "Attributes")
   userconfig_dt_editcols <- userconfig_dt_viewcols[!userconfig_dt_viewcols %in% c("id")]
   # columns viewed in DTedit when adding/editing/removing user config
+
+
+  ###### Password Removal ##################################################
+  output$ConfiguredUserList <- renderUI({
+    # create a list of configured users
+    # (only configured users can have passwords)
+    selectInput(inputId = ns('User_toReset_Password'), label = 'Selected User',
+                choices = UserConfig()$Fullname)
+  })
+  observeEvent(UserConfig(), {
+    # update the list if the UserConfig() changes
+    # (it will change when the configuration database is read
+    updateSelectInput(session, ns('User_tochange_Password'), label = 'Selected User',
+                      choices = UserConfig()$Fullname)
+  })
+  observeEvent(input$reset_password, {
+    # reset password button has been pressed
+    validate(
+      need(input$User_toReset_Password, "No user selected")
+    )
+    showModal(modalDialog(
+      title= "Remove Password",
+      paste0("Remove password of '", input$User_toReset_Password, "'."),
+      br(), br(),
+      paste0("The user will be asked for a new password when they next login."),
+      br(),
+      # ask for confirmation
+      footer = tagList(actionButton(ns("confirmRemovePassword"),
+                                    "Remove Password"),
+                       modalButton("Cancel")
+      )
+    ))
+  })
+  observeEvent(input$confirmRemovePassword, {
+    # reset password has been confirmed
+    newUserConfig <-
+      UserConfig() %>%
+      mutate(Password =
+               replace(Password, input$User_toReset_Password == Fullname, ""))
+    UserConfig(newUserConfig) # replace password with empty string
+
+    UserRow <- UserConfig() %>% filter(input$User_toReset_Password == Fullname)
+    # just select the user for whom we are removing the password
+
+    query <- "UPDATE Users SET Password = ? WHERE id = ?"
+    # write to configuration database
+    data_for_sql <- list(c(""), UserRow$id[[1]])
+
+    connection <- pool::poolCheckout(config_pool())
+    # can't write with the pool
+    rs <- DBI::dbSendQuery(connection, query) # update database
+    DBI::dbBind(rs, data_for_sql)
+    DBI::dbClearResult(rs)
+    pool::poolReturn(connection)
+
+    removeModal()
+  })
+
+  ####### Restriction of permissions #############################################
   restrictionTypes_df <- data.frame(Reduce(rbind, restrictionTypes))
   # converts the list to a dataframe
-  user_attribute_types <- unlist(restrictionTypes_df$id, use.names = FALSE)
-  # user attribute types is defined in restrictionTypes
+  user_attribute_types <- unlist(filter(restrictionTypes_df, userAttribute == TRUE)$id,
+                                 use.names = FALSE)
+  # user attribute types is defined in restrictionTypes. only those with userAttribute TRUE
 
   usernames <- reactiveVal()
   # list of user names
@@ -643,12 +763,19 @@ userconfig_datatable <- function(input, output, session,
       # (otherwise only the final expression in the loop is registered as an observer!)
       restrictionLocal <- restriction
       observeEvent(input[[restrictionLocal$id]], ignoreInit = TRUE, {
-        if (input[[restrictionLocal$id]] != (restrictionLocal$id) %in% UserRestrictions()$Restriction) {
+        if (input[[restrictionLocal$id]] !=
+            (restrictionLocal$id) %in% UserRestrictions()$Restriction) {
           # change in state
           state <- restrictionLocal$callback(
             input[[restrictionLocal$id]],
-            UserConfig()$Attributes %>% unlist(use.names = FALSE)
+            UserConfig()$Attributes %>% unlist(use.names = FALSE),
             # list of attributes in use
+            (nchar(apply(cbind(unlist(UserConfig()$Password, use.names = FALSE)),
+                        1,
+                        function(x) paste(x[!is.na(x)], collapse = ""))) > 0)
+            # any passwords are set?
+            # this code to concatenate strings, NA or not, was found on StackOverflow
+            # by 'Joe' https://stackoverflow.com/questions/13673894/suppress-nas-in-paste
           )
           # returns state. same as the 'changed to' state, if it is permissible
           # e.g. it isn't permissible to set ServerAdmin/UserAdmin to 'TRUE' if
@@ -820,4 +947,101 @@ userconfig_datatable <- function(input, output, session,
 
   return(reactive({userconfig_list_change()}))
   # increments each time a callback changes UserConfig
+}
+
+#' password configuration module - UI
+#'
+#' Allow user to set or change their user password.
+#' Only shown if password can be set, i.e. user has been identified.
+#'
+#' @param id as required by shiny modules
+#'
+passwordConfig_UI <- function(id) {
+  ns <- NS(id)
+
+  tagList(
+    wellPanel(
+      "Change User Password",
+      br(), br(),
+      actionButton(ns("ChangePassword"), "Change Password", icon("unlock-alt"))
+    )
+  )
+
+}
+
+#' password configuration module - server function
+#'
+#' Allow user to set or change their user password
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param	UserConfig reactiveval, list of user config
+#' @param LoggedInUser reactiveval, currently logged in user
+#' @param config_pool reactiveval, access to configuration database
+#'
+#' @return count - increments with each GUI edit of user configuration database
+passwordConfig_server <- function(input, output, session,
+                              UserConfig, LoggedInUser,
+                              config_pool) {
+  ns <- session$ns
+
+  observeEvent(input$ChangePassword, {
+    if (is.na(LoggedInUser()$Password) || (nchar(LoggedInUser()$Password) == 0)) {
+      # empty or NA password, then asking for new password
+      showModal(modalDialog(
+        title="New password",
+        tagList(
+          passwordInput(ns("password1"), label = "Enter Password", value = ""),
+          br(),
+          passwordInput(ns("password2"), label = "Confirm Password", value = "")
+        ),
+        footer = tagList(actionButton(ns("confirmNewPassword"), "Confirm"),
+                         modalButton("Cancel")
+        )
+      ))
+    } else {
+      showModal(modalDialog(
+        title="Change password",
+        tagList(
+          passwordInput(ns("passwordOld"), label = "Old Password", value = ""),
+          br(),
+          passwordInput(ns("password1"), label = "Enter Password", value = ""),
+          br(),
+          passwordInput(ns("password2"), label = "Confirm Password", value = "")
+        ),
+        footer = tagList(actionButton(ns("confirmChangePassword"), "Confirm"),
+                         modalButton("Cancel")
+        )
+      ))
+    }
+  })
+
+  observeEvent(input$confirmNewPassword, {
+    if (input$password1 != input$password2) {
+      shinytoastr::toastr_error("Passwords must match",
+                                closeButton = TRUE)
+    } else if (nchar(input$password1) < 6) {
+      shinytoastr::toastr_error("Password must be at least six (6) characters long")
+    } else {
+      setPassword(input$password1, UserConfig, LoggedInUser, config_pool)
+      # this function is found in calculation_definitions.R
+      removeModal()
+    }
+  })
+
+  observeEvent(input$confirmChangePassword, {
+    if (!simple_tag_compare(input$passwordOld, LoggedInUser()$Password)) {
+      shinytoastr::toastr_error("Old Password incorrect",
+                                closeButton = TRUE)
+    } else if (input$password1 != input$password2) {
+      shinytoastr::toastr_error("Passwords must match",
+                                closeButton = TRUE)
+    } else if (nchar(input$password1) < 6) {
+      shinytoastr::toastr_error("Password must be at least six (6) characters long")
+    } else {
+      setPassword(input$password1, UserConfig, LoggedInUser, config_pool)
+      removeModal()
+    }
+  })
 }

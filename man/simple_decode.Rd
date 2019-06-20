@@ -20,5 +20,5 @@ simple_decode(msg, key = NULL, nonce = NULL)
 Simple decoder of text strings, will output a text string.
 Uses sodium library and base64_enc/dec from jsonlite. Has some defaults, but
 will also take command-line arguments or read from environment.
-Componaion function to simple_encode
+Companion function to simple_encode
 }

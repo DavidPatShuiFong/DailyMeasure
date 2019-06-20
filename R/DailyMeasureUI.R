@@ -185,11 +185,11 @@ DailyMeasureUI <- function() {
 										         passwordConfig_UI("password_config"))
 										)
 									)
-								)),
-				tabItem(tabName = "test",
-								fluidRow(column(width = 12, align = "center", h2("Test frame"))),
-								fluidRow(column(width = 12, DT::DTOutput("test_dt")))
-				)
+								)) #,
+				#tabItem(tabName = "test",
+				#				fluidRow(column(width = 12, align = "center", h2("Test frame"))),
+				#				fluidRow(column(width = 12, DT::DTOutput("test_dt")))
+				#)
 			)
 		)
 	)

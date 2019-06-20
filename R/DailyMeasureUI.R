@@ -176,6 +176,13 @@ DailyMeasureUI <- function() {
 											value = "UsersPanel",
 											column(width = 12,
 														 userconfig_datatableUI("userconfig_dt"))
+										),
+										tabPanel(
+										  # User password
+										  title = "User Password Setting",
+										  value = "PasswordPanel",
+										  column(width = 12,
+										         passwordConfig_UI("password_config"))
 										)
 									)
 								)),

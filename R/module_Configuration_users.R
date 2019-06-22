@@ -166,6 +166,12 @@ restrictionTypes <- list(
   )
 )
 
+restrictionTypes_df <- data.frame(Reduce(rbind, restrictionTypes))
+# converts the list to a dataframe
+user_attribute_types <- unlist(filter(restrictionTypes_df, userAttribute == TRUE)$id,
+                               use.names = FALSE)
+# user attribute types is defined in restrictionTypes. only those with userAttribute TRUE
+
 
 ###### Password Removal ##################################################
 #' userconfig_resetpasswordUI
@@ -314,12 +320,6 @@ userconfig_enableRestrictionsUI <- function(id) {
 userconfig_enableRestrictions <- function (input, out, session,
                                            UserConfig, UserRestrictions,
                                            config_pool) {
-
-  restrictionTypes_df <- data.frame(Reduce(rbind, restrictionTypes))
-  # converts the list to a dataframe
-  user_attribute_types <- unlist(filter(restrictionTypes_df, userAttribute == TRUE)$id,
-                                 use.names = FALSE)
-  # user attribute types is defined in restrictionTypes. only those with userAttribute TRUE
 
   update_UserRestrictions_database <- function() {
     # update UserRestrictions database

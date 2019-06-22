@@ -64,6 +64,12 @@ a modified version of fomantic-UI is used
 https://github.com/fomantic/Fomantic-U
 (fomantic-UI, in turn, is a fork of semantic-UI)
 
+BSD-3
+=====
+
+stringi
+https://github.com/gagolews/stringi
+
 GNU General Public License v2 (GPL v2)
 ======================================
 
@@ -84,9 +90,6 @@ other licensing details in LICENSE.shinydashboardplus
 
 lubridate
 https://lubridate.tidyverse.org/
-
-stringr
-https://stringr.tidyverse.org/
 
 
 GNU Lesser General Public License

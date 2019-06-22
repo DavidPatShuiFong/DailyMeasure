@@ -3,7 +3,6 @@
 #' @import dbplyr
 #' @import tidyr
 #' @import shiny
-#' @import tidyverse
 #' @import dplyr
 NULL
 
@@ -332,8 +331,8 @@ DailyMeasureServer <- function(input, output, session) {
     PracticeLocations(config_pool() %>% tbl("Location"))
     UserConfig(config_pool() %>% tbl("Users") %>%
                  # in UserConfig, there can be multiple Locations/Attributes per user
-                 collect() %>% mutate(Location = stringr::str_split(Location, ";"),
-                                      Attributes = stringr::str_split(Attributes, ";")))
+                 collect() %>% mutate(Location = stringi::stri_split(Location, regex = ";"),
+                                      Attributes = stringi::stri_split(Attributes, regex = ";")))
     UserRestrictions(config_pool() %>% tbl("UserRestrictions") %>% collect())
   })
 

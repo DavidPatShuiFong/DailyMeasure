@@ -5,7 +5,7 @@
 \title{server configuration module - server}
 \usage{
 servers_datatable(input, output, session, BPdatabase, BPdatabaseChoice,
-  emrpool, config_pool)
+  emrpool, config_db)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -20,7 +20,7 @@ servers_datatable(input, output, session, BPdatabase, BPdatabaseChoice,
 
 \item{emrpool}{reactiveval, current Best Practice (electronic medical record 'EMR') database pool in use}
 
-\item{config_pool}{reactiveval, access to configuration database}
+\item{config_db}{R6 object, access to configuration database}
 }
 \value{
 count increments with each edit of server database

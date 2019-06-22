@@ -5,7 +5,7 @@
 \title{userconfig_enableRestrictions - server component}
 \usage{
 userconfig_enableRestrictions(input, out, session, UserConfig,
-  UserRestrictions, config_pool)
+  UserRestrictions, config_db)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -16,7 +16,7 @@ userconfig_enableRestrictions(input, out, session, UserConfig,
 
 \item{UserRestrictions}{reactiveval, list of user restrictions}
 
-\item{config_pool}{reactiveval, access to configuration database}
+\item{config_db}{R6 object, access to configuration database}
 
 \item{output}{as required by Shiny modules}
 }

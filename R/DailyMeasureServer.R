@@ -16,6 +16,8 @@ NULL
 #'
 #' @include calculation_definitions.R
 #' needed for simple encode/decode
+#' @include dbConnection.R
+#' needed for database connections
 DailyMeasureServer <- function(input, output, session) {
 
   # IMPORTANT!
@@ -23,19 +25,19 @@ DailyMeasureServer <- function(input, output, session) {
   # shiny app session ends. Otherwise, you end up with a zombie process
   session$onSessionEnded(function() {
 
-    if (is.environment(isolate(config_pool()))) {
-      if (DBI::dbIsValid(isolate(config_pool()))) {
-        # if emrpool() is defined as a database, then close it
-        pool::poolClose(isolate(config_pool()))
+    if (!is.null(config_db$conn())) {
+      if (DBI::dbIsValid(config_db$conn())) {
+        # if config_db is defined as a database, then close it
+        config_db$close()
       }
     }
 
-    if (is.environment(isolate(emrpool()))) {
-      if (DBI::dbIsValid(isolate(emrpool()))) {
-        # if emrpool() is defined as a database, then close it
-        pool::poolClose(isolate(emrpool()))
-      }
-    }
+    #    if (!is.null(emr_db$conn())) {
+    #      if (DBI::dbIsValid(emr_db$conn)) {
+    #        # if emrpool() is defined as a database, then close it
+    #        emr_db$close()
+    #      }
+    #    }
 
     stopApp()
   })
@@ -78,8 +80,7 @@ DailyMeasureServer <- function(input, output, session) {
     )
   }
 
-  # local_config <- reactiveValues(config_file = character())
-  config_pool <- reactiveVal()
+  config_db <- dbConnection$new() # connection to database, using either DBI or pool
   configuration_file_path <- reactiveVal()
   BPdatabase <- reactiveVal(
     value = data.frame(id = integer(),
@@ -121,25 +122,19 @@ DailyMeasureServer <- function(input, output, session) {
   observeEvent(configuration_file_path(), ignoreNULL = TRUE, {
     if (file.exists(isolate(configuration_file_path()))) {
       # open config database file
-      config_pool(tryCatch(pool::dbPool(
-        RSQLite::SQLite(),
-        dbname = isolate(configuration_file_path())),
-        error = function(e) {NULL}))
+      config_db$connect(usepool = TRUE, RSQLite::SQLite(), dbname = isolate(configuration_file_path()))
     } else {
       # if the config database doesn't exist,
       # then create it (note create = TRUE option)
-      config_pool(tryCatch(pool::dbPool(
-        RSQLite::SQLite(),
-        dbname = isolate(configuration_file_path()),
-        create = TRUE),
-        error = function(e) {NULL}))
+      config_db$connect(usepool = TRUE, RSQLite::SQLite(), dbname = isolate(configuration_file_path()))
+      # create = TRUE not a valid option? always tries to create file if it doesn't exist
     }
 
-    initialize_data_table <- function(config_pool, tablename, variable_list) {
+    initialize_data_table <- function(config_db, tablename, variable_list) {
       # make sure the table in the database has all the right variable headings
       # allows 'update' of old databases
       #
-      # input - config_pool : 'pool' reactive of database
+      # input - config_db : R6 object of configuration database
       # input - tablename : name of table
       # input - variable_list : list of variable headings, with variable type
       #   e.g. list(c("id", "integer"), c("Name", "character"))
@@ -148,13 +143,13 @@ DailyMeasureServer <- function(input, output, session) {
       #
       # returns - nothing
 
-      tablenames <- config_pool() %>% DBI::dbListTables()
+      tablenames <- config_db$conn() %>% DBI::dbListTables()
 
       if (tablename %in% tablenames) {
-        # if table exists in config_pool database
-        columns <- config_pool() %>% tbl(tablename) %>% colnames()
+        # if table exists in config_db database
+        columns <- config_db$conn() %>% tbl(tablename) %>% colnames()
         # list of column (variable) names
-        data <- config_pool() %>% tbl(tablename) %>% collect()
+        data <- config_db$conn() %>% tbl(tablename) %>% collect()
         # get a copy of the table's data
       } else {
         # table does not exist, needs to be created
@@ -176,47 +171,49 @@ DailyMeasureServer <- function(input, output, session) {
         }
       }
       if (changed == TRUE) {
-        DBI::dbWriteTable(config_pool(), tablename, data, overwrite = TRUE)
+        DBI::dbWriteTable(config_db$conn(), tablename, data, overwrite = TRUE)
       }
 
     }
 
-    # check that tables exist in the config file
-    # also create new columns (variables) as necessary
-    initialize_data_table(config_pool, "Server",
-                          list(c("id", "integer"),
-                               c("Name", "character"),
-                               c("Address", "character"),
-                               c("Database", "character"),
-                               c("UserID", "character"),
-                               c("dbPassword", "character")))
-    # initialize_data_table will create table and/or ADD 'missing' columns to existing table
+    if (!is.null(config_db$conn)) {
+      # check that tables exist in the config file
+      # also create new columns (variables) as necessary
+      initialize_data_table(config_db, "Server",
+                            list(c("id", "integer"),
+                                 c("Name", "character"),
+                                 c("Address", "character"),
+                                 c("Database", "character"),
+                                 c("UserID", "character"),
+                                 c("dbPassword", "character")))
+      # initialize_data_table will create table and/or ADD 'missing' columns to existing table
 
-    initialize_data_table(config_pool, "ServerChoice",
-                          list(c("id", "integer"),
-                               c("Name", "character")))
-    # there should only be (at most) one entry in this table!
-    # with id '1', and a 'Name' the same as the chosen entry in table "Server"
+      initialize_data_table(config_db, "ServerChoice",
+                            list(c("id", "integer"),
+                                 c("Name", "character")))
+      # there should only be (at most) one entry in this table!
+      # with id '1', and a 'Name' the same as the chosen entry in table "Server"
 
-    initialize_data_table(config_pool, "Location",
-                          list(c("id", "integer"),
-                               c("Name", "character"),
-                               c("Description", "character")))
+      initialize_data_table(config_db, "Location",
+                            list(c("id", "integer"),
+                                 c("Name", "character"),
+                                 c("Description", "character")))
 
-    initialize_data_table(config_pool, "Users",
-                          list(c("id", "integer"),
-                               c("Fullname", "character"),
-                               c("AuthIdentity", "character"),
-                               c("Location", "character"),
-                               c("Password", "character"),
-                               c("Attributes", "character")))
+      initialize_data_table(config_db, "Users",
+                            list(c("id", "integer"),
+                                 c("Fullname", "character"),
+                                 c("AuthIdentity", "character"),
+                                 c("Location", "character"),
+                                 c("Password", "character"),
+                                 c("Attributes", "character")))
 
-    initialize_data_table(config_pool, "UserRestrictions",
-                          list(c("uid", "integer"),
-                               c("Restriction", "character")))
-    # list of restrictions for users
-    # use of 'uid' rather than 'id'
-    # (this relates to the 'Attributes' field in "Users")
+      initialize_data_table(config_db, "UserRestrictions",
+                            list(c("uid", "integer"),
+                                 c("Restriction", "character")))
+      # list of restrictions for users
+      # use of 'uid' rather than 'id'
+      # (this relates to the 'Attributes' field in "Users")
+    }
   })
 
   ### database initialization
@@ -324,16 +321,19 @@ DailyMeasureServer <- function(input, output, session) {
 
   ### configuration database changes
 
-  observeEvent(config_pool(), ignoreNULL = TRUE, {
-    BPdatabase(config_pool() %>% tbl("Server") %>% collect())
-    BPdatabaseChoice((config_pool() %>% tbl("ServerChoice") %>%
+  observeEvent(reactive(config_db$conn()), ignoreNULL = TRUE, {
+    validate(
+      need(config_db$conn(), "No connection established to configuration database")
+    )
+    BPdatabase(config_db$conn() %>% tbl("Server") %>% collect())
+    BPdatabaseChoice((config_db$conn() %>% tbl("ServerChoice") %>%
                         filter(id == 1) %>% select("Name") %>% collect())[[1]])
-    PracticeLocations(config_pool() %>% tbl("Location"))
-    UserConfig(config_pool() %>% tbl("Users") %>%
+    PracticeLocations(config_db$conn() %>% tbl("Location"))
+    UserConfig(config_db$conn() %>% tbl("Users") %>%
                  # in UserConfig, there can be multiple Locations/Attributes per user
                  collect() %>% mutate(Location = stringi::stri_split(Location, regex = ";"),
                                       Attributes = stringi::stri_split(Attributes, regex = ";")))
-    UserRestrictions(config_pool() %>% tbl("UserRestrictions") %>% collect())
+    UserRestrictions(config_db$conn() %>% tbl("UserRestrictions") %>% collect())
   })
 
   ### emr database variables
@@ -487,7 +487,7 @@ DailyMeasureServer <- function(input, output, session) {
     # respond to database initialization or change in input choice
     # respond to change in UserRestrictions and which sidebartab is selected
     validate(
-      need(!is.null(input$location), "Locations not available")
+      need(input$location, "Locations not available")
     )
     if (isolate(input$location) == 'All') {
       # note that 'ifelse' only returns result in the
@@ -937,7 +937,7 @@ DailyMeasureServer <- function(input, output, session) {
   # database configuration tab
 
   serverconfig_change <- callModule(servers_datatable, "servers_dt",
-                                    BPdatabase, BPdatabaseChoice, emrpool, config_pool)
+                                    BPdatabase, BPdatabaseChoice, emrpool, config_db)
   # returns $count
 
   server_list_names <- reactiveVal(isolate(BPdatabase()) %>%
@@ -951,7 +951,7 @@ DailyMeasureServer <- function(input, output, session) {
 
   # location configuration tab
   location_list_change <- callModule(locations_datatable, "locations_dt",
-                                     PracticeLocations, UserConfig, config_pool)
+                                     PracticeLocations, UserConfig, config_db)
 
   location_list_names <- reactiveVal(isolate(PracticeLocations()) %>%
                                        select(Name) %>% collect() %>% unlist(use.names = FALSE))
@@ -966,12 +966,12 @@ DailyMeasureServer <- function(input, output, session) {
 
   userconfig_change <- callModule(userconfig_datatable, "userconfig_dt",
                                   UserConfig, UserFullConfig, UserRestrictions,
-                                  location_list_names, db, config_pool)
+                                  location_list_names, db, config_db)
 
   ###### user configuration of their own password #######################
   callModule(passwordConfig_server, "password_config",
              UserConfig, LoggedInUser,
-             config_pool)
+             config_db)
 
   ###### display of panels etc. change depending on logged in user ######
   LoggedInUser <- reactiveVal()
@@ -1083,7 +1083,7 @@ DailyMeasureServer <- function(input, output, session) {
     } else if (nchar(input$password1) < 6) {
       shinytoastr::toastr_error("Password must be at least six (6) characters long")
     } else {
-      setPassword(input$password1, UserConfig, LoggedInUser, config_pool)
+      setPassword(input$password1, UserConfig, LoggedInUser, config_db)
       # this function is found in calculation_definitions.R
       removeModal()
       authenticated(TRUE)

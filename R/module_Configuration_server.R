@@ -31,13 +31,13 @@ servers_datatableUI <- function(id) {
 #' @param	BPdatabase reactiveval, list of servers
 #' @param BPdatabaseChoice reactiveval, name of chosen server
 #' @param emrpool reactiveval, current Best Practice (electronic medical record 'EMR') database pool in use
-#' @param config_pool reactiveval, access to configuration database
+#' @param config_db R6 object, access to configuration database
 #'
 #' @return count increments with each edit of server database
 #'
 #' @include calculation_definitions.R
 #' required for simple encoding/decoding
-servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoice, emrpool, config_pool) {
+servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoice, emrpool, config_db) {
   # Practice locations/groups server part of module
   # returns server_list_change$count - increments with each GUI edit of server list
   # change in server_list_change to prompt change in selectable filter list of locations
@@ -53,9 +53,12 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 
   servername_list <- reactiveVal(append("None", isolate(BPdatabase()$Name)))
   # add 'None' to the list of databases
-  observeEvent(c(BPdatabase(), config_pool()), {
+  observeEvent(c(BPdatabase(), reactive(config_db$conn())), {
     # when the database list is updated, either change in list
     # or configuration file has been opened
+    validate(
+      need(!is.null(BPdatabase()), "BPdatabase not defined")
+    )
     servername_list(append("None", BPdatabase()$Name))
   })
 
@@ -78,7 +81,7 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
     # this will be the server 'Name', a character string
     BPdatabaseChoice(input$server_chosen)
     ## then need to update configuraiton file
-    if (nrow(config_pool() %>% tbl("ServerChoice") %>% filter(id ==1) %>% collect())) {
+    if (nrow(config_db$conn() %>% tbl("ServerChoice") %>% filter(id ==1) %>% collect())) {
       # already an entry in the ServerChoice table
       query <- "UPDATE ServerChoice SET Name = ? WHERE id = ?"
       data_for_sql <- as.list.data.frame(c(input$server_chosen, 1))
@@ -88,15 +91,9 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
       data_for_sql <- as.list.data.frame(c(1, input$server_chosen))
     }
 
-    connection <- pool::poolCheckout(config_pool()) # can't write with the pool
-    rs <- DBI::dbSendQuery(connection, query)
-    # parameterized query can handle apostrophes etc.
-    DBI::dbBind(rs, data_for_sql)
-    # for statements, rather than queries, we don't need to dbFetch(rs)
-    # update database
-    DBI::dbClearResult(rs)
-    pool::poolReturn(connection)
-
+    config_db$dbSendQuery(query, data_for_sql)
+    # if the connection is a pool, can't send write query (a statement) directly
+    # so use the object's method
   })
 
   ### callback definitions for DTedit
@@ -126,14 +123,10 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
                                            data[row,]$Database, data[row,]$UserID,
                                            data[row,]$dbPassword))
 
-      connection <- pool::poolCheckout(config_pool()) # can't write with the pool
-      rs <- DBI::dbSendQuery(connection, query)
-      # parameterized query can handle apostrophes etc.
-      DBI::dbBind(rs, data_for_sql)
-      # for statements, rather than queries, we don't need to dbFetch(rs)
-      # update database
-      DBI::dbClearResult(rs)
-      pool::poolReturn(connection)
+      config_db$dbSendQuery(query, data_for_sql)
+      # if the connection is a pool, can't send write query (a statement) directly
+      # so use the object's method
+
 
       BPdatabase(data) # update the dataframe in memory
       servers_list_change(servers_list_change() + 1)
@@ -169,11 +162,9 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
                                            data[row,]$Database, data[row,]$UserID,
                                            data[row,]$dbPassword, data[row,]$id))
 
-      connection <- pool::poolCheckout(config_pool()) # can't write with the pool
-      rs <- DBI::dbSendQuery(connection, query) # update database
-      DBI::dbBind(rs, data_for_sql)
-      DBI::dbClearResult(rs)
-      pool::poolReturn(connection)
+      config_db$dbSendQuery(query, data_for_sql)
+      # if the connection is a pool, can't send write query (a statement) directly
+      # so use the object's method
 
       BPdatabase(data) # store new values in copy of settings in memory
       servers_list_change(servers_list_change() + 1) # this value returned by module
@@ -189,11 +180,9 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
       query <- "DELETE FROM Server WHERE id = ?"
       data_for_sql <- as.list.data.frame(c(data[row,]$id))
 
-      connection <- pool::poolCheckout(config_pool()) # can't write with the pool
-      rs <- DBI::dbSendQuery(connection, query) # update database
-      DBI::dbBind(rs, data_for_sql)
-      DBI::dbClearResult(rs)
-      pool::poolReturn(connection)
+      config_db$dbSendQuery(query, data_for_sql)
+      # if the connection is a pool, can't send write query (a statement) directly
+      # so use the object's method
 
       BPdatabase(data[-c(row),])
       servers_list_change(servers_list_change() + 1) # this value returned by module

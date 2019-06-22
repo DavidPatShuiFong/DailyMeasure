@@ -5,7 +5,7 @@
 \title{password configuration module - server function}
 \usage{
 passwordConfig_server(input, output, session, UserConfig, LoggedInUser,
-  config_pool)
+  config_db)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -18,7 +18,7 @@ passwordConfig_server(input, output, session, UserConfig, LoggedInUser,
 
 \item{LoggedInUser}{reactiveval, currently logged in user}
 
-\item{config_pool}{reactiveval, access to configuration database}
+\item{config_db}{R6 object, access to configuration database}
 }
 \value{
 count - increments with each GUI edit of user configuration database

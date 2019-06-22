@@ -5,7 +5,7 @@
 \title{user configuration module - server function}
 \usage{
 userconfig_datatable(input, output, session, UserConfig, UserFullConfig,
-  UserRestrictions, LocationNames, db, config_pool)
+  UserRestrictions, LocationNames, db, config_db)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -22,7 +22,7 @@ userconfig_datatable(input, output, session, UserConfig, UserFullConfig,
 
 \item{db}{reactivevalues link to EMR database. includes $users and $dbversion}
 
-\item{config_pool}{reactiveval, access to configuration database}
+\item{config_db}{reactiveval, access to configuration database}
 }
 \value{
 count - increments with each GUI edit of user configuration database

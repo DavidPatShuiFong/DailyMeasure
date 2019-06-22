@@ -4,7 +4,7 @@
 \alias{userconfig_resetpassword}
 \title{userconfig_resetpassword - server component}
 \usage{
-userconfig_resetpassword(input, output, session, UserConfig, config_pool)
+userconfig_resetpassword(input, output, session, UserConfig, config_db)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -15,7 +15,7 @@ userconfig_resetpassword(input, output, session, UserConfig, config_pool)
 
 \item{UserConfig}{reactiveval, list of user config}
 
-\item{config_pool}{reactiveval, access to configuration database}
+\item{config_db}{R6 object, access to configuration database}
 }
 \value{
 nothing

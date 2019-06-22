@@ -27,12 +27,12 @@ passwordConfig_UI <- function(id) {
 #' @param session as required by Shiny modules
 #' @param	UserConfig reactiveval, list of user config
 #' @param LoggedInUser reactiveval, currently logged in user
-#' @param config_pool reactiveval, access to configuration database
+#' @param config_db R6 object, access to configuration database
 #'
 #' @return count - increments with each GUI edit of user configuration database
 passwordConfig_server <- function(input, output, session,
                                   UserConfig, LoggedInUser,
-                                  config_pool) {
+                                  config_db) {
   ns <- session$ns
 
   observeEvent(input$ChangePassword, {
@@ -73,7 +73,7 @@ passwordConfig_server <- function(input, output, session,
     } else if (nchar(input$password1) < 6) {
       shinytoastr::toastr_error("Password must be at least six (6) characters long")
     } else {
-      setPassword(input$password1, UserConfig, LoggedInUser, config_pool)
+      setPassword(input$password1, UserConfig, LoggedInUser, config_db$conn())
       # this function is found in calculation_definitions.R
       removeModal()
     }
@@ -89,7 +89,7 @@ passwordConfig_server <- function(input, output, session,
     } else if (nchar(input$password1) < 6) {
       shinytoastr::toastr_error("Password must be at least six (6) characters long")
     } else {
-      setPassword(input$password1, UserConfig, LoggedInUser, config_pool)
+      setPassword(input$password1, UserConfig, LoggedInUser, config_db$conn())
       removeModal()
     }
   })

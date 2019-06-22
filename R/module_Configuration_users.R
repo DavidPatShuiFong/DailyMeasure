@@ -202,11 +202,11 @@ userconfig_resetpasswordUI <- function(id) {
 #' @param output as required by Shiny modules
 #' @param session as required by Shiny modules
 #' @param	UserConfig reactiveval, list of user config
-#' @param config_pool reactiveval, access to configuration database
+#' @param config_db R6 object, access to configuration database
 #'
 #' @return nothing
 userconfig_resetpassword <- function(input, output, session,
-                                     UserConfig, config_pool) {
+                                     UserConfig, config_db) {
   ns <- session$ns
 
   output$ConfiguredUserList <- renderUI({
@@ -258,12 +258,9 @@ userconfig_resetpassword <- function(input, output, session,
     # write to configuration database
     data_for_sql <- list(c(""), UserRow$id[[1]])
 
-    connection <- pool::poolCheckout(config_pool())
-    # can't write with the pool
-    rs <- DBI::dbSendQuery(connection, query) # update database
-    DBI::dbBind(rs, data_for_sql)
-    DBI::dbClearResult(rs)
-    pool::poolReturn(connection)
+    config_db$dbSendQuery(query, data_for_sql)
+    # if the connection is a pool, can't send write query (a statement) directly
+    # so use the object's method
 
     removeModal()
   })
@@ -314,18 +311,18 @@ userconfig_enableRestrictionsUI <- function(id) {
 #' @param session as required by Shiny modules
 #' @param	UserConfig reactiveval, list of user config
 #' @param UserRestrictions reactiveval, list of user restrictions
-#' @param config_pool reactiveval, access to configuration database
+#' @param config_db R6 object, access to configuration database
 #'
 #' @return nothing
 userconfig_enableRestrictions <- function (input, out, session,
                                            UserConfig, UserRestrictions,
-                                           config_pool) {
+                                           config_db) {
 
   update_UserRestrictions_database <- function() {
     # update UserRestrictions database
     # this is manually called when (one) restriction is added or removed
     # so only has to find 'one' row of difference between the 'new' list and the 'old' list
-    originalRestrictions <- config_pool() %>% tbl("UserRestrictions") %>% collect()
+    originalRestrictions <- config_db$conn() %>% tbl("UserRestrictions") %>% collect()
     newRestrictions <- isolate(UserRestrictions())
 
     new_row <- anti_join(newRestrictions, originalRestrictions, by = "uid")
@@ -334,14 +331,9 @@ userconfig_enableRestrictions <- function (input, out, session,
       query <- "INSERT INTO UserRestrictions (uid, Restriction) VALUES (?, ?)"
       data_for_sql <- as.list.data.frame(c(new_row$uid, new_row$Restriction))
 
-      connection <- pool::poolCheckout(isolate(config_pool())) # can't write with the pool
-      rs <- DBI::dbSendQuery(connection, query)
-      # parameterized query can handle apostrophes etc.
-      DBI::dbBind(rs, data_for_sql)
-      # for statements, rather than queries, we don't need to dbFetch(rs)
-      # update database
-      DBI::dbClearResult(rs)
-      pool::poolReturn(connection)
+      config_db$dbSendQuery(query, data_for_sql)
+      # if the connection is a pool, can't send write query (a statement) directly
+      # so use the object's method
     } else {
       deleted_row <- anti_join(originalRestrictions, newRestrictions, by = "uid")
       if (nrow(deleted_row) > 0) {
@@ -349,20 +341,18 @@ userconfig_enableRestrictions <- function (input, out, session,
         query <- "DELETE FROM UserRestrictions WHERE uid = ?"
         data_for_sql <- as.list.data.frame(c(deleted_row$uid))
 
-        connection <- pool::poolCheckout(isolate(config_pool()))
-        # can't write with the pool
-        rs <- DBI::dbSendQuery(connection, query) # update database
-        DBI::dbBind(rs, data_for_sql)
-        DBI::dbClearResult(rs)
-        pool::poolReturn(connection)
+        config_db$dbSendQuery(query, data_for_sql)
+        # if the connection is a pool, can't send write query (a statement) directly
+        # so use the object's method
       }
     }
   }
 
-  observeEvent(config_pool(), {
+  observeEvent(reactive(config_db$conn()), {
     # if configuration pool has been initialized
     validate(
-      need(UserRestrictions(), "No restriction list")
+      need(UserRestrictions(), "No restriction list"),
+      need(config_db$conn(), "Configuration database not defined")
     )
     for (restriction in unlist(restrictionTypes_df$id, use.names = FALSE)) {
       # set the switches according the what is stored in the configuration database
@@ -469,12 +459,12 @@ userconfig_datatableUI <- function(id) {
 #' @param UserRestrictions reactiveval, user restriction list
 #' @param LocationNames list of location names (not including ID or Description)
 #' @param db reactivevalues link to EMR database. includes $users and $dbversion
-#' @param config_pool reactiveval, access to configuration database
+#' @param config_db reactiveval, access to configuration database
 #'
 #' @return count - increments with each GUI edit of user configuration database
 userconfig_datatable <- function(input, output, session,
                                  UserConfig, UserFullConfig, UserRestrictions,
-                                 LocationNames, db, config_pool) {
+                                 LocationNames, db, config_db) {
   ns <- session$ns
 
   userconfig_dt_viewcols <- c("id", "Fullname", "AuthIdentity", "Location",
@@ -484,11 +474,11 @@ userconfig_datatable <- function(input, output, session,
 
   # password reset module
   callModule(userconfig_resetpassword, "reset_password",
-             UserConfig, config_pool)
+             UserConfig, config_db)
 
   # enable/disable restrictions module
   callModule(userconfig_enableRestrictions, "enable_restrictions",
-             UserConfig, UserRestrictions, config_pool)
+             UserConfig, UserRestrictions, config_db)
 
   usernames <- reactiveVal()
   # list of user names
@@ -528,14 +518,10 @@ userconfig_datatable <- function(input, output, session,
                            # $Location and $Attribute could both have multiple (or no) entries
                            lo = paste0(data[row,]$Location[[1]], "", collapse = ";"),
                            at = paste0(data[row,]$Attributes[[1]], "", collapse = ";"))
-      connection <- pool::poolCheckout(config_pool()) # can't write with the pool
-      rs <- DBI::dbSendQuery(connection, query)
-      # parameterized query can handle apostrophes etc.
-      DBI::dbBind(rs, data_for_sql)
-      # for statements, rather than queries, we don't need to dbFetch(rs)
-      # update database
-      DBI::dbClearResult(rs)
-      pool::poolReturn(connection)
+
+      config_db$dbSendQuery(query, data_for_sql)
+      # if the connection is a pool, can't send write query (a statement) directly
+      # so use the object's method
 
       UserConfig(data) # update the dataframe in memory
       userconfig_list_change(userconfig_list_change() + 1)
@@ -570,12 +556,10 @@ userconfig_datatable <- function(input, output, session,
                               paste0(data[row,]$Attributes[[1]], "", collapse = ";"),
                               data[row,]$id))
     # note extra "" within paste0 is required in the case of empty data
-    connection <- pool::poolCheckout(config_pool())
-    # can't write with the pool
-    rs <- DBI::dbSendQuery(connection, query) # update database
-    DBI::dbBind(rs, data_for_sql)
-    DBI::dbClearResult(rs)
-    pool::poolReturn(connection)
+
+    config_db$dbSendQuery(query, data_for_sql)
+    # if the connection is a pool, can't send write query (a statement) directly
+    # so use the object's method
 
     UserConfig(data)
     userconfig_list_change(userconfig_list_change() + 1)
@@ -607,11 +591,9 @@ userconfig_datatable <- function(input, output, session,
     query <- "DELETE FROM Users WHERE id = ?"
     data_for_sql <- as.list.data.frame(c(data[row,]$id))
 
-    connection <- pool::poolCheckout(config_pool()) # can't write with the pool
-    rs <- DBI::dbSendQuery(connection, query) # update database
-    DBI::dbBind(rs, data_for_sql)
-    DBI::dbClearResult(rs)
-    pool::poolReturn(connection)
+    config_db$dbSendQuery(query, data_for_sql)
+    # if the connection is a pool, can't send write query (a statement) directly
+    # so use the object's method
 
     UserConfig(data[-c(row),])
     userconfig_list_change(userconfig_list_change() + 1)

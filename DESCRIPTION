@@ -28,7 +28,6 @@ Imports:
     DBI,
     odbc,
     RSQLite,
-    pool,
     configr,
     DT (>= 0.5.3),
     lubridate,
@@ -36,7 +35,10 @@ Imports:
     stringi,
     magrittr,
     jsonlite,
-    sodium
+    sodium,
+    R6
+Suggests:
+    pool
 ImportComments:
  shinycssloaders - loading animations
   custom version based on Gao Zheng's 'transparent' background version
@@ -46,6 +48,7 @@ ImportComments:
   install with devtools::install_github('DavidPatShuiFong/DTedit')
 Collate: 
     'DailyMeasure.R'
+    'dbConnection.R'
     'calculation_definitions.R'
     'DailyMeasureServer.R'
     'module_Configuration_server.R'

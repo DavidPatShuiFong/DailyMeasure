@@ -25,15 +25,11 @@ locations_datatableUI <- function(id) {
 #' @param session as required by Shiny modules
 #' @param	PracticeLocations reactiveval, list of locations
 #' @param UserConfig reactiveval, list of users who have been configured
-#' @param config_pool reactiveval, access to configuration database
+#' @param config_db R6 object, access to configuration database
 #'
 #' @return count - increments with each edit of server database
 locations_datatable <- function(input, output, session,
-                                PracticeLocations, UserConfig, config_pool) {
-  # Practice locations/groups server part of module
-  # input : PracticeLocations() reactiveval, list of PracticeLocations
-  # input : Users - access to Users database. avoid deleting location currently in 'use' by user
-  # input : config_pool - reactiveval, access to configuration database
+                                PracticeLocations, UserConfig, config_db) {
   # returns location_list_change - increments with each GUI edit of location list
   # change in location_list_change to prompt change in selectable filter list of locations
 
@@ -75,14 +71,9 @@ locations_datatable <- function(input, output, session,
       query <- "INSERT INTO Location (id, Name, Description) VALUES (?, ?, ?)"
       data_for_sql <- as.list.data.frame(c(newid, data[row,]$Name, data[row,]$Description))
 
-      connection <- pool::poolCheckout(config_pool()) # can't write with the pool
-      rs <- DBI::dbSendQuery(connection, query)
-      # parameterized query can handle apostrophes etc.
-      DBI::dbBind(rs, data_for_sql)
-      # for statements, rather than queries, we don't need to dbFetch(rs)
-      # update database
-      DBI::dbClearResult(rs)
-      pool::poolReturn(connection)
+      config_db$dbSendQuery(query, data_for_sql)
+      # if the connection is a pool, can't send write query (a statement) directly
+      # so use the object's method
 
       PracticeLocations(data) # update the dataframe in memory
       location_list_change(location_list_change() + 1)
@@ -110,11 +101,9 @@ locations_datatable <- function(input, output, session,
       query <- "UPDATE Location SET Name = ?, Description = ? WHERE id = ?"
       data_for_sql <- as.list.data.frame(c(data[row,]$Name, data[row,]$Description, data[row,]$id))
 
-      connection <- pool::poolCheckout(config_pool()) # can't write with the pool
-      rs <- DBI::dbSendQuery(connection, query) # update database
-      DBI::dbBind(rs, data_for_sql)
-      DBI::dbClearResult(rs)
-      pool::poolReturn(connection)
+      config_db$dbSendQuery(query, data_for_sql)
+      # if the connection is a pool, can't send write query (a statement) directly
+      # so use the object's method
 
       PracticeLocations(data)
       location_list_change(location_list_change() + 1)
@@ -132,12 +121,9 @@ locations_datatable <- function(input, output, session,
       query <- "DELETE FROM Location WHERE id = ?"
       data_for_sql <- as.list.data.frame(c(data[row,]$id))
 
-      connection <- pool::poolCheckout(config_pool())
-      # can't write with the pool
-      rs <- DBI::dbSendQuery(connection, query) # update database
-      DBI::dbBind(rs, data_for_sql)
-      DBI::dbClearResult(rs)
-      pool::poolReturn(connection)
+      config_db$dbSendQuery(query, data_for_sql)
+      # if the connection is a pool, can't send write query (a statement) directly
+      # so use the object's method
 
       PracticeLocations(data[-c(row),])
       location_list_change(location_list_change() + 1) # this value returned by module

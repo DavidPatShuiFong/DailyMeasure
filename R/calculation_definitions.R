@@ -174,11 +174,11 @@ simple_tag_compare <- function(msg, tag, key = NULL) {
 #' @param newpassword the new password
 #' @param UserConfig reactive, the User Configuration table
 #' @param LoggedInUser reactive, the current user
-#' @param config_pool reactive, access to the user configuration database
+#' @param config_db R6 object, access to the user configuration database
 #'
 #' @return nothing
 #'
-setPassword <- function(newpassword, UserConfig, LoggedInUser, config_pool) {
+setPassword <- function(newpassword, UserConfig, LoggedInUser, config_db) {
   # set the password for the user
 
   newpassword <- simple_tag(newpassword)
@@ -196,10 +196,7 @@ setPassword <- function(newpassword, UserConfig, LoggedInUser, config_pool) {
   # write to configuration database
   data_for_sql <- list(newpassword, LoggedInUser()$id[[1]])
 
-  connection <- pool::poolCheckout(config_pool())
-  # can't write with the pool
-  rs <- DBI::dbSendQuery(connection, query) # update database
-  DBI::dbBind(rs, data_for_sql)
-  DBI::dbClearResult(rs)
-  pool::poolReturn(connection)
+  config_db$dbSendQuery(query, data_for_sql)
+  # if the connection is a pool, can't send write query (a statement) directly
+  # so use the object's method
 }

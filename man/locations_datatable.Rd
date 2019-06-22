@@ -5,7 +5,7 @@
 \title{location configuration module - server}
 \usage{
 locations_datatable(input, output, session, PracticeLocations, UserConfig,
-  config_pool)
+  config_db)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -18,7 +18,7 @@ locations_datatable(input, output, session, PracticeLocations, UserConfig,
 
 \item{UserConfig}{reactiveval, list of users who have been configured}
 
-\item{config_pool}{reactiveval, access to configuration database}
+\item{config_db}{R6 object, access to configuration database}
 }
 \value{
 count - increments with each edit of server database

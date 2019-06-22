@@ -36,7 +36,8 @@ Imports:
     magrittr,
     jsonlite,
     sodium,
-    R6
+    R6,
+    dbConnection
 Suggests:
     pool
 ImportComments:
@@ -46,9 +47,11 @@ ImportComments:
  DTedit - datatable edit wrapper.
   substantially based on jbryer/DTedit
   install with devtools::install_github('DavidPatShuiFong/DTedit')
+ dbConnection - generalize DBI or pool database connection
+  depends on preference and package availability
+  install with devtools::install_github('DavidPatShuiFong/dbConnection')
 Collate: 
     'DailyMeasure.R'
-    'dbConnection.R'
     'calculation_definitions.R'
     'DailyMeasureServer.R'
     'module_Configuration_server.R'

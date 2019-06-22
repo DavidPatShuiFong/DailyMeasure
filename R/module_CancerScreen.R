@@ -67,11 +67,11 @@ fobt_result_query <-
 #' Bowel cancer screening list
 #'
 #' @param appointments_list reactive, list of appointments to search
-#' @param emrpool accesss to Best Practice (EMR) database
+#' @param emr_db R6 object, accesss to Best Practice (EMR) database
 #'
 #' @return list of appointments (with patient details)
 #'
-fobt_list <- function(appointments_list, emrpool) {
+fobt_list <- function(appointments_list, emr_db) {
 
 	screen_fobt_list <-appointments_list() %>%
 		filter(Age >= 50 & Age <=75) # from age 50 to 75 years inclusive
@@ -79,22 +79,22 @@ fobt_list <- function(appointments_list, emrpool) {
 	screen_fobt_ix <-
 		left_join(screen_fobt_list,
 							bind_rows(inner_join(screen_fobt_list,
-							                     DBI::dbGetQuery(emrpool(), fobt_investigation_query) %>%
+							                     DBI::dbGetQuery(emr_db$conn(), fobt_investigation_query) %>%
 							                       collect() %>%
 							                       rename(TestDate = Collected),
 							                     by = 'InternalID'),
 												inner_join(screen_fobt_list,
-																	 DBI::dbGetQuery(emrpool(), fobt_letter_subject_query) %>%
+																	 DBI::dbGetQuery(emr_db$conn(), fobt_letter_subject_query) %>%
 																	   collect() %>%
 																	   rename(TestDate = CorrespondenceDate, TestName = Subject),
 																	 by = 'InternalID'),
 												inner_join(screen_fobt_list,
-												           DBI::dbGetQuery(emrpool(), fobt_letter_detail_query) %>%
+												           DBI::dbGetQuery(emr_db$conn(), fobt_letter_detail_query) %>%
 												             collect() %>%
 												             rename(TestDate = CorrespondenceDate, TestName = Detail),
 																	 by = 'InternalID'),
 												inner_join(screen_fobt_list,
-												           DBI::dbGetQuery(emrpool(), fobt_result_query) %>% collect() %>%
+												           DBI::dbGetQuery(emr_db$conn(), fobt_result_query) %>% collect() %>%
 												             rename(TestDate = ReportDate, TestName = ResultName),
 												           by = 'InternalID')
 							) %>%
@@ -140,14 +140,14 @@ fobt_list <- function(appointments_list, emrpool) {
 #' @param output (as required by modules)
 #' @param session (as required by modules)
 #' @param appointments_list reactive list of appointments to search
-#' @param emrpool reactive access to Electronic Medical Record database
+#' @param emr_db R6 object, access to Electronic Medical Record database
 #'
 #' @return None
 #'
 #' @include fomantic_definitions.R
 #' requires fomantic/semantic definitions
 cancerscreen_datatable <- function(input, output, session,
-																	 appointments_list, emrpool) {
+																	 appointments_list, emr_db) {
 
 	ns <- session$ns
 
@@ -182,7 +182,7 @@ cancerscreen_datatable <- function(input, output, session,
 		screenlist <- NULL
 		# Zostavax (herpes zoster 'shingles' vaccine)
 		if ("Bowel cancer" %in% input$cancerscreen_chosen)
-		{screenlist <- rbind(screenlist, fobt_list(appointments_list, emrpool))}
+		{screenlist <- rbind(screenlist, fobt_list(appointments_list, emr_db))}
 
 		if (!is.null(screenlist)) {
 			screenlist <- screenlist %>%

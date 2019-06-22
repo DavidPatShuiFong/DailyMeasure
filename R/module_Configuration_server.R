@@ -30,14 +30,16 @@ servers_datatableUI <- function(id) {
 #' @param session as required by Shiny modules
 #' @param	BPdatabase reactiveval, list of servers
 #' @param BPdatabaseChoice reactiveval, name of chosen server
-#' @param emrpool reactiveval, current Best Practice (electronic medical record 'EMR') database pool in use
+#' @param emr_db R6 object, current Best Practice (electronic medical record 'EMR') database in use
 #' @param config_db R6 object, access to configuration database
 #'
 #' @return count increments with each edit of server database
 #'
 #' @include calculation_definitions.R
 #' required for simple encoding/decoding
-servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoice, emrpool, config_db) {
+servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoice, emr_db, config_db) {
+  # as of 22nd June 2019, this function doesn't actually use emr_db
+  #
   # Practice locations/groups server part of module
   # returns server_list_change$count - increments with each GUI edit of server list
   # change in server_list_change to prompt change in selectable filter list of locations

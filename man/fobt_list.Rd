@@ -4,12 +4,12 @@
 \alias{fobt_list}
 \title{Bowel cancer screening list}
 \usage{
-fobt_list(appointments_list, emrpool)
+fobt_list(appointments_list, emr_db)
 }
 \arguments{
 \item{appointments_list}{reactive, list of appointments to search}
 
-\item{emrpool}{accesss to Best Practice (EMR) database}
+\item{emr_db}{R6 object, accesss to Best Practice (EMR) database}
 }
 \value{
 list of appointments (with patient details)

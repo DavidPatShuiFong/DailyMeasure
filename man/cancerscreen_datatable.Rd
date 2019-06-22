@@ -4,7 +4,7 @@
 \alias{cancerscreen_datatable}
 \title{Cancer screening module server}
 \usage{
-cancerscreen_datatable(input, output, session, appointments_list, emrpool)
+cancerscreen_datatable(input, output, session, appointments_list, emr_db)
 }
 \arguments{
 \item{input}{(as required by modules)}
@@ -15,7 +15,7 @@ cancerscreen_datatable(input, output, session, appointments_list, emrpool)
 
 \item{appointments_list}{reactive list of appointments to search}
 
-\item{emrpool}{reactive access to Electronic Medical Record database}
+\item{emr_db}{R6 object, access to Electronic Medical Record database}
 }
 \value{
 None

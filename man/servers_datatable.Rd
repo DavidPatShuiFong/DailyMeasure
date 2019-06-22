@@ -5,7 +5,7 @@
 \title{server configuration module - server}
 \usage{
 servers_datatable(input, output, session, BPdatabase, BPdatabaseChoice,
-  emrpool, config_db)
+  emr_db, config_db)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -18,7 +18,7 @@ servers_datatable(input, output, session, BPdatabase, BPdatabaseChoice,
 
 \item{BPdatabaseChoice}{reactiveval, name of chosen server}
 
-\item{emrpool}{reactiveval, current Best Practice (electronic medical record 'EMR') database pool in use}
+\item{emr_db}{R6 object, current Best Practice (electronic medical record 'EMR') database in use}
 
 \item{config_db}{R6 object, access to configuration database}
 }

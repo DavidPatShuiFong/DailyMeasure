@@ -16,8 +16,6 @@ NULL
 #'
 #' @include calculation_definitions.R
 #' needed for simple encode/decode
-#' @include dbConnection.R
-#' needed for database connections
 DailyMeasureServer <- function(input, output, session) {
 
   # IMPORTANT!
@@ -32,12 +30,12 @@ DailyMeasureServer <- function(input, output, session) {
       }
     }
 
-    #    if (!is.null(emr_db$conn())) {
-    #      if (DBI::dbIsValid(emr_db$conn)) {
-    #        # if emrpool() is defined as a database, then close it
-    #        emr_db$close()
-    #      }
-    #    }
+    if (!is.null(emr_db$conn())) {
+      if (DBI::dbIsValid(emr_db$conn())) {
+        # if emr_db is defined as a database, then close it
+        emr_db$close()
+      }
+    }
 
     stopApp()
   })
@@ -80,7 +78,7 @@ DailyMeasureServer <- function(input, output, session) {
     )
   }
 
-  config_db <- dbConnection$new() # connection to database, using either DBI or pool
+  config_db <- dbConnection::dbConnection$new() # connection to database, using either DBI or pool
   configuration_file_path <- reactiveVal()
   BPdatabase <- reactiveVal(
     value = data.frame(id = integer(),
@@ -122,11 +120,13 @@ DailyMeasureServer <- function(input, output, session) {
   observeEvent(configuration_file_path(), ignoreNULL = TRUE, {
     if (file.exists(isolate(configuration_file_path()))) {
       # open config database file
-      config_db$connect(usepool = TRUE, RSQLite::SQLite(), dbname = isolate(configuration_file_path()))
+      config_db$connect(usepool = FALSE, RSQLite::SQLite(),
+                        dbname = isolate(configuration_file_path()))
     } else {
       # if the config database doesn't exist,
       # then create it (note create = TRUE option)
-      config_db$connect(usepool = TRUE, RSQLite::SQLite(), dbname = isolate(configuration_file_path()))
+      config_db$connect(usepool = FALSE, RSQLite::SQLite(),
+                        dbname = isolate(configuration_file_path()))
       # create = TRUE not a valid option? always tries to create file if it doesn't exist
     }
 
@@ -216,62 +216,38 @@ DailyMeasureServer <- function(input, output, session) {
     }
   })
 
+  ### emr database variables
+  emr_db <- dbConnection::dbConnection$new()
+  # the database pool of the electronic medical record
+  # (Best Practice)
+  db <- reactiveValues() # the database tables
+  db$dbversion <- 0
+
   ### database initialization
 
-  observeEvent(emrpool(), ignoreNULL = TRUE, {
-    # if emrpool is initialized to a database,
-    # then initialize tables
-    if (is.environment(emrpool())) { # emrpool has been defined at least once
-      if (DBI::dbIsValid(emrpool())) {
-        # and is still a valid database object (e.g. not disconnected)
-        print("Re-initializing databases")
-        initialize_tables(emrpool) # if pool is successfully initialized
-      }
-    }
-  })
-
-  observeEvent(BPdatabaseChoice(), {
+  observeEvent(BPdatabaseChoice(), ignoreInit = TRUE, {
     print(paste("ChosenServerName:", BPdatabaseChoice()))
 
     # close existing database connection
-    if (is.environment(emrpool())) {
-      if (DBI::dbIsValid(emrpool())) {
-        # if emrpool() is defined as a database, then close it
-        pool::poolClose(emrpool())
-      }
-    }
+    # safe to call $close() if no database is open
+    emr_db$close()
     if (BPdatabaseChoice() == "None") {
       # do nothing
     } else if (!is.null(BPdatabaseChoice())) {
       server <- BPdatabase() %>% filter(Name == BPdatabaseChoice()) %>% collect()
-      print("Initializing EMR database")
+      print("Opening EMR database")
       shinytoastr::toastr_info(
         "Opening link to Best Practice", closeButton = TRUE,
         position = "bottom-center", title = "Best Practice database")
-      emrpool(tryCatch(pool::dbPool(
-        odbc::odbc(), driver = "SQL Server",
-        server = server$Address, database = server$Database,
-        uid = server$UserID, pwd = simple_decode(server$dbPassword)),
-        error = function(e) {
-          shinytoastr::toastr_error(
-            paste0(e), title = "Error opening Best Practice database",
-            closeButton = TRUE, position = "bottom-center",
-            timeOut = 0) # stays open until clicked
-          # SweetAlert from shinyWidgets not working as of June/2019
-          # (including in shinyWidget's gallery)
-          # shinyWidgets::sendSweetAlert(
-          #  session = session,
-          #  title = "Error opening database",
-          #  text = e,
-          #  type = "error")
-        }
-      ))
-
+      emr_db$connect(usepool = FALSE,
+                     odbc::odbc(), driver = "SQL Server",
+                     server = server$Address, database = server$Database,
+                     uid = server$UserID, pwd = simple_decode(server$dbPassword))
     }
 
-    if (!is.environment(emrpool()) || !DBI::dbIsValid(emrpool())) {
+    if (is.null(emr_db$conn()) || !DBI::dbIsValid(emr_db$conn())) {
       # || 'short-circuits' the evaluation, so if not an environment,
-      # then dbIsValid() is not evaluated (will return an error if emrpool() is NULL)
+      # then dbIsValid() is not evaluated (will return an error if emr_db$conn() is NULL)
 
       # either database not opened, or has just been closed
       db$users <- NULL
@@ -286,14 +262,27 @@ DailyMeasureServer <- function(input, output, session) {
       db$history <- NULL
       clinician_choice_list(NULL)
       BPdatabaseChoice("None") # set choice of database to 'None'
+
+      shinytoastr::toastr_error(
+        paste0(e), title = "Error opening Best Practice database",
+        closeButton = TRUE, position = "bottom-center",
+        timeOut = 0) # stays open until clicked
+      # SweetAlert from shinyWidgets not working as of June/2019
+      # (including in shinyWidget's gallery)
+      # shinyWidgets::sendSweetAlert(
+      #  session = session,
+      #  title = "Error opening database",
+      #  text = e,
+      #  type = "error")
     } else {
       shinytoastr::toastr_success(
         "Linking to Best Practice database successful!",
         closeButton = TRUE,
-        position = "top-center",
+        position = "bottom-center",
         title = "Best Practice database")
+      initialize_tables(emr_db)
     }
-  }, ignoreInit = TRUE)
+  })
 
   UserFullConfig <- reactiveVal(NULL)
   # contains user names attached to configuration information
@@ -336,28 +325,22 @@ DailyMeasureServer <- function(input, output, session) {
     UserRestrictions(config_db$conn() %>% tbl("UserRestrictions") %>% collect())
   })
 
-  ### emr database variables
-  emrpool <- reactiveVal()
-  # the database pool of the electronic medical record
-  # (Best Practice)
-  db <- reactiveValues() # the database tables
-  db$dbversion <- 0
-
   # change database tables whenever database is initialized
-  # this is called by an observeEvent when emrpool() changes
-  initialize_tables <- function(emrpool) {
+  # this is called by an observeEvent when emr_db$conn() changes
+  initialize_tables <- function(emr_db) {
+    print("Re-initializing databases")
 
-    db$users <- emrpool() %>%
+    db$users <- emr_db$conn() %>%
       # this is a function! a collect() is later called prior to mutate/join,
       # (as a result is no longer a 'lazy eval') and cannot be evaluated just once.
       # output - Fullname, UserID, Surname, Firstname, LocationName, Title, ProviderNo
       tbl(in_schema('dbo', 'BPS_Users')) %>%
       select(c('UserID', 'Surname', 'Firstname', 'LocationName', 'Title', 'ProviderNo'))
 
-    db$patients <- emrpool() %>%
+    db$patients <- emr_db$conn() %>%
       tbl(in_schema('dbo', 'BPS_Patients'))
 
-    db$investigations <- emrpool() %>%
+    db$investigations <- emr_db$conn() %>%
       # output - InternalID, Collected (Date), TestName
       tbl(in_schema('dbo', 'BPS_Investigations')) %>%
       select(c('InternalID', 'Collected', 'TestName'))
@@ -365,62 +348,62 @@ DailyMeasureServer <- function(input, output, session) {
     # due to some type of bug/standards non-compliance. also can handle the History table. need to
     # 'Select' out just a few columns.
 
-    db$appointments <- emrpool() %>%
+    db$appointments <- emr_db$conn() %>%
       # Patient, InternalID, AppointmentDate, AppointmentTime, Provider, Status
       tbl(in_schema('dbo', 'BPS_Appointments')) %>%
       select(c('Patient', 'InternalID', 'AppointmentDate', 'AppointmentTime', 'Provider', 'Status'))
 
-    db$immunizations <- emrpool() %>%
+    db$immunizations <- emr_db$conn() %>%
       # InternalID, GivenDate, VaccineName, VaccineID
       tbl(in_schema('dbo', 'BPS_Immunisations')) %>%
       select(c('InternalID', 'GivenDate', 'VaccineName', 'VaccineID'))
 
-    db$vaccine_disease <- emrpool() %>%
+    db$vaccine_disease <- emr_db$conn() %>%
       # vaccineIDs linked to diseases
       # e.g. diseasecode 7+30 are for influenza vaccines
       tbl(in_schema("bpsdrugs.dbo", "VACCINE_DISEASE")) %>%
       select("VACCINEID", "DISEASECODE")
 
-    db$preventive_health <- emrpool() %>%
+    db$preventive_health <- emr_db$conn() %>%
       # INTERNALID, ITEMID (e.g. not for Zostavax remindders)
       tbl(in_schema('dbo', 'PreventiveHealth')) %>%
       select('InternalID' = 'INTERNALID', 'ITEMID')
 
-    db$correspondenceIn <- emrpool() %>%
+    db$correspondenceIn <- emr_db$conn() %>%
       # InternalID, CorrespondenceDate, Subject, Detail
       tbl(in_schema('dbo', 'BPS_CorrespondenceIn')) %>%
       select('InternalID', 'CorrespondenceDate', 'Subject', 'Detail')
 
-    db$reportValues <- emrpool() %>%
+    db$reportValues <- emr_db$conn() %>%
       # InternalID, ReportDate, ResultName, LoincCode
       tbl(in_schema('dbo', 'BPS_ReportValues')) %>%
       select('InternalID', 'ReportDate', 'ResultName', 'LoincCode')
 
-    db$services <- emrpool() %>%
+    db$services <- emr_db$conn() %>%
       tbl(in_schema('dbo', 'BPS_SERVICES')) %>%
       select('InternalID' = 'INTERNALID', 'ServiceDate' = 'SERVICEDATE',
              'MBSItem' = 'MBSITEM', 'Description' = 'DESCRIPTION')
 
-    db$history <- emrpool() %>%
+    db$history <- emr_db$conn() %>%
       # InternalID, Year, Condition, ConditionID, Status
       tbl(in_schema('dbo', 'BPS_History')) %>%
       select('InternalID', 'Year', 'Condition', 'ConditionID', 'Status')
 
-    db$observations <- emrpool() %>%
+    db$observations <- emr_db$conn() %>%
       tbl(in_schema("dbo", "OBSERVATIONS")) %>%
       select('InternalID' = 'INTERNALID', 'DATANAME', 'DATACODE', 'DATAVALUE', 'OBSDATE')
 
-    db$currentrx <- emrpool() %>%
+    db$currentrx <- emr_db$conn() %>%
       tbl(in_schema("dbo", "CURRENTRX")) %>%
       select('InternalID' = 'INTERNALID', 'PRODUCTID', 'DRUGNAME', 'RXSTATUS')
     # RXSTATUS appears to be 1 if 'long-term' and 2 if 'short-term'
 
-    db$obgyndetail <- emrpool() %>%
+    db$obgyndetail <- emr_db$conn() %>%
       tbl(in_schema("dbo", "OBSGYNDETAIL")) %>%
       select('InternalID' = 'INTERNALID', 'NOMINALLMP', 'LASTPAPDATE', 'LASTPAPRESULT',
              'BREASTFEEDING', 'MammogramStatus', 'LastMammogramDate', 'MammogramResult')
 
-    db$pregnancies <- emrpool() %>%
+    db$pregnancies <- emr_db$conn() %>%
       tbl(in_schema("dbo", "PREGNANCIES")) %>%
       select('InternalID' = 'INTERNALID', 'EDCBYDATE', 'ACTUALLMP', 'NOMINALLMP', 'ENDDATE')
 
@@ -554,7 +537,7 @@ DailyMeasureServer <- function(input, output, session) {
   # Bowel cancer screening
 
   callModule(cancerscreen_datatable, "cancerscreen_dt",
-             appointments_list, emrpool)
+             appointments_list, emr_db)
 
   # Billings for patients who have displayed appointments
 
@@ -937,7 +920,7 @@ DailyMeasureServer <- function(input, output, session) {
   # database configuration tab
 
   serverconfig_change <- callModule(servers_datatable, "servers_dt",
-                                    BPdatabase, BPdatabaseChoice, emrpool, config_db)
+                                    BPdatabase, BPdatabaseChoice, emr_db, config_db)
   # returns $count
 
   server_list_names <- reactiveVal(isolate(BPdatabase()) %>%

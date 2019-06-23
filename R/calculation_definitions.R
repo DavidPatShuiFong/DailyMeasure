@@ -6,7 +6,9 @@ calc_age <- function(birthDate, refDate = Sys.Date()) {
   # note that arguments can be vectors, so needto use mapply
 
   period <- mapply(function(x, y)
-    length(seq.Date(x, y, by = "year")) - 1,
+    (length(seq.Date(min(x, y), max(x, y), by = "year")) - 1 ) *
+      ifelse(y > x, 1, -1),
+    # note that seq.Date can't handle 'negative' periods
     birthDate, refDate)
 
   return(period)
@@ -18,7 +20,9 @@ calc_age_months <- function(birthDate, refDate = Sys.Date()) {
   # note that arguments can be vectors, so need to use mapply
 
   period <- mapply(function(x, y)
-    length(seq.Date(x, y, by = "month")) - 1,
+    (length(seq.Date(min(x, y), max(x, y), by = "month")) - 1) *
+      ifelse(y > x, 1, -1),
+    # note that seq.Date can't handle 'negative' periods
     birthDate, refDate)
 
   return(period)
@@ -124,7 +128,7 @@ simple_tag <- function(msg, key = NULL) {
   }
   key <- sodium::hash(charToRaw(key))
   msg <- serialize(msg, NULL)
-  tag <- base64enc::base64encode(sodium::data_tag(msg, key))
+  tag <- jsonlite::base64_enc(sodium::data_tag(msg, key))
 
   return(tag)
 }
@@ -154,7 +158,7 @@ simple_tag_compare <- function(msg, tag, key = NULL) {
   key <- sodium::hash(charToRaw(key))
   msg <- serialize(msg, NULL)
   newtag <- sodium::data_tag(msg, key)
-  oldtag <- base64enc::base64decode(tag)
+  oldtag <- jsonlite::base64_dec(tag)
 
   if (newtag == oldtag) {
     result = TRUE

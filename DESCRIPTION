@@ -30,7 +30,6 @@ Imports:
     RSQLite,
     configr,
     DT (>= 0.5.3),
-    lubridate,
     DTedit,
     stringi,
     magrittr,

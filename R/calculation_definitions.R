@@ -3,33 +3,33 @@
 calc_age <- function(birthDate, refDate = Sys.Date()) {
   # Calculate age at a given reference date
   # Create an interval between the date of birth and the enrollment date;
-  # intervals are specific to the two dates. Periods give the actual length
-  # of time between those dates, so convert to period and extract the year.
-  # written by 'mmparker' https://gist.github.com/mmparker/7254445
+  # note that arguments can be vectors, so needto use mapply
 
-  period <- lubridate::as.period(lubridate::interval(birthDate, refDate),
-                                 unit = "year")
-  period$year
+  period <- mapply(function(x, y)
+    length(seq.Date(x, y, by = "year")) - 1,
+    birthDate, refDate)
+
+  return(period)
 }
 
 calc_age_months <- function(birthDate, refDate = Sys.Date()) {
   # Calculate age at a given reference date, in months
   # Create an interval between the date of birth and the enrollment date;
-  # intervals are specific to the two dates. Periods give the actual length
-  # of time between those dates, so convert to period and extract the month.
-  # based on code written by 'mmparker' https://gist.github.com/mmparker/7254445
+  # note that arguments can be vectors, so need to use mapply
 
-  period <- lubridate::as.period(lubridate::interval(birthDate, refDate),
-                                 unit = "month")
-  period$month
+  period <- mapply(function(x, y)
+    length(seq.Date(x, y, by = "month")) - 1,
+    birthDate, refDate)
+
+  return(period)
 }
 
 hrmin <- function(t) {
   # converts seconds to a 'time' starting from midnight
   # t : value in seconds
   # returns 24-hour time of form '14:15' (hh:mm)
-  td <- lubridate::seconds_to_period(t)
-  sprintf('%02d:%02d', td@hour, td@minute)
+
+  format(as.POSIXct('1900-1-1') + t, '%H:%M')
 }
 
 # code for encoding/decoding. not 'very' secret

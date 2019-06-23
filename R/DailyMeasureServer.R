@@ -57,7 +57,7 @@ DailyMeasureServer <- function(input, output, session) {
     # e.g. C:/Users/MyName/AppData/Programs/...
     # as opposed to 'C:/Program Files/...'
     yaml_config_filepath <- "./DailyMeasure_cfg.yaml"
-    sql_config_filepath <- "~/.DailyMeasure_cfg.sqlite"
+    sql_config_filepath <- "./DailyMeasure_cfg.sqlite"
     # this file can be stored in the AppData folder, out of sight of the user
   }
 
@@ -120,12 +120,12 @@ DailyMeasureServer <- function(input, output, session) {
   observeEvent(configuration_file_path(), ignoreNULL = TRUE, {
     if (file.exists(isolate(configuration_file_path()))) {
       # open config database file
-      config_db$connect(usepool = FALSE, RSQLite::SQLite(),
+      config_db$connect(RSQLite::SQLite(),
                         dbname = isolate(configuration_file_path()))
     } else {
       # if the config database doesn't exist,
       # then create it (note create = TRUE option)
-      config_db$connect(usepool = FALSE, RSQLite::SQLite(),
+      config_db$connect(RSQLite::SQLite(),
                         dbname = isolate(configuration_file_path()))
       # create = TRUE not a valid option? always tries to create file if it doesn't exist
     }
@@ -239,8 +239,7 @@ DailyMeasureServer <- function(input, output, session) {
       shinytoastr::toastr_info(
         "Opening link to Best Practice", closeButton = TRUE,
         position = "bottom-center", title = "Best Practice database")
-      emr_db$connect(usepool = FALSE,
-                     odbc::odbc(), driver = "SQL Server",
+      emr_db$connect(odbc::odbc(), driver = "SQL Server",
                      server = server$Address, database = server$Database,
                      uid = server$UserID, pwd = simple_decode(server$dbPassword))
     }

@@ -176,7 +176,7 @@ DailyMeasureServer <- function(input, output, session) {
 
     }
 
-    if (!is.null(config_db$conn)) {
+    if (!is.null(config_db$conn())) {
       # check that tables exist in the config file
       # also create new columns (variables) as necessary
       initialize_data_table(config_db, "Server",
@@ -309,7 +309,9 @@ DailyMeasureServer <- function(input, output, session) {
 
   ### configuration database changes
 
-  observeEvent(reactive(config_db$conn()), ignoreNULL = TRUE, {
+  observeEvent(reactive(config_db), ignoreNULL = TRUE, {
+    # unfortunately can't seem to react to individual fields of config_db
+    # without extra coding (e.g. placing a reactive inside the config_db object)
     validate(
       need(config_db$conn(), "No connection established to configuration database")
     )

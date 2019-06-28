@@ -160,13 +160,11 @@ simple_tag_compare <- function(msg, tag, key = NULL) {
   newtag <- sodium::data_tag(msg, key)
   oldtag <- jsonlite::base64_dec(tag)
 
-  if (newtag == oldtag) {
-    result = TRUE
-  } else {
-    result = FALSE
-  }
+  result <- all(ifelse(newtag == oldtag, TRUE, FALSE))
+  # ifelse is vectorized, and will return a vector of TRUE/FALSE
+  # 'all' checks that that all the elements of the comparison vector are TRUE
 
-  return(newtag == oldtag)
+  return(result)
 }
 
 #' setPassword

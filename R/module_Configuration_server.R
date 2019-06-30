@@ -82,7 +82,7 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
     chosen_database(input$server_chosen)
     # this will be the server 'Name', a character string
     BPdatabaseChoice(input$server_chosen)
-    ## then need to update configuraiton file
+    ## then need to update configuration file
     if (nrow(config_db$conn() %>% tbl("ServerChoice") %>% filter(id ==1) %>% collect())) {
       # already an entry in the ServerChoice table
       query <- "UPDATE ServerChoice SET Name = ? WHERE id = ?"

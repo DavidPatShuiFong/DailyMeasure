@@ -2,7 +2,6 @@
 
 export("%>%")
 export(DailyMeasure)
-export(dMeasure)
 import(dbplyr)
 import(dplyr)
 import(shiny)

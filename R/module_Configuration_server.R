@@ -105,11 +105,11 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
       # if the proposed server is the same as one that already exists
       # (ignoring case)
       stop("New server name cannot be the same as existing names, or 'None'")
-    } else if (stringr::str_length(data[row,]$Name) == 0 |
-               stringr::str_length(data[row,]$Address) == 0 |
-               stringr::str_length(data[row,]$Database) == 0 |
-               stringr::str_length(data[row,]$UserID) == 0 |
-               stringr::str_length(data[row,]$dbPassword) == 0) {
+    } else if (stringi::stri_length(data[row,]$Name) == 0 |
+               stringi::stri_length(data[row,]$Address) == 0 |
+               stringi::stri_length(data[row,]$Database) == 0 |
+               stringi::stri_length(data[row,]$UserID) == 0 |
+               stringi::stri_length(data[row,]$dbPassword) == 0) {
       stop("All entries must be described")
     } else {
 
@@ -148,11 +148,11 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
       stop(paste0("Cannot edit '", data[row,]$Name, "', currently in use!"))
     } else if (toupper(data[row,]$Name == "NONE")) {
       stop("New server name cannot be 'None'!")
-    } else if (stringr::str_length(data[row,]$Name) == 0 |
-               stringr::str_length(data[row,]$Address) == 0 |
-               stringr::str_length(data[row,]$Database) == 0 |
-               stringr::str_length(data[row,]$UserID) == 0 |
-               stringr::str_length(data[row,]$dbPassword) == 0) {
+    } else if (stringi::stri_length(data[row,]$Name) == 0 |
+               stringi::stri_length(data[row,]$Address) == 0 |
+               stringi::stri_length(data[row,]$Database) == 0 |
+               stringi::stri_length(data[row,]$UserID) == 0 |
+               stringi::stri_length(data[row,]$dbPassword) == 0) {
       stop("All entries must be described")
     } else {
       data[row, ]$dbPassword <- simple_encode(data[row, ]$dbPassword)

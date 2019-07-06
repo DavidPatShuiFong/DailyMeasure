@@ -146,8 +146,6 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
       stop("New server name cannot be the same as existing names, or 'None'")
     } else if (toupper(data[row,]$Name) == toupper(BPdatabaseChoice())) {
       stop(paste0("Cannot edit '", data[row,]$Name, "', currently in use!"))
-    } else if (toupper(data[row,]$Name == "NONE")) {
-      stop("New server name cannot be 'None'!")
     } else if (stringi::stri_length(data[row,]$Name) == 0 |
                stringi::stri_length(data[row,]$Address) == 0 |
                stringi::stri_length(data[row,]$Database) == 0 |

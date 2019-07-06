@@ -9,6 +9,7 @@
 #                     billings in "other" people's appointment books
 #  GlobalCDMView    - only users with GlobalCDMView attribute can see
 #                     potential CDM actions in "other" people's appointment books
+#  RequirePasswords - identified users need to use password to be 'authenticated'
 
 restrictionTypes <- list(
   list(

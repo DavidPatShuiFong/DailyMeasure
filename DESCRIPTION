@@ -36,7 +36,8 @@ Imports:
     jsonlite,
     sodium,
     R6,
-    dbConnection
+    dbConnection,
+    dMeasure
 Suggests:
     pool
 ImportComments:

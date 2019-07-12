@@ -8,15 +8,17 @@
 #'
 #' @return Shiny user interface element
 billings_datatableUI <- function(id) {
-	ns <- NS(id)
+	ns <- shiny::NS(id)
 
-	tagList(
-		fluidRow(
-			column(4,
-						 shinyWidgets::switchInput(
-						 	inputId = ns("printcopy_view"),
-						 	label = "<i class=\"fas fa-print\"></i> </i><i class=\"far fa-copy\"></i>  Print and Copy View",
-						 	labelWidth = "100%")
+	shiny::tagList(
+	  shiny::fluidRow(
+	    shiny::column(4,
+	                  shinyWidgets::switchInput(
+	                    inputId = ns("printcopy_view"),
+	                    label = paste("<i class=\"fas fa-print\"></i> </i>",
+	                                  "<i class=\"far fa-copy\"></i>",
+	                                  "  Print and Copy View", sep = ""),
+	                    labelWidth = "100%")
 			)
 		),
 		shinycssloaders::withSpinner(
@@ -37,41 +39,39 @@ billings_datatableUI <- function(id) {
 #' @param input as required by Shiny modules
 #' @param output as required by Shiny modules
 #' @param session as required by Shiny modules
-#' @param appointments_filtered_time reactive list of appointments attached to all billings
-#' @param db access to database tables from Best Practice EMR
+#' @param dM dMeasure R6 object
 #'
 #' @include fomantic_definitions.R
 #'
 #' @return none
 #'
-billings_datatable <- function(input, output, session,
-                               appointments_billings, db) {
+billings_datatable <- function(input, output, session, dM) {
 	ns <- session$ns
 
 	# MBS (medicare benefits schedule) item numbers for CDM
 
 	# filter to billings which are done on the same day as displayed appointments
 	appointments_billings_sameday <- reactive({
-	  appointments_billings() %>%
-	    filter(ServiceDate == AppointmentDate) %>%
+	  dM$appointments_billingsR() %>>%
+	    dplyr::filter(ServiceDate == AppointmentDate) %>>%
 	    # billings done on the same day as displayed appointments
-	    select(Patient, InternalID, AppointmentDate, AppointmentTime,
-	           Provider, MBSItem, Description) %>%
+	    dplyr::select(Patient, InternalID, AppointmentDate, AppointmentTime,
+	           Provider, MBSItem, Description) %>>%
 	    # need to preserve ApppointmentTime and Provider
 	    # in the case where there are multiple apppointments
 	    # for the patient in the same time period/day and providers
-	    mutate(billingtag =
-	             semantic_button(MBSItem,
-	                             colour = 'green',
-	                             popuphtml = paste0('<h4>', AppointmentDate,
-	                                                "</h3><p><font size=\'+0\'>",
-	                                                Description, '</p>')),
-	           billingtag_print = MBSItem)
-	    # change MBSITEMS into fomantic/semantic tags
+	    dplyr::mutate(billingtag =
+	                    semantic_button(MBSItem,
+	                                    colour = 'green',
+	                                    popuphtml = paste0('<h4>', AppointmentDate,
+	                                                       "</h3><p><font size=\'+0\'>",
+	                                                       Description, '</p>')),
+	                  billingtag_print = MBSItem)
+	  # change MBSITEMS into fomantic/semantic tags
 	})
 
 	billings_list <- reactive({
-	  validate(
+	  shiny::validate(
 	    need(appointments_billings_sameday(), "No appointments in chosen range"),
 	    need(nrow(appointments_billings_sameday())>0, "No appointments in chosen range")
 	  )
@@ -82,32 +82,33 @@ billings_datatable <- function(input, output, session,
 	  if (is.null(billingslist)) {
 	    # no valid appointments
 	  } else {
-	    billingslist <- billingslist %>%
-	      group_by(Patient, InternalID, AppointmentDate, AppointmentTime, Provider) %>%
+	    billingslist <- billingslist %>>%
+	      dplyr::group_by(Patient, InternalID, AppointmentDate,
+	                      AppointmentTime, Provider) %>>%
 	      # gathers vaccination notifications on the same appointment into a single row
-	      summarise(billingtag = paste(billingtag, collapse = ""),
-	                billingtag_print = paste(billingtag_print, collapse = ", ")) %>%
-	      ungroup()
+	      dplyr::summarise(billingtag = paste(billingtag, collapse = ""),
+	                       billingtag_print = paste(billingtag_print, collapse = ", ")) %>>%
+	      dplyr::ungroup()
 	  }
 	  billingslist
 	})
 
 	styled_billings_list <- reactive({
-	  validate(
+	  shiny::validate(
 	    need(billings_list(), "No appointments in selected range")
 	  )
 
 	  if (input$printcopy_view == TRUE) {
 	    # printable/copyable view
-	    datatable_styled(billings_list() %>%
-	                       select(Patient, AppointmentDate, AppointmentTime,
-	                              Provider, billingtag_print),
+	    datatable_styled(billings_list() %>>%
+	                       dplyr::select(Patient, AppointmentDate, AppointmentTime,
+	                                     Provider, billingtag_print),
 	                     colnames = c('Billings' = 'billingtag_print'))
 	  } else {
 	    # fomantic/semantic tag view
 	    datatable_styled(billings_list() %>%
-	                       select(Patient, AppointmentDate, AppointmentTime,
-	                              Provider, billingtag),
+	                       dplyr::select(Patient, AppointmentDate, AppointmentTime,
+	                                     Provider, billingtag),
 	                     escape = c(5),
 	                     dom = 'frltip', # no copy/print buttons
 	                     colnames = c('Billings' = 'billingtag'))

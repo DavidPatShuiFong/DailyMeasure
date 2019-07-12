@@ -190,8 +190,8 @@ DailyMeasureServer <- function(input, output, session) {
   observeEvent(c(dM$dbversion, input$location, dM$UserRestrictions, input$sidebartabs), {
     # respond to database initialization or change in input choice
     # respond to change in UserRestrictions and which sidebartab is selected
-    validate(
-      need(input$location, "Locations not available")
+    shiny::validate(
+      shiny::need(input$location, "Locations not available")
     )
 
     clinician_list <- dM$clinician_list(input$sidebartabs)
@@ -309,26 +309,15 @@ DailyMeasureServer <- function(input, output, session) {
   userconfig_change <- callModule(userconfig_datatable, "userconfig_dt", dM)
 
   ###### user configuration of their own password #######################
-  callModule(passwordConfig_server, "password_config",
-             UserConfig, LoggedInUser,
-             config_db)
+  callModule(passwordConfig_server, "password_config", dM)
 
-  ###### display of panels etc. change depending on logged in user ######
-  LoggedInUser <- reactiveVal()
-  observeEvent(UserConfig(), ignoreNULL = TRUE, {
-    LoggedInUser(UserConfig()[UserConfig()$AuthIdentity == Sys.info()[["user"]],])
-  })
-
-  authenticated <- reactiveVal(FALSE)
-  # has the current log-in use been identified and authenticated yet?
-
-  observeEvent(c(LoggedInUser(), UserRestrictions()), {
-    validate(
-      need(LoggedInUser(), "No user information")
+  observeEvent(c(dM$identified_user(), dM$UserRestrictions()), {
+    shiny::validate(
+      shiny::need(dM$identified_user(), "No user information")
     )
-    if ("ServerAdmin" %in% unlist(UserRestrictions()$Restriction)) {
+    if ("ServerAdmin" %in% unlist(dM$UserRestrictions()$Restriction)) {
       # only some users allowed to see/change server settings
-      if ("ServerAdmin" %in% unlist(LoggedInUser()$Attributes)) {
+      if ("ServerAdmin" %in% unlist(dM$identified_user()$Attributes)) {
         showTab("tab_config", "ServerPanel")
       } else {
         hideTab("tab_config", "ServerPanel")
@@ -336,9 +325,9 @@ DailyMeasureServer <- function(input, output, session) {
     } else {
       showTab("tab_config", "ServerPanel")
     }
-    if ("UserAdmin" %in% unlist(UserRestrictions()$Restriction)) {
+    if ("UserAdmin" %in% unlist(dM$UserRestrictions()$Restriction)) {
       # only some users allowed to see/change user settings
-      if ("UserAdmin" %in% unlist(LoggedInUser()$Attributes)) {
+      if ("UserAdmin" %in% unlist(dM$identified_user()$Attributes)) {
         showTab("tab_config", "LocationsPanel")
         # also change ability to view locations panel
         showTab("tab_config", "UsersPanel")
@@ -351,7 +340,7 @@ DailyMeasureServer <- function(input, output, session) {
       showTab("tab_config", "LocationsPanel")
       showTab("tab_config", "UsersPanel")
     }
-    if (nrow(LoggedInUser()) > 0) {
+    if (nrow(dM$identified_user()) > 0) {
       # user has been identified
       showTab("tab_config", "PasswordPanel")
       # only 'identified' and configured users can set a password
@@ -362,28 +351,31 @@ DailyMeasureServer <- function(input, output, session) {
   })
 
   ####### User login #######################################################
-  observeEvent(c(LoggedInUser(), UserRestrictions()), {
+  observeEvent(c(dM$identified_user(), dM$UserRestrictions()), {
     # need to know that user identification has occurred
     # and that restrictions have been read
-    validate(
-      need(LoggedInUser(), "No user information")
+    shiny::validate(
+      shiny::need(dM$identified_user(), "No user information")
     )
-    if ("RequirePasswords" %in% unlist(UserRestrictions()$Restriction) &
-        authenticated() == FALSE & nrow(UserConfig()) > 0) {
+    if ("RequirePasswords" %in% unlist(dM$UserRestrictions()$Restriction) &
+        dM$authenticated == FALSE & nrow(dM$identified_user()) > 0) {
       # passwords are required, not yet authenticated
       # and information about users has been read in
-      if (nrow(LoggedInUser()) > 0) {
+      if (nrow(dM$identified_user()) > 0) {
         # user has been identified
-        if (is.na(LoggedInUser()$Password) || (nchar(LoggedInUser()$Password) == 0)) {
+        if (dM$empty_password()) {
           # empty or NA password, then asking for new password
           showModal(modalDialog(
             title="New password",
             tagList(
-              paste("Password required for user ", LoggedInUser()$Fullname, "."),
+              paste("Password required for user ",
+                    dM$identified_user()$Fullname, "."),
               HTML("You need to set a password<br><br>"),
-              passwordInput("password1", label = "Enter Password", value = ""),
+              passwordInput("password1",
+                            label = "Enter Password", value = ""),
               br(),
-              passwordInput("password2", label = "Confirm Password", value = "")
+              passwordInput("password2",
+                            label = "Confirm Password", value = "")
             ),
             footer = tagList(actionButton("confirmNewPassword", "Confirm"))
           ))
@@ -391,7 +383,8 @@ DailyMeasureServer <- function(input, output, session) {
           showModal(modalDialog(
             title="Password required",
             tagList(
-              paste("Password required for user ", LoggedInUser()$Fullname, "."),
+              paste("Password required for user ",
+                    dM$identified_user()$Fullname, "."),
               HTML("<br><br>Please enter your password!<br>
               Click the 'Enter' button after typing in your password.<br><br>
               This is not (or shouldn't be!) your Windows or Best Practice password<br><br>"),
@@ -423,10 +416,9 @@ DailyMeasureServer <- function(input, output, session) {
     } else if (nchar(input$password1) < 6) {
       shinytoastr::toastr_error("Password must be at least six (6) characters long")
     } else {
-      setPassword(input$password1, UserConfig, LoggedInUser, config_db)
-      # this function is found in calculation_definitions.R
+      dM$set_password(newpassword = input$password1)
+      # will also set dM$authenticated to TRUE
       removeModal()
-      authenticated(TRUE)
       shinytoastr::toastr_success(message = "Password set and Successful login",
                                   title = "Welcome back!",
                                   position = "bottom-left")
@@ -436,18 +428,21 @@ DailyMeasureServer <- function(input, output, session) {
   input_password_CR <- reactiveVal(0)
 
   observeEvent(c(input$confirmPassword), {
-    validate(
-      need(nchar(input$password) > 0, "No password entered")
+    shiny::validate(
+      shiny::need(nchar(input$password) > 0, "No password entered")
     )
-    if (!simple_tag_compare(input$password, LoggedInUser()$Password)) {
+
+    if (tryCatch(dM$user_login(input$password),
+                 error = function(e) {return(FALSE)})) {
+      # dM$user_login returns $authenticated if successful log-in i.e. TRUE
+      # otherwise returns and error
       shinytoastr::toastr_error("Wrong password",
                                 closeButton = TRUE)
     } else {
       # successful login
       removeModal()
-      authenticated(TRUE)
       shinytoastr::toastr_success(message = paste("Successful login for",
-                                                  LoggedInUser()$Fullname),
+                                                  dM$identified_user()$Fullname),
                                   title = "Welcome back!",
                                   position = "bottom-left")
     }
@@ -456,7 +451,7 @@ DailyMeasureServer <- function(input, output, session) {
   ###### Render user information on top-right header ##########################
   output$user <- shinydashboardPlus::renderUser({
     shinydashboardPlus::dashboardUser(
-      name = LoggedInUser()$Fullname,
+      name = identified_user()$Fullname,
       src = 'icons/user-avatar.svg', # this depends on addResourcePath in zzz.R
       subtitle = Sys.info()[["user"]], # not necessarily an identified user
       fluidRow(
@@ -464,7 +459,7 @@ DailyMeasureServer <- function(input, output, session) {
           width = 6,
           shinydashboardPlus::descriptionBlock(
             text = paste0(
-              unlist(LoggedInUser()$Location),
+              unlist(dM$identified_user()$Location),
               collapse = ", "),
             right_border = TRUE,
             margin_bottom = TRUE)
@@ -473,7 +468,7 @@ DailyMeasureServer <- function(input, output, session) {
           width = 6,
           shinydashboardPlus::descriptionBlock(
             text = paste0(
-              unlist(LoggedInUser()$Attributes),
+              unlist(dM$identified_user()$Attributes),
               collapse = ", "),
             right_border = FALSE,
             margin_bottom = TRUE)

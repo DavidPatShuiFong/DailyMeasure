@@ -28,6 +28,64 @@ calc_age_months <- function(birthDate, refDate = Sys.Date()) {
   return(period)
 }
 
+interval <- function(date_a, date_b, unit = "none") {
+  # calculate period between date_a and date_b
+  # date_a and date_b can be lists
+  # returns $year, $month, $day
+  # can return 'negative' numbers
+  # returns NA if either of date_a or date_b is NA
+  # returns an arbitrarily large number of years if min(date_a, date_b) is -Inf
+  #
+  # if 'unit' = month, then convert all years to months
+
+  infinity_years <- Inf
+
+  interval <- list()
+
+  interval$year <- mapply(function(x, y)
+    ifelse(!is.na(min(x, y)),
+           ifelse(min(x,y) == -Inf,
+                  infinity_years,
+                  (length(seq.Date(min(x, y), max(x, y), by = "year")) - 1) *
+                    ifelse(y > x, 1, -1)),
+           NA),
+    # note that seq.Date can't handle 'negative' periods
+    date_a, date_b)
+
+  interval$month <- mapply(function(x, y, z)
+    ifelse(!is.na(min(x, y)),
+           (ifelse(min(x,y) == -Inf,
+                   0,
+                   length(seq.Date(tail(seq.Date(min(x, y), length.out = abs(z) + 1, by = "year"), 1),
+                                   # 'reduces' difference between dates by 'year' difference
+                                   max(x,y), by = "month")) -1 ) *
+              ifelse(y > x, 1, -1)),
+           NA),
+    date_a, date_b, interval$year)
+
+  interval$day <- mapply(function(x, y, z, zz)
+    ifelse(!is.na(min(x, y)),
+           (ifelse(min(x,y) == -Inf,
+                   0,
+                   length(seq.Date(tail(seq.Date(tail(seq.Date(min(x, y),
+                                                               length.out = abs(z) + 1,
+                                                               by = "year"), 1),
+                                                 length.out = abs(zz) + 1, by = "month"), 1),
+                                   # 'reduces' difference between dates by 'year' difference
+                                   max(x,y), by = "day")) -1 ) *
+              ifelse(y > x, 1, -1)),
+           NA),
+    date_a, date_b, interval$year, interval$month)
+
+  if (unit == "month") {
+    interval$month <- interval$month + interval$year*12
+    interval$year <- replicate(length(interval$month), 0)
+  }
+
+  return(interval)
+}
+
+
 hrmin <- function(t) {
   # converts seconds to a 'time' starting from midnight
   # t : value in seconds

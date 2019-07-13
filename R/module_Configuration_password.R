@@ -6,13 +6,13 @@
 #' @param id as required by shiny modules
 #'
 passwordConfig_UI <- function(id) {
-  ns <- NS(id)
+  ns <- shiny::NS(id)
 
-  tagList(
-    wellPanel(
+  shiny::tagList(
+    shiny::wellPanel(
       "Change User Password",
-      br(), br(),
-      actionButton(ns("ChangePassword"), "Change Password", icon("unlock-alt"))
+      shiny::br(), shiny::br(),
+      shiny::actionButton(ns("ChangePassword"), "Change Password", icon("unlock-alt"))
     )
   )
 
@@ -25,9 +25,7 @@ passwordConfig_UI <- function(id) {
 #' @param input as required by Shiny modules
 #' @param output as required by Shiny modules
 #' @param session as required by Shiny modules
-#' @param	UserConfig reactiveval, list of user config
-#' @param LoggedInUser reactiveval, currently logged in user
-#' @param config_db R6 object, access to configuration database
+#' @param dM dMeasure R6 object
 #'
 #' @return count - increments with each GUI edit of user configuration database
 passwordConfig_server <- function(input, output, session,
@@ -35,62 +33,70 @@ passwordConfig_server <- function(input, output, session,
                                   config_db) {
   ns <- session$ns
 
-  observeEvent(input$ChangePassword, {
-    if (is.na(LoggedInUser()$Password) || (nchar(LoggedInUser()$Password) == 0)) {
+  shiny::observeEvent(input$ChangePassword, {
+    if (dM$empty.password()) {
       # empty or NA password, then asking for new password
-      showModal(modalDialog(
+      shiny::showModal(shiny::modalDialog(
         title="New password",
-        tagList(
-          passwordInput(ns("password1"), label = "Enter Password", value = ""),
-          br(),
-          passwordInput(ns("password2"), label = "Confirm Password", value = "")
+        shiny::tagList(
+          shiny::passwordInput(ns("password1"), label = "Enter Password", value = ""),
+          shiny::br(),
+          shiny::passwordInput(ns("password2"), label = "Confirm Password", value = "")
         ),
-        footer = tagList(actionButton(ns("confirmNewPassword"), "Confirm"),
-                         modalButton("Cancel")
+        footer = shiny::tagList(
+          shiny::actionButton(ns("confirmNewPassword"), "Confirm"),
+          shiny::modalButton("Cancel")
         )
       ))
     } else {
-      showModal(modalDialog(
+      shiny::showModal(shiny::modalDialog(
         title="Change password",
-        tagList(
-          passwordInput(ns("passwordOld"), label = "Old Password", value = ""),
-          br(),
-          passwordInput(ns("password1"), label = "Enter Password", value = ""),
-          br(),
-          passwordInput(ns("password2"), label = "Confirm Password", value = "")
+        shiny::tagList(
+          shiny::passwordInput(ns("passwordOld"), label = "Old Password", value = ""),
+          shiny::br(),
+          shiny::passwordInput(ns("password1"), label = "Enter Password", value = ""),
+          shiny::br(),
+          shiniy::passwordInput(ns("password2"), label = "Confirm Password", value = "")
         ),
-        footer = tagList(actionButton(ns("confirmChangePassword"), "Confirm"),
-                         modalButton("Cancel")
+        footer = shiny::tagList(
+          shiny::actionButton(ns("confirmChangePassword"), "Confirm"),
+          shiny::modalButton("Cancel")
         )
       ))
     }
   })
 
-  observeEvent(input$confirmNewPassword, {
+  shiny::observeEvent(input$confirmNewPassword, {
+    # setting new password. no previous password
     if (input$password1 != input$password2) {
       shinytoastr::toastr_error("Passwords must match",
                                 closeButton = TRUE)
     } else if (nchar(input$password1) < 6) {
       shinytoastr::toastr_error("Password must be at least six (6) characters long")
     } else {
-      setPassword(input$password1, UserConfig, LoggedInUser, config_db$conn())
-      # this function is found in calculation_definitions.R
-      removeModal()
+      dM$set_password(input$password1)
+      shiny::removeModal()
     }
   })
 
-  observeEvent(input$confirmChangePassword, {
-    if (!simple_tag_compare(input$passwordOld, LoggedInUser()$Password)) {
-      shinytoastr::toastr_error("Old Password incorrect",
-                                closeButton = TRUE)
-    } else if (input$password1 != input$password2) {
+  shiny::observeEvent(input$confirmChangePassword, {
+    # changing old password
+    if (input$password1 != input$password2) {
       shinytoastr::toastr_error("Passwords must match",
                                 closeButton = TRUE)
-    } else if (nchar(input$password1) < 6) {
-      shinytoastr::toastr_error("Password must be at least six (6) characters long")
     } else {
-      setPassword(input$password1, UserConfig, LoggedInUser, config_db$conn())
-      removeModal()
+      tryCatch({
+        success = TRUE
+        dM$setPassword(newpassword = input$password1,
+                       oldpassword = input$passwordOld)
+      },
+      error = function(e) {
+        shinytoastr::toastr_error(e, closeButton = TRUE)
+        success = FALSE
+      })
+      if (success) {
+        shiny::removeModal()
+      }
     }
   })
 }

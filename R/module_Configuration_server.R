@@ -10,11 +10,11 @@
 #'
 #' @return Shiny user interface element
 servers_datatableUI <- function(id) {
-  ns <- NS(id)
+  ns <- shiny::NS(id)
 
-  tagList(
-    wellPanel(
-      uiOutput(ns("selection"))
+  shiny::tagList(
+    shiny::wellPanel(
+      shiny::uiOutput(ns("selection"))
     ),
     DTedit::dteditUI(ns("servers"))
   )
@@ -50,7 +50,6 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
   # 'id' is likely not necessary for end-users
   servers_dt_editcols <- c("Name", "Address", "Database", "UserID", "dbPassword")
 
-  chosen_database <- reactiveVal(NULL) # ID of chosen database
   servers_list_change <- reactiveVal(0)
 
   servername_list <- reactiveVal(append("None", isolate(BPdatabase()$Name)))
@@ -64,9 +63,9 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
     servername_list(append("None", BPdatabase()$Name))
   })
 
-  output$selection <- renderUI({
+  output$selection <- shiny::renderUI({
     # drop-down list of servers (including 'None')
-    selectInput(inputId = ns("server_chosen"), label = "Chosen Best Practice server",
+    shiny::selectInput(inputId = ns("server_chosen"), label = "Chosen Best Practice server",
                 choices = servername_list(), selected = isolate(BPdatabaseChoice()))
   })
 
@@ -79,7 +78,6 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
 
   observeEvent(input$server_chosen, {
     # when a different server is chosen from the input drop-down list
-    chosen_database(input$server_chosen)
     # this will be the server 'Name', a character string
     BPdatabaseChoice(input$server_chosen)
     ## then need to update configuration file

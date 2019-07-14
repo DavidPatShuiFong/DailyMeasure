@@ -22,7 +22,7 @@
 #' @return shiny user interface element
 userconfig_resetpasswordUI <- function(id) {
   ns <- shiny::NS(id)
-  
+
   shiny::tagList(
     shiny::wellPanel(
       "Only configured users can have passwords reset (or set)",
@@ -46,23 +46,23 @@ userconfig_resetpasswordUI <- function(id) {
 #' @return nothing
 userconfig_resetpassword <- function(input, output, session, dM) {
   ns <- session$ns
-  
+
   output$ConfiguredUserList <- shiny::renderUI({
     # create a list of configured users
     # (only configured users can have passwords)
     shiny::selectInput(inputId = ns('User_toReset_Password'),
                        label = 'Selected User',
-                       choices = dM$UserFullConfigR()$Fullname)
+                       choices = dM$UserConfigR()$Fullname)
   })
-  
-  shiny::observeEvent(dM$UserFullConfigR(), {
-    # update the list if the $UserFullConfigR() changes
+
+  shiny::observeEvent(dM$UserConfigR(), {
+    # update the list if the $UserConfigR() changes
     # (it will change when the configuration database is read
     shiny::updateSelectInput(session, ns('User_toReset_Password'),
                              label = 'Selected User',
-                             choices = dM$UserFullConfigR()$Fullname)
+                             choices = dM$UserConfigR()$Fullname)
   })
-  
+
   shiny::observeEvent(input$reset_password, {
     # reset password button has been pressed
     shiny::validate(
@@ -82,15 +82,15 @@ userconfig_resetpassword <- function(input, output, session, dM) {
       )
     ))
   })
-  
+
   shiny::observeEvent(input$confirmRemovePassword, {
     # reset password has been confirmed
     dm$password.reset(input$User_toReset_Password)
     # $password.reset sets $UserConfig and writes to SQLite configuration
-    
+
     removeModal()
   })
-  
+
 }
 
 ####### Restriction of permissions #############################################
@@ -103,7 +103,7 @@ userconfig_resetpassword <- function(input, output, session, dM) {
 #' @return shiny user interface element
 userconfig_enableRestrictionsUI <- function(id) {
   ns <- shiny::NS(id)
-  
+
   shiny::tagList(
     lapply(restrictionTypes,
            # goes through restrictionTypes
@@ -125,7 +125,7 @@ userconfig_enableRestrictionsUI <- function(id) {
            }
     )
   )
-  
+
 }
 
 #' userconfig_enableRestrictions - server component
@@ -140,7 +140,7 @@ userconfig_enableRestrictionsUI <- function(id) {
 #'
 #' @return nothing
 userconfig_enableRestrictions <- function (input, out, session, dM) {
-  
+
   shiny::observeEvent(dM$config_db_trigR(), {
     # if configuration pool has been initialized
     validate(
@@ -154,7 +154,7 @@ userconfig_enableRestrictions <- function (input, out, session, dM) {
         restriction %in% (UserRestrictions()$Restriction))
     }
   })
-  
+
   for (restriction in dM$restrictionTypes) {
     # add each of the restrictionTypes to the user interface
     local({
@@ -163,7 +163,7 @@ userconfig_enableRestrictions <- function (input, out, session, dM) {
       restrictionLocal <- restriction
       shiny::observeEvent(input[[restrictionLocal$id]], ignoreInit = TRUE, {
         if (input[[restrictionLocal$id]] !=
-            (restrictionLocal$id) %in% isolate(self$UserRestrictions()$Restriction)) {
+            (restrictionLocal$id) %in% isolate(dM$UserRestrictions()$Restriction)) {
           # change in state
           state <- dM$userrestriction.change(restrictionLocal$id,
                                              input[[restrictionLocal$id]])
@@ -171,7 +171,7 @@ userconfig_enableRestrictions <- function (input, out, session, dM) {
           # if permissible, $userrestriction.change will return the
           # same state as input[[restrictionLocal$id]]. otherwise returns
           # the 'permissible' state.
-          # 
+          #
           # e.g. it isn't permissible to set ServerAdmin/UserAdmin to 'TRUE' if
           # there is no user who has UserAdmin attribute
           if (state != input[[restrictionLocal$id]]) {
@@ -189,7 +189,7 @@ userconfig_enableRestrictions <- function (input, out, session, dM) {
       })
     })
   }
-  
+
 }
 
 #' userconfig_datatableUI - editable datatable module
@@ -201,7 +201,7 @@ userconfig_enableRestrictions <- function (input, out, session, dM) {
 #' @return Shiny user interface element
 userconfig_datatableUI <- function(id) {
   ns <- shiny::NS(id)
-  
+
   shiny::tagList(
     shiny::tabsetPanel(
       shiny::tabPanel(
@@ -228,42 +228,30 @@ userconfig_datatableUI <- function(id) {
 #' @param input as required by Shiny modules
 #' @param output as required by Shiny modules
 #' @param session as required by Shiny modules
-#' @param dM dMeasure R6 object. includes $UserFullConfigR, 
-#'  $UserRestrictions, $location.list, links to EMR and configuration db
-#' @param	UserConfig reactiveval, list of user config
-#' @param UserRestrictions reactiveval, user restriction list
-#' @param LocationNames list of location names (not including ID or Description)
-#' @param db reactivevalues link to EMR database. includes $users and $dbversion
-#' @param config_db reactiveval, access to configuration database
+#' @param dM dMeasure R6 object. includes $UserConfigR,
+#'  $UserRestrictions, $location.list, $location_listR
+#'  and links to EMR and configuration db
 #'
 #' @return count - increments with each GUI edit of user configuration database
-userconfig_datatable <- function(input, output, session, dM, 
-                                 UserConfig, UserFullConfig, UserRestrictions,
-                                 LocationNames, db, config_db) {
+userconfig_datatable <- function(input, output, session, dM) {
   ns <- session$ns
-  
-  userconfig_dt_viewcols <- c("id", "Fullname", "AuthIdentity", "Location",
-                              "Attributes")
-  userconfig_dt_editcols <- 
-    userconfig_dt_viewcols[!userconfig_dt_viewcols %in% c("id")]
-  # columns viewed in DTedit when adding/editing/removing user config
-  
+
   # password reset module
   callModule(userconfig_resetpassword, "reset_password", dM)
-  
+
   # enable/disable restrictions module
   callModule(userconfig_enableRestrictions, "enable_restrictions", dM)
-  
+
   usernames <- shiny::reactiveVal()
   # list of user names
   shiny::observeEvent(dM$dbversion(), {
     shiny::validate(
-      shiny::need(dM$UserFullConfigR(), "No user list"),
+      shiny::need(dM$UserConfigR(), "No user list"),
       shiny::need(dM$UserRestrictions(), "No restriction list")
     )
     # if the database has been connected
-    if (!is.null(dM$UserFullConfigR())) {
-      usernames(dM$UserFullConfigR() %>>%
+    if (!is.null(dM$UserConfigR())) {
+      usernames(dM$UserConfigR() %>>%
                   dplyr::select(Fullname) %>>%
                   dplyr::collect() %>>%
                   unlist(use.names = FALSE))
@@ -273,132 +261,99 @@ userconfig_datatable <- function(input, output, session, dM,
       # editing a current user configuration
     }
   })
-  
+
   userconfig_list_change <- reactiveVal(0)
   # counts number of GUI edits of the user configuration table
-  
+
   ### callback definitions for DTedit userconfig
   userconfig.insert.callback <- function(data, row) {
     # adding a new user configuration
-    
-    if (data[row,]$Fullname %in% data[-row,]$Fullname) {
-      # if the proposed new name is the same as one that is configured elsewhere
-      stop("This user is already configured")
-    } else {
-      newid <- max(c(as.data.frame(UserConfig())$id, 0)) + 1
-      # initially, UserConfig()$id might be an empty set, so need to append a '0'
-      data[row, ]$id <- newid
-      
-      query <- "INSERT INTO Users (id, Fullname, AuthIdentity, Location, Attributes) VALUES ($id, $fn, $au, $lo, $at)"
-      data_for_sql <- list(id = newid, fn = data[row,]$Fullname, au = paste0(data[row,]$AuthIdentity, ""),
-                           # $Location and $Attribute could both have multiple (or no) entries
-                           lo = paste0(data[row,]$Location[[1]], "", collapse = ";"),
-                           at = paste0(data[row,]$Attributes[[1]], "", collapse = ";"))
-      
-      config_db$dbSendQuery(query, data_for_sql)
-      # if the connection is a pool, can't send write query (a statement) directly
-      # so use the object's method
-      
-      UserConfig(data) # update the dataframe in memory
-      userconfig_list_change(userconfig_list_change() + 1)
-      # this value returned by module
-      
-      return(UserConfig())
-    }
+
+    description <- data[row,]
+
+    tryCatch(newdata <- dM$userconfig.insert(description),
+             error = function(e) stop(e))
+    # possible errors include "This user is already configured"
+    # or invalid description (although the UI should prevent invalid descriptions)
+
+    # dm$userconfig.insert will change the SQLite configuration file if appropriate
+    # and $UserConfig
+
+    userconfig_list_change(userconfig_list_change() + 1)
+    # this value returned by module
+
+    return(newdata)
   }
   userconfig.update.callback <- function(data, olddata, row) {
     # change (update) a user configuration
-    
-    # is restrictions have been placed on who can modify the server or user configuration
+
+    description <- data[row,]
+
+    tryCatch(newdata <- dM$userconfig.update(description),
+             error = function(e) stop (e))
+    # possible errors include
+    # if restrictions have been placed on who can modify the server or user configuration
     # then at least one user must have the restricted attribute
-    if ("ServerAdmin" %in% UserRestrictions()$Restriction) {
-      if (!("ServerAdmin" %in% unlist(data$Attributes))) {
-        # modified data would no longer have anyone with ServerAdmin attribute
-        stop("Only 'ServerAdmin' users can change server settings.
-              At least one user must have the 'ServerAdmin' attribute!")
-      }
-    }
-    if ("UserAdmin" %in% UserRestrictions()$Restriction) {
-      if (!("UserAdmin" %in% unlist(data$Attributes))) {
-        # modified data would no longer have anyone with UserAdmin attribute
-        stop("Only 'UserAdmin' users can change user permissions.
-              At least one user must have the 'UserAdmin' attribute!")
-      }
-    }
-    
-    query <- "UPDATE Users SET Fullname = ?, AuthIdentity = ?, Location = ?, Attributes = ? WHERE id = ?"
-    data_for_sql <- as.list(c(data[row,]$Fullname, paste0(data[row,]$AuthIdentity, ""),
-                              paste0(data[row,]$Location[[1]], "", collapse = ";"),
-                              paste0(data[row,]$Attributes[[1]], "", collapse = ";"),
-                              data[row,]$id))
-    # note extra "" within paste0 is required in the case of empty data
-    
-    config_db$dbSendQuery(query, data_for_sql)
-    # if the connection is a pool, can't send write query (a statement) directly
-    # so use the object's method
-    
-    UserConfig(data)
+
+    # dm$userconfig.insert will change the SQLite configuration file if appropriate
+    # and $UserConfig
+
     userconfig_list_change(userconfig_list_change() + 1)
     # this value returned by module
-    
-    return(UserConfig())
-    
+
+    return(newdata)
+
   }
   userconfig.delete.callback <- function(data, row) {
     # delete a user configuration
-    
-    # is restrictions have been placed on who can modify the server or user configuration
+
+    description <- data[row,]
+
+    tryCatch(newdata <- dM$userconfig.delete(description),
+             error = function(e) stop (e))
+    # possible errors include
+    # if restrictions have been placed on who can modify the server or user configuration
     # then at least one user must have the restricted attribute
-    if ("ServerAdmin" %in% UserRestrictions()$Restriction) {
-      if (!("ServerAdmin" %in% unlist(data[-c(row),]$Attributes))) {
-        # modified data would no longer have anyone with ServerAdmin attribute
-        stop("Only 'ServerAdmin' users can change server settings.
-             At least one user must have the 'ServerAdmin' attribute!")
-      }
-    }
-    if ("UserAdmin" %in% UserRestrictions()$Restriction) {
-      if (!("UserAdmin" %in% unlist(data[-c(row),]$Attributes))) {
-        # modified data would no longer have anyone with UserAdmin attribute
-        stop("Only 'UserAdmin' users can change user permissions.
-             At least one user must have the 'UserAdmin' attribute!")
-      }
-    }
-    
-    query <- "DELETE FROM Users WHERE id = ?"
-    data_for_sql <- as.list.data.frame(c(data[row,]$id))
-    
-    config_db$dbSendQuery(query, data_for_sql)
-    # if the connection is a pool, can't send write query (a statement) directly
-    # so use the object's method
-    
-    UserConfig(data[-c(row),])
+
+    # dm$userconfig.insert will change the SQLite configuration file if appropriate
+    # and $UserConfig
+
     userconfig_list_change(userconfig_list_change() + 1)
     # this value returned by module
-    
-    return(UserConfig())
+
+    return(newdata)
   }
-  
+
+  userconfig_dt_viewcols <- c("id", "Fullname", "AuthIdentity", "Location",
+                              "Attributes")
+  userconfig_dt_editcols <-
+    userconfig_dt_viewcols[!userconfig_dt_viewcols %in% c("id")]
+  # columns viewed in DTedit when adding/editing/removing user config
+
   # depends on modularized version of DTedit
-  userconfig_edited <- callModule(DTedit::dtedit, "userconfigs",
-                                  thedataframe = UserConfig, # pass a ReactiveVal
-                                  view.cols = userconfig_dt_viewcols, # no need to show 'id' in future
-                                  edit.cols = userconfig_dt_editcols,
-                                  # edit.label.cols = ,
-                                  show.copy = FALSE,
-                                  input.types = c(Fullname = 'selectInputReactive',
-                                                  AuthIdentity = 'textInput',
-                                                  Location = 'selectInputMultipleReactive',
-                                                  Attributes = 'selectInputMultiple'),
-                                  input.choices = c(Location = 'LocationNames',
-                                                    Fullname = 'Fullname',
-                                                    Attributes = list(user_attribute_types)),
-                                  input.choices.reactive = list(Fullname = usernames,
-                                                                LocationNames = LocationNames),
-                                  callback.update = userconfig.update.callback,
-                                  callback.insert = userconfig.insert.callback,
-                                  callback.delete = userconfig.delete.callback
-  )
-  
+  userconfig_edited <-
+    callModule(DTedit::dtedit, "userconfigs",
+               thedataframe = dM$UserConfigR, # pass a ReactiveVal
+               view.cols = userconfig_dt_viewcols, # no need to show 'id' in future
+               edit.cols = userconfig_dt_editcols,
+               # edit.label.cols = ,
+               show.copy = FALSE,
+               input.types = c(Fullname = 'selectInputReactive',
+                               AuthIdentity = 'textInput',
+                               Location = 'selectInputMultipleReactive',
+                               Attributes = 'selectInputMultiple'),
+               input.choices = c(Location = 'LocationNames',
+                                 Fullname = 'Fullname',
+                                 Attributes = list(user_attribute_types)),
+               input.choices.reactive = list(Fullname = usernames,
+                                             # usernames was defined in this function
+                                             # userconfig_datatable
+                                             LocationNames = dM$location_listR),
+               callback.update = userconfig.update.callback,
+               callback.insert = userconfig.insert.callback,
+               callback.delete = userconfig.delete.callback
+    )
+
   return(reactive({userconfig_list_change()}))
   # increments each time a callback changes UserConfig
 }

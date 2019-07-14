@@ -38,6 +38,10 @@ locations_datatable <- function(input, output, session, dM) {
   # 'id' is likely not necessary for end-users
 
   location_list_change <- reactiveVal(0)
+  observeEvent(location_list_change(), ignoreInit = TRUE, {
+    invisible(dM$location_list())
+    # this will also re-fresh $location_listR
+  })
 
   ### callback definitions for DTedit location
   locations.insert.callback <- function(data, row) {
@@ -99,7 +103,7 @@ locations_datatable <- function(input, output, session, dM) {
 
   # depends on modularized version of DTedit
   locations_edited <- callModule(DTedit::dtedit, 'locations',
-                                 thedataframe = dm$location_listR, # a reactiveval
+                                 thedataframe = dM$location_listR, # a reactiveval
                                  view.cols = locations_dt_viewcols, # no need to show 'id' in future
                                  edit.cols = c('Name', 'Description'),
                                  edit.label.cols = c('Practice Locations', 'Description'),

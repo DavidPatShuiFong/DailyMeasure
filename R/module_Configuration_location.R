@@ -38,10 +38,6 @@ locations_datatable <- function(input, output, session, dM) {
   # 'id' is likely not necessary for end-users
 
   location_list_change <- reactiveVal(0)
-  observeEvent(location_list_change(), ignoreInit = TRUE, {
-    invisible(dM$location_list())
-    # this will also re-fresh $location_listR
-  })
 
   ### callback definitions for DTedit location
   locations.insert.callback <- function(data, row) {

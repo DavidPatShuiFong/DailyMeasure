@@ -33,6 +33,7 @@ Imports:
     DTedit,
     stringi,
     magrittr,
+    pipeR,
     jsonlite,
     sodium,
     R6,
@@ -52,6 +53,7 @@ ImportComments:
   install with devtools::install_github('DavidPatShuiFong/dbConnection')
 Collate: 
     'DailyMeasure.R'
+    'utils-pipe.R'
     'calculation_definitions.R'
     'DailyMeasureServer.R'
     'module_Configuration_server.R'
@@ -65,5 +67,4 @@ Collate:
     'module_Immunization.R'
     'module_Appointments.R'
     'DailyMeasureUI.R'
-    'utils-pipe.R'
     'zzz.R'

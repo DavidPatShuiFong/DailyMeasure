@@ -31,17 +31,12 @@ servers_datatableUI <- function(id) {
 #' @param dM dMeasure R6 object
 #'  list of database servers, name of chosen server
 #'  access to EMR database, access to configuration database
-#' @param	BPdatabase reactiveval, list of servers
-#' @param BPdatabaseChoice reactiveval, name of chosen server
-#' @param emr_db R6 object, current Best Practice (electronic medical record 'EMR') database in use
-#' @param config_db R6 object, access to configuration database
 #'
 #' @return count increments with each edit of server database
 #'
 #' @include calculation_definitions.R
 #' required for simple encoding/decoding
-servers_datatable <- function(input, output, session, dM,
-                              BPdatabase, BPdatabaseChoice, emr_db, config_db) {
+servers_datatable <- function(input, output, session, dM) {
   # as of 22nd June 2019, this function doesn't actually use emr_db
   #
   # Practice locations/groups server part of module
@@ -71,7 +66,7 @@ servers_datatable <- function(input, output, session, dM,
   })
 
   shiny::observeEvent(dM$BPdatabaseChoiceR(), {
-    # if the choice has been changed, changed the entry in the drop-down list
+    # if the choice has been changed, change the entry in the drop-down list
     # this might happen if a choice has been changed to 'None' because
     # the previously chosen database entry was not successfully opened
     shiny::updateSelectInput(session,

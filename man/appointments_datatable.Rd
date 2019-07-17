@@ -4,7 +4,7 @@
 \alias{appointments_datatable}
 \title{appointment list module - server}
 \usage{
-appointments_datatable(input, output, session, appointments_filtered_time)
+appointments_datatable(input, output, session, dM)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -13,7 +13,7 @@ appointments_datatable(input, output, session, appointments_filtered_time)
 
 \item{session}{as required by Shiny modules}
 
-\item{appointments_filtered_time}{- reactive list of appointments}
+\item{dM}{- dMeasure R6 object}
 }
 \value{
 none

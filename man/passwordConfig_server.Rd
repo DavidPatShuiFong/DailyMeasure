@@ -14,11 +14,7 @@ passwordConfig_server(input, output, session, UserConfig, LoggedInUser,
 
 \item{session}{as required by Shiny modules}
 
-\item{UserConfig}{reactiveval, list of user config}
-
-\item{LoggedInUser}{reactiveval, currently logged in user}
-
-\item{config_db}{R6 object, access to configuration database}
+\item{dM}{dMeasure R6 object}
 }
 \value{
 count - increments with each GUI edit of user configuration database

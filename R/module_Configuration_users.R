@@ -105,7 +105,7 @@ userconfig_enableRestrictionsUI <- function(id) {
   ns <- shiny::NS(id)
 
   shiny::tagList(
-    lapply(restrictionTypes,
+    lapply(dMeasure::restrictionTypes_list(),
            # goes through restrictionTypes
            # extracts the names labelled in $label
            function(type) {
@@ -147,11 +147,11 @@ userconfig_enableRestrictions <- function (input, out, session, dM) {
       need(dM$UserRestrictionsR(), "No restriction list"),
       need(config_db$conn(), "Configuration database not defined")
     )
-    for (restriction in unlist(restrictionTypes_df$id, use.names = FALSE)) {
+    for (restriction in unlist(dM$restrictionTypes_df$id, use.names = FALSE)) {
       # set the switches according the what is stored in the configuration database
       shinyWidgets::updateMaterialSwitch(
         session, restriction,
-        restriction %in% (UserRestrictions()$Restriction))
+        restriction %in% (dM$UserRestrictions()$Restriction))
     }
   })
 

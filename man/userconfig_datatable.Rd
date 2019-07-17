@@ -4,8 +4,7 @@
 \alias{userconfig_datatable}
 \title{user configuration module - server function}
 \usage{
-userconfig_datatable(input, output, session, UserConfig, UserFullConfig,
-  UserRestrictions, LocationNames, db, config_db)
+userconfig_datatable(input, output, session, dM)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -14,15 +13,9 @@ userconfig_datatable(input, output, session, UserConfig, UserFullConfig,
 
 \item{session}{as required by Shiny modules}
 
-\item{UserConfig}{reactiveval, list of user config}
-
-\item{UserRestrictions}{reactiveval, user restriction list}
-
-\item{LocationNames}{list of location names (not including ID or Description)}
-
-\item{db}{reactivevalues link to EMR database. includes $users and $dbversion}
-
-\item{config_db}{reactiveval, access to configuration database}
+\item{dM}{dMeasure R6 object. includes $UserConfigR,
+$UserRestrictions, $location.list, $location_listR
+and links to EMR and configuration db}
 }
 \value{
 count - increments with each GUI edit of user configuration database

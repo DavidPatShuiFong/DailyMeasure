@@ -4,7 +4,7 @@
 \alias{billings_datatable}
 \title{appointment list module - server}
 \usage{
-billings_datatable(input, output, session, appointments_billings, db)
+billings_datatable(input, output, session, dM)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -13,9 +13,7 @@ billings_datatable(input, output, session, appointments_billings, db)
 
 \item{session}{as required by Shiny modules}
 
-\item{db}{access to database tables from Best Practice EMR}
-
-\item{appointments_filtered_time}{reactive list of appointments attached to all billings}
+\item{dM}{dMeasure R6 object}
 }
 \value{
 none

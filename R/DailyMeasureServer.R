@@ -15,6 +15,8 @@ NULL
 #' @return None
 #'
 #' @include calculation_definitions.R
+#' @include utils-pipe.R
+#'
 #' needed for simple encode/decode
 DailyMeasureServer <- function(input, output, session) {
 
@@ -79,7 +81,7 @@ DailyMeasureServer <- function(input, output, session) {
   #  for the 'non-specified' action
   # use 'uid' rather than 'id', because 'id' is later used to identify the restrictions...
 
-  observeEvent(dM$configuration_file_path(), ignoreNULL = TRUE, {
+  observeEvent(dM$configuration_file_pathR(), ignoreNULL = TRUE, {
     dM$open_configuration_db()
     # connects to SQLite configuration database, using either DBI or pool
     # generates the SQLite configuration database if needed
@@ -90,27 +92,27 @@ DailyMeasureServer <- function(input, output, session) {
 
   ### database initialization
 
-  observeEvent(BPdatabaseChoice(), ignoreInit = TRUE, {
-    print(paste("ChosenServerName:", BPdatabaseChoice()))
+#  observeEvent(BPdatabaseChoice(), ignoreInit = TRUE, {
+#    print(paste("ChosenServerName:", BPdatabaseChoice()))
 
-    if (BPdatabaseChoice() == "None") {
-      dM$BPdatabaseChoice <- BPdatabaseChoice()
+#    if (BPdatabaseChoice() == "None") {
+#      dM$BPdatabaseChoice <- BPdatabaseChoice()
       # the '$BPdatabaseChoice' is an active field.
       # setting to "None" will close any currently open databases
-    } else if (!is.null(BPdatabaseChoice())) {
-      shinytoastr::toastr_info(
-        "Opening link to Best Practice", closeButton = TRUE,
-        position = "bottom-center", title = "Best Practice database")
+#    } else if (!is.null(BPdatabaseChoice())) {
+#      shinytoastr::toastr_info(
+#        "Opening link to Best Practice", closeButton = TRUE,
+#        position = "bottom-center", title = "Best Practice database")
 
-      dM$BPdatabaseChoice <- BPdatabaseChoice()
+#      dM$BPdatabaseChoice <- BPdatabaseChoice()
       # setting $BPdatabaseChoice 'active field' will try to
       # open the requested database
-      if (dm$BPdatabaseChoice == "None") {
+#      if (dm$BPdatabaseChoice == "None") {
         # failed to open database, has been re-set to "None"
-        shinytoastr::toastr_error(
-          paste0(e), title = "Error opening Best Practice database",
-          closeButton = TRUE, position = "bottom-center",
-          timeOut = 0) # stays open until clicked
+#        shinytoastr::toastr_error(
+#          paste0(e), title = "Error opening Best Practice database",
+#          closeButton = TRUE, position = "bottom-center",
+#          timeOut = 0) # stays open until clicked
         # SweetAlert from shinyWidgets not working as of June/2019
         # (including in shinyWidget's gallery)
         # shinyWidgets::sendSweetAlert(
@@ -118,15 +120,15 @@ DailyMeasureServer <- function(input, output, session) {
         #  title = "Error opening database",
         #  text = e,
         #  type = "error")
-      } else {
-        shinytoastr::toastr_success(
-          "Linking to Best Practice database successful!",
-          closeButton = TRUE,
-          position = "bottom-center",
-          title = "Best Practice database")
-      }
-    }
-  })
+#      } else {
+#        shinytoastr::toastr_success(
+#          "Linking to Best Practice database successful!",
+#          closeButton = TRUE,
+#          position = "bottom-center",
+#          title = "Best Practice database")
+#      }
+#    }
+#  })
 
   UserFullConfig <- reactiveVal(NULL)
   # place-holder only there is no code to modify this at the ment
@@ -302,8 +304,7 @@ DailyMeasureServer <- function(input, output, session) {
   observeEvent(c(location_list_change(), dM$location_listR), {
     # change in location_listR (by GUI editor in locations_data module) prompts
     # change in location list filter (for providers) and location_list_names (for user config)
-    updateSelectInput(session, inputId = 'location', choices = dM$location_list())
-    location_list_names(PracticeLocations() %>% select(Name) %>% collect() %>% unlist(use.names = FALSE))
+    updateSelectInput(session, inputId = 'location', choices = dM$location_listR())
   })
 
   userconfig_change <- callModule(userconfig_datatable, "userconfig_dt", dM)
@@ -451,7 +452,7 @@ DailyMeasureServer <- function(input, output, session) {
   ###### Render user information on top-right header ##########################
   output$user <- shinydashboardPlus::renderUser({
     shinydashboardPlus::dashboardUser(
-      name = identified_user()$Fullname,
+      name = dM$identified_user()$Fullname,
       src = 'icons/user-avatar.svg', # this depends on addResourcePath in zzz.R
       subtitle = Sys.info()[["user"]], # not necessarily an identified user
       fluidRow(

@@ -51,31 +51,22 @@ billings_datatable <- function(input, output, session, dM) {
 	# MBS (medicare benefits schedule) item numbers for CDM
 
 	# filter to billings which are done on the same day as displayed appointments
-	appointments_billings_sameday <- reactive({
-	  dM$appointments_billingsR() %>>%
-	    dplyr::filter(ServiceDate == AppointmentDate) %>>%
-	    # billings done on the same day as displayed appointments
-	    dplyr::select(Patient, InternalID, AppointmentDate, AppointmentTime,
-	           Provider, MBSItem, Description) %>>%
-	    # need to preserve ApppointmentTime and Provider
-	    # in the case where there are multiple apppointments
-	    # for the patient in the same time period/day and providers
-	    dplyr::mutate(billingtag =
-	                    semantic_button(MBSItem,
-	                                    colour = 'green',
-	                                    popuphtml = paste0('<h4>', AppointmentDate,
-	                                                       "</h3><p><font size=\'+0\'>",
-	                                                       Description, '</p>')),
-	                  billingtag_print = MBSItem)
-	  # change MBSITEMS into fomantic/semantic tags
+	appointments_billings_sameday <- shiny::eventReactive(dM$appointments_filteredR(), {
+	  return(dM$appointments_billings_sameday(screentag = TRUE,
+	                                          screentag_print = TRUE))
+	  #	returns Patient, InternalID, AppointmentDate, AppointmentTime,
+	  #	        Provider, MBSItem, Description, billingtag, billingtag_print
+	  # need to preserve ApppointmentTime and Provider
+	  # in the case where there are multiple apppointments
+	  # for the patient in the same time period/day and providers
 	})
 
-	billings_list <- reactive({
+	billings_list <- shiny::reactive({
 	  shiny::validate(
 	    need(appointments_billings_sameday(), "No appointments in chosen range"),
 	    need(nrow(appointments_billings_sameday())>0, "No appointments in chosen range")
 	  )
-
+	  
 	  billingslist <- NULL
 	  billingslist <- rbind(billingslist, appointments_billings_sameday())
 

@@ -75,7 +75,7 @@ cancerscreen_datatable <- function(input, output, session, dM) {
   cancerscreen_list <- shiny::reactive({
     shiny::validate(
       need(dM$appointments_listR(), "No appointments in chosen range"),
-      need(nrow(appointments_listR())>0, "No appointments in chosen range")
+      need(nrow(dM$appointments_listR())>0, "No appointments in chosen range")
     )
 
     screenlist <- NULL
@@ -104,7 +104,7 @@ cancerscreen_datatable <- function(input, output, session, dM) {
 
   styled_cancerscreen_list <- reactive({
     validate(
-      need(dm$appointments_listR(), "No appointments in selected range"),
+      need(dM$appointments_listR(), "No appointments in selected range"),
       need(cancerscreen_list(), "Choose at least one screening to display")
     )
     dummy <- cancerscreen_list()

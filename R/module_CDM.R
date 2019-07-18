@@ -37,24 +37,13 @@ cdm_datatableUI <- function(id) {
 #' @param input as required by Shiny modules
 #' @param output as required by Shiny modules
 #' @param session as required by Shiny modules
-#' @param appointments_billings reactive. joining appointments and billings
-#' @param appointments_filtered reactive
-#' @param appointments_filtered_time reactive. filtered appointments list
-#' @param appointments_list reactive. same as appointments_filtered_time, but with DOB and Age added
-#' @param diabetes_list vector of diabetic patients with appointments
-#' @param asthma_list vector of asthma patients with apponitments
-#' @param dbhistory table of history items, lazy evaluation
-#' @param appointments_filtered_time reactive list of appointments attached to all billings
-#' @param db access to database tables from Best Practice EMR
+#' @param dM dMeasure R6 object
+#'  access to appointments lists, condition lists, history and EMR database
 #'
 #' @include fomantic_definitions.R
 #'
 #' @return none
-cdm_datatable <- function(input, output, session,
-                          appointments_billings, appointments_filtered,
-                          appointments_filtered_time, appointments_list,
-                          diabetes_list, asthma_list,
-                          dbHistory) {
+cdm_datatable <- function(input, output, session, dM) {
   ns <- session$ns
 
   # MBS (medicare benefits schedule) item numbers for CDM
@@ -83,41 +72,30 @@ cdm_datatable <- function(input, output, session,
 	# filter to CDM item billed prior to (or on) the day of displayed appointments
 	# only show most recent billed item in each category
 
-	appointments_billings_cdm <- eventReactive(c(dM$appointments_billingsR(),
-	                                             input$cdm_chosen,
-	                                             input$printcopy_view), {
-		validate(
-			need(dM$appointments_billingsR(), "No billed appointments in chosen range"),
-			need(nrow(dM$appointments_billingsR())>0, "No billed appointments in chosen range")
-		)
-		appointments <- dM$appointments_billings_cdm(cdm_chosen = input$cdm_chosen,
-		                                             lazy = FALSE,
-		                                             screentag = !input$printcopy_view,
-		                                             screentag_pring = input$princopy_view)
-
-		return(appointments)
-	})
-
-	### AHA 75 (annual health assessment for those aged 75 years and above)
-	aha75_list_cdm <- eventReactive(dM$appointments_listR(), {
-	  return(dm$aha75_list_cdm)
-	})
-
-	### Diabetes CDM list
-
-	diabetes_list_cdm <- eventReactive(dM$appointments_listR(), {
-	  return(dm$diabetes_list_cdm)
-	})
-
-	### asthma list CDM
-
-	asthma_list_cdm <- eventReactive(dM$appointments_listR(), {
-	  return(dM$asthma_list_cdm)
-	})
-
+	appointments_billings_cdm <- 
+	  shiny::eventReactive(
+	    c(dM$appointments_filteredR(),
+	      input$cdm_chosen,
+	      input$printcopy_view), {
+	        validate(
+	          need(dM$appointments_billingsR(), "No appointments in chosen range"),
+	          need(nrow(dM$appointments_billingsR())>0, "No appointments in chosen range")
+	        )
+	        # respond to appointments_filteredR, since that is what is changed
+	        # when clinician or dates is changed
+	        
+	        appointments <- dM$appointments_billings_cdm(
+	          cdm_chosen = input$cdm_chosen,
+	          lazy = TRUE, # no need to re-calculate $appointments_billings
+	          screentag = !input$printcopy_view,
+	          screentag_print = input$printcopy_view)
+	        
+	        return(appointments)
+	      })
+	
 	### create tag-styled datatable (or 'printable' datatable)
-
-	cdm_styled_datatable <- reactive({
+	
+	cdm_styled_datatable <- shiny::reactive({
 	  if (!is.null(appointments_billings_cdm()) &
 	      !is.null(dM$appointments_filtered_timeR())) {
 	    if (input$printcopy_view == TRUE) {

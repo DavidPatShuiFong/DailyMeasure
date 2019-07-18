@@ -1,9 +1,9 @@
 ##### Define server logic #####################################################
 
-#' @import dbplyr
 #' @import tidyr
 #' @import shiny
 #' @import dplyr
+#' @import dbplyr
 NULL
 
 #' Shiny app server function
@@ -19,7 +19,7 @@ NULL
 #'
 #' needed for simple encode/decode
 DailyMeasureServer <- function(input, output, session) {
-
+  
   # IMPORTANT!
   # this is needed to terminate the R process when the
   # shiny app session ends. Otherwise, you end up with a zombie process
@@ -38,49 +38,6 @@ DailyMeasureServer <- function(input, output, session) {
 
   ##### Configuration file ######################################################
 
-  # User configuration file path
-  # (this config file contains a pointer to the .sqlite configuration file path)
-
-  configuration_file_path <- reactiveVal()
-
-  dbversion <- reactiveVal(0)
-  # increments each time EMR database is opened
-
-  BPdatabase <- reactiveVal(
-    value = data.frame(id = integer(),
-                       Name = character(),
-                       Address = character(),
-                       Database = character(),
-                       UserID = character(),
-                       dbPassword = character(),
-                       stringsAsFactors = FALSE))
-  BPdatabaseChoice <- reactiveVal(value = character())
-  # database choice will be the same as the 'Name' of the chosen entry in BPdatabase
-  PracticeLocations <- reactiveVal(
-    value = data.frame(id = integer(),
-                       Name = character(),
-                       Description = character(),
-                       stringsAsFactors = FALSE))
-  # id needed for editing this dataframe later
-  # need default value for practice location filter interface initialization
-  UserConfig <- reactiveVal(
-    value = data.frame(id = integer(),
-                       Fullname = character(), AuthIdentity = character(),
-                       Location = character(),
-                       Attributes = character(),
-                       Password = character(),
-                       stringsAsFactors = FALSE))
-
-  UserRestrictions <- reactiveVal(
-    value = data.frame(uid = integer(),
-                       Restriction = character(),
-                       stringsAsFactors = FALSE))
-  # this lists the 'enabled' restrictions,
-  #  relevant to the 'Attributes' field of 'UserConfig'
-  # without the restriction, all users have the 'permission'
-  #  for the 'non-specified' action
-  # use 'uid' rather than 'id', because 'id' is later used to identify the restrictions...
-
   observeEvent(dM$configuration_file_pathR(), ignoreNULL = TRUE, {
     dM$open_configuration_db()
     # connects to SQLite configuration database, using either DBI or pool
@@ -89,6 +46,8 @@ DailyMeasureServer <- function(input, output, session) {
     dM$read_configuration_db()
     # reads server definitions, location definitions, user attributes etc..
   })
+  invisible(dM$configuration_file_path)
+  # this will also set $configuration_file_pathR
 
   ### database initialization
 
@@ -130,37 +89,33 @@ DailyMeasureServer <- function(input, output, session) {
 #    }
 #  })
 
-  UserFullConfig <- reactiveVal(NULL)
-  # place-holder only there is no code to modify this at the ment
-  # dM contains an active field '$UserFullConfig'
-  # contains user names attached to configuration information
-  # contains ALL user names
-  # UserConfig() contains just names who have been configured
-
   # 'helper' functions for input panel
 
   # only adjust appointment view after dates are 'submitted' using 'submit' button
-  date_a <- eventReactive(input$update_date, {
-    dM$choose_date(date_from = input$date1) # also update the dMeasure object
-    input$date1
-  }, ignoreNULL = FALSE) # initialize on first run, after that only update if 'update' button used
-  date_b <- eventReactive(input$update_date, {
-    dM$choose_date(date_to = input$date2) # also update the dMeasure object
-    input$date2
-  }, ignoreNULL = FALSE)
+  shiny::observeEvent(input$update_date, ignoreNULL = FALSE, {
+    dM$choose_date(date_from = as.Date(input$date1)) # also update the dMeasure object
+  }) # initialize on first run, after that only update if 'update' button used
+  shiny::observeEvent(input$update_date, ignoreNULL = FALSE, {
+    dM$choose_date(date_to = as.Date(input$date2)) # also update the dMeasure object
+  })
 
   date_today <- observeEvent(input$update_date_today, {
     # 'today' button. change date range to today, and click the 'update' button
     updateDateInput(session, 'date1', value = Sys.Date())
     updateDateInput(session, 'date2', value = Sys.Date())
     # change date range to today
-    click('update_date')
+    shinyjs::click('update_date')
     # and click the 'update' button
+    
+    # work more reliably if doubled?
+    # change date range to today
+    shinyjs::click('update_date')
+    
   })
 
   output$locationList <- renderUI({
     selectInput(inputId = 'location', label = 'Practice location',
-                choices = dM$location_list(), selected = 'All')
+                choices = dM$location_list, selected = 'All')
     # list of locations available in appointment picker
     # $location_list returns all locations in configuration, and add 'All'
   })
@@ -222,10 +177,12 @@ DailyMeasureServer <- function(input, output, session) {
   toggle_clinicians <- observeEvent(input$toggle_clinician_list, {
     if (input$toggle_clinician_list == 0) {return(NULL)}
     else if (input$toggle_clinician_list%%2 == 1) {
-      updateCheckboxGroupInput(session, 'clinicians', selected = clinician_choice_list())
+      updateCheckboxGroupInput(session, 'clinicians',
+                               selected = clinician_choice_list())
       # toggle all clinicians selected
     } else {
-      updateCheckboxGroupInput(session, 'clinicians', selected = character(0))
+      updateCheckboxGroupInput(session, 'clinicians',
+                               selected = character(0))
       # no clinicians selected
     }
   })
@@ -270,7 +227,7 @@ DailyMeasureServer <- function(input, output, session) {
   # configuration file location tab
 
   output$configuration_file_details <- renderText({
-    paste('Configuration file location: "', dM$configuration_file_path(), '"')
+    paste('Configuration file location: "', dM$configuration_file_pathR(), '"')
   })
 
   volumes <- c(shinyFiles::getVolumes()(), base = '.', home = Sys.getenv("USERPROFILE"))
@@ -301,7 +258,7 @@ DailyMeasureServer <- function(input, output, session) {
   # location configuration tab
   location_list_change <- callModule(locations_datatable, "locations_dt", dM)
 
-  observeEvent(c(location_list_change(), dM$location_listR), {
+  shiny::observeEvent(c(location_list_change(), dM$location_listR()), {
     # change in location_listR (by GUI editor in locations_data module) prompts
     # change in location list filter (for providers) and location_list_names (for user config)
     updateSelectInput(session, inputId = 'location', choices = dM$location_listR())
@@ -312,47 +269,46 @@ DailyMeasureServer <- function(input, output, session) {
   ###### user configuration of their own password #######################
   callModule(passwordConfig_server, "password_config", dM)
 
-  observeEvent(c(dM$identified_user(), dM$UserRestrictions()), {
+  shiny::observeEvent(c(dM$identified_user(), dM$UserRestrictions()), {
     shiny::validate(
       shiny::need(dM$identified_user(), "No user information")
     )
     if ("ServerAdmin" %in% unlist(dM$UserRestrictions()$Restriction)) {
       # only some users allowed to see/change server settings
       if ("ServerAdmin" %in% unlist(dM$identified_user()$Attributes)) {
-        showTab("tab_config", "ServerPanel")
+        shiny::showTab("tab_config", "ServerPanel")
       } else {
-        hideTab("tab_config", "ServerPanel")
+        shiny::hideTab("tab_config", "ServerPanel")
       }
     } else {
-      showTab("tab_config", "ServerPanel")
+      shiny::showTab("tab_config", "ServerPanel")
     }
     if ("UserAdmin" %in% unlist(dM$UserRestrictions()$Restriction)) {
       # only some users allowed to see/change user settings
       if ("UserAdmin" %in% unlist(dM$identified_user()$Attributes)) {
-        showTab("tab_config", "LocationsPanel")
+        shiny::showTab("tab_config", "LocationsPanel")
         # also change ability to view locations panel
-        showTab("tab_config", "UsersPanel")
+        shiny::showTab("tab_config", "UsersPanel")
       } else {
-        hideTab("tab_config", "LocationsPanel")
-        hideTab("tab_config", "UsersPanel")
-        browser()
+        shiny::hideTab("tab_config", "LocationsPanel")
+        shiny::hideTab("tab_config", "UsersPanel")
       }
     } else {
-      showTab("tab_config", "LocationsPanel")
-      showTab("tab_config", "UsersPanel")
+      shiny::showTab("tab_config", "LocationsPanel")
+      shiny::showTab("tab_config", "UsersPanel")
     }
     if (nrow(dM$identified_user()) > 0) {
       # user has been identified
-      showTab("tab_config", "PasswordPanel")
+      shiny::showTab("tab_config", "PasswordPanel")
       # only 'identified' and configured users can set a password
     } else {
       # no user identified
-      hideTab("tab_config", "PasswordPanel")
+      shiny::hideTab("tab_config", "PasswordPanel")
     }
   })
 
   ####### User login #######################################################
-  observeEvent(c(dM$identified_user(), dM$UserRestrictions()), {
+  shiny::observeEvent(c(dM$identified_user(), dM$UserRestrictions()), {
     # need to know that user identification has occurred
     # and that restrictions have been read
     shiny::validate(
@@ -366,42 +322,44 @@ DailyMeasureServer <- function(input, output, session) {
         # user has been identified
         if (dM$empty_password()) {
           # empty or NA password, then asking for new password
-          showModal(modalDialog(
+          shiny::showModal(shiny::modalDialog(
             title="New password",
-            tagList(
+            shiny::tagList(
               paste("Password required for user ",
                     dM$identified_user()$Fullname, "."),
-              HTML("You need to set a password<br><br>"),
-              passwordInput("password1",
+              shiny::HTML("You need to set a password<br><br>"),
+              shiny::passwordInput("password1",
                             label = "Enter Password", value = ""),
-              br(),
-              passwordInput("password2",
+              shiny::br(),
+              shiny::passwordInput("password2",
                             label = "Confirm Password", value = "")
             ),
-            footer = tagList(actionButton("confirmNewPassword", "Confirm"))
+            footer = shiny::tagList(shiny::actionButton("confirmNewPassword",
+                                                        "Confirm"))
           ))
         } else {
-          showModal(modalDialog(
+          shiny::showModal(shiny::modalDialog(
             title="Password required",
-            tagList(
+            shiny::tagList(
               paste("Password required for user ",
                     dM$identified_user()$Fullname, "."),
-              HTML("<br><br>Please enter your password!<br>
+              shiny::HTML("<br><br>Please enter your password!<br>
               Click the 'Enter' button after typing in your password.<br><br>
               This is not (or shouldn't be!) your Windows or Best Practice password<br><br>"),
-              passwordInput("password", label = "Password", value = "")
+              shiny::passwordInput("password", label = "Password", value = "")
             ),
-            footer = tagList(actionButton("confirmPassword", "Enter"))
+            footer = shiny::tagList(shiny::actionButton("confirmPassword",
+                                                        "Enter"))
           ))
         }
       } else {
         # no user identified! but password required
         # will need to stop
-        showModal(modalDialog(
+        shiny::showModal(shiny::modalDialog(
           title="Password required",
-          tagList(
+          shiny::tagList(
             "User not recognized!",
-            br(),
+            shiny::br(),
             "Please contact your systems administrator."
           ),
           footer = tagList()
@@ -410,7 +368,7 @@ DailyMeasureServer <- function(input, output, session) {
     }
   })
 
-  observeEvent(input$confirmNewPassword, {
+  shiny::observeEvent(input$confirmNewPassword, {
     if (input$password1 != input$password2) {
       shinytoastr::toastr_error("Passwords must match",
                                 closeButton = TRUE)
@@ -419,7 +377,7 @@ DailyMeasureServer <- function(input, output, session) {
     } else {
       dM$set_password(newpassword = input$password1)
       # will also set dM$authenticated to TRUE
-      removeModal()
+      shiny::removeModal()
       shinytoastr::toastr_success(message = "Password set and Successful login",
                                   title = "Welcome back!",
                                   position = "bottom-left")
@@ -428,7 +386,7 @@ DailyMeasureServer <- function(input, output, session) {
 
   input_password_CR <- reactiveVal(0)
 
-  observeEvent(c(input$confirmPassword), {
+  shiny::observeEvent(c(input$confirmPassword), {
     shiny::validate(
       shiny::need(nchar(input$password) > 0, "No password entered")
     )
@@ -441,7 +399,7 @@ DailyMeasureServer <- function(input, output, session) {
                                 closeButton = TRUE)
     } else {
       # successful login
-      removeModal()
+      shiny::removeModal()
       shinytoastr::toastr_success(message = paste("Successful login for",
                                                   dM$identified_user()$Fullname),
                                   title = "Welcome back!",
@@ -455,7 +413,7 @@ DailyMeasureServer <- function(input, output, session) {
       name = dM$identified_user()$Fullname,
       src = 'icons/user-avatar.svg', # this depends on addResourcePath in zzz.R
       subtitle = Sys.info()[["user"]], # not necessarily an identified user
-      fluidRow(
+      shiny::fluidRow(
         shinydashboardPlus::dashboardUserItem(
           width = 6,
           shinydashboardPlus::descriptionBlock(

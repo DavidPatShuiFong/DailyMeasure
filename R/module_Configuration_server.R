@@ -52,7 +52,7 @@ servers_datatable <- function(input, output, session, dM) {
   shiny::observeEvent(dM$config_db_trigR(), {
     # observe any configuration database change
     shiny::validate(
-      shiny::need(!is.null(dM$BPdatabaseNames), "BPdatabase not defined")
+      shiny::need(dM$BPdatabaseNames, "BPdatabase not defined")
     )
     servername_list(append("None", dM$BPdatabaseNames))
   })

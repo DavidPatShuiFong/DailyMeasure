@@ -103,7 +103,6 @@ userconfig_resetpassword <- function(input, output, session, dM) {
 #' @return shiny user interface element
 userconfig_enableRestrictionsUI <- function(id) {
   ns <- shiny::NS(id)
-
   shiny::tagList(
     lapply(dMeasure::restrictionTypes_list(),
            # goes through restrictionTypes
@@ -125,7 +124,6 @@ userconfig_enableRestrictionsUI <- function(id) {
            }
     )
   )
-
 }
 
 #' userconfig_enableRestrictions - server component
@@ -144,8 +142,7 @@ userconfig_enableRestrictions <- function (input, out, session, dM) {
   shiny::observeEvent(dM$config_db_trigR(), {
     # if configuration pool has been initialized
     validate(
-      need(dM$UserRestrictionsR(), "No restriction list"),
-      need(config_db$conn(), "Configuration database not defined")
+      need(dM$UserRestrictions(), "No restriction list")
     )
     for (restriction in unlist(dM$restrictionTypes_df$id, use.names = FALSE)) {
       # set the switches according the what is stored in the configuration database
@@ -245,13 +242,9 @@ userconfig_datatable <- function(input, output, session, dM) {
   usernames <- shiny::reactiveVal()
   # list of user names
   shiny::observeEvent(dM$dbversion(), {
-    shiny::validate(
-      shiny::need(dM$UserConfigR(), "No user list"),
-      shiny::need(dM$UserRestrictions(), "No restriction list")
-    )
     # if the database has been connected
-    if (!is.null(dM$UserConfigR())) {
-      usernames(dM$UserConfigR() %>>%
+    if (!is.null(dM$UserFullConfig)) {
+      usernames(dM$UserFullConfig %>>%
                   dplyr::select(Fullname) %>>%
                   dplyr::collect() %>>%
                   unlist(use.names = FALSE))
@@ -339,12 +332,12 @@ userconfig_datatable <- function(input, output, session, dM) {
                # edit.label.cols = ,
                show.copy = FALSE,
                input.types = c(Fullname = 'selectInputReactive',
+                               Attributes = 'selectInputMultiple',
                                AuthIdentity = 'textInput',
-                               Location = 'selectInputMultipleReactive',
-                               Attributes = 'selectInputMultiple'),
+                               Location = 'selectInputMultipleReactive'),
                input.choices = c(Location = 'LocationNames',
                                  Fullname = 'Fullname',
-                                 Attributes = list(user_attribute_types)),
+                                 Attributes = list(dM$user_attribute_types)),
                input.choices.reactive = list(Fullname = usernames,
                                              # usernames was defined in this function
                                              # userconfig_datatable

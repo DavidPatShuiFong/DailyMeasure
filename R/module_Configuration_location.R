@@ -43,7 +43,7 @@ locations_datatable <- function(input, output, session, dM) {
   locations.insert.callback <- function(data, row) {
     # adding a new practice location
     if (length(grep(toupper(data[row, ]$Name),
-                    toupper(as.data.frame(isolate(PracticeLocations()))$Name)))){
+                    toupper(as.data.frame(isolate(dM$PracticeLocationsR()))$Name)))){
       # if the proposed new name is the same as one that already exists
       # (ignoring case). grep returns empty integer list if no match
       stop("New practice location name cannot be the same as existing names")
@@ -70,23 +70,23 @@ locations_datatable <- function(input, output, session, dM) {
       stop("New practice location name cannot be the same as existing names")
     } else if (is.null(data[row,]$Name)){
       stop("New practice location name cannot be 'empty'!")
-    } else if ((olddata[row,]$Name %in% userlocations()) &
+    } else if ((olddata[row,]$Name %in% dM$UserConfig$Location) &
                (olddata[row,]$Name != data[row,]$Name)) {
       stop(paste0("Cannot change the name of '", olddata[row,]$Name,
                   "', this location is assigned to a user."))
     } else {
 
-      dM$location.update(as.lsit(data[row, ]))
+      dM$location.update(as.list(data[row, ]))
 
       location_list_change(location_list_change() + 1)
       # this value returned by module
 
-      return(dM$server.list())
+      return(dM$location.list())
     }
   }
   locations.delete.callback <- function(data, row) {
     # delete a practice location
-    if (data[row,]$Name %in% userlocations()) {
+    if (data[row,]$Name %in% dM$UserConfig$Location) {
       stop(paste0("Cannot remove '", data[row,]$Name,
                   "', this location is assigned to a user."))
     } else {
@@ -111,5 +111,5 @@ locations_datatable <- function(input, output, session, dM) {
   )
 
   return(reactive({location_list_change()}))
-  # increments each time a callback changes PracticeLocations()
+  # increments each time a callback changes dM$PracticeLocationsR()
 }

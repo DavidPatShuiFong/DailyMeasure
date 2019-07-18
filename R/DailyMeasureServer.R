@@ -19,7 +19,7 @@ NULL
 #'
 #' needed for simple encode/decode
 DailyMeasureServer <- function(input, output, session) {
-  
+
   # IMPORTANT!
   # this is needed to terminate the R process when the
   # shiny app session ends. Otherwise, you end up with a zombie process
@@ -45,6 +45,25 @@ DailyMeasureServer <- function(input, output, session) {
     # and updates old SQLite configuration databases with necessary fields
     dM$read_configuration_db()
     # reads server definitions, location definitions, user attributes etc..
+    newdb <- dM$BPdatabaseChoice_new()
+    if (newdb != dM$BPdatabaseChoice) {
+      shinytoastr::toastr_info(
+        "Opening link to Best Practice", closeButton = TRUE,
+        position = "bottom-center", title = "Best Practice database")
+      opened_base <- dM$open_emr_db()
+      if (opened_base == "None") {
+        shinytoastr::toastr_error(
+          paste0(e), title = "Error opening Best Practice database",
+          closeButton = TRUE, position = "bottom-center",
+          timeOut = 0) # stays open until clicked
+      } else {
+        shinytoastr::toastr_success(
+          "Linking to Best Practice database successful!",
+          closeButton = TRUE,
+          position = "bottom-center",
+          title = "Best Practice database")
+      }
+    }
   })
   invisible(dM$configuration_file_path)
   # this will also set $configuration_file_pathR
@@ -106,11 +125,11 @@ DailyMeasureServer <- function(input, output, session) {
     # change date range to today
     shinyjs::click('update_date')
     # and click the 'update' button
-    
+
     # work more reliably if doubled?
     # change date range to today
     shinyjs::click('update_date')
-    
+
   })
 
   output$locationList <- renderUI({
@@ -391,11 +410,12 @@ DailyMeasureServer <- function(input, output, session) {
       shiny::need(nchar(input$password) > 0, "No password entered")
     )
 
-    if (tryCatch(dM$user_login(input$password),
+    if (!tryCatch(dM$user_login(input$password),
                  error = function(e) {return(FALSE)})) {
       # dM$user_login returns $authenticated if successful log-in i.e. TRUE
-      # otherwise returns and error
+      # otherwise returns an error
       shinytoastr::toastr_error("Wrong password",
+                                position = "bottom-left",
                                 closeButton = TRUE)
     } else {
       # successful login

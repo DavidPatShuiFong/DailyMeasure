@@ -171,7 +171,7 @@ userconfig_enableRestrictions <- function (input, out, session, dM) {
           #
           # e.g. it isn't permissible to set ServerAdmin/UserAdmin to 'TRUE' if
           # there is no user who has UserAdmin attribute
-          if (state != input[[restrictionLocal$id]]) {
+          if (state$state != input[[restrictionLocal$id]]) {
             # state returned is not the same as the state which was attempted
             # so change the state 'back' to the what is, in fact, the old state
             shinyWidgets::updateMaterialSwitch(

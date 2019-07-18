@@ -70,9 +70,11 @@ passwordConfig_server <- function(input, output, session,
     # setting new password. no previous password
     if (input$password1 != input$password2) {
       shinytoastr::toastr_error("Passwords must match",
+                                position = "bottom-left",
                                 closeButton = TRUE)
     } else if (nchar(input$password1) < 6) {
-      shinytoastr::toastr_error("Password must be at least six (6) characters long")
+      shinytoastr::toastr_error("Password must be at least six (6) characters long",
+                                position = "bottom-left")
     } else {
       dM$set_password(input$password1)
       shiny::removeModal()
@@ -83,6 +85,7 @@ passwordConfig_server <- function(input, output, session,
     # changing old password
     if (input$password1 != input$password2) {
       shinytoastr::toastr_error("Passwords must match",
+                                position = "bottom-left",
                                 closeButton = TRUE)
     } else {
       tryCatch({

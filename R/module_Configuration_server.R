@@ -77,10 +77,38 @@ servers_datatable <- function(input, output, session, dM) {
   shiny::observeEvent(input$server_chosen, {
     # when a different server is chosen from the input drop-down list
     # this will be the server 'Name', a character string
-    dM$BPdatabaseChoice <- input$server_chosen
-    # then need to update configuration file
-    # the active $BPdatabaseChoice will also write to the configuration file
-    # will reject the choice if not possible (e.g. bad database definition)
+
+    newchoice <- input$server_chosen
+
+    if (newchoice != dM$BPdatabaseChoice) {
+      if (newchoice == "None") {
+        shinytoastr::toastr_info(
+          "Closing link to Best Practice", closeButton = TRUE,
+          position = "bottom-left", title = "Best Practice database")
+      } else {
+        shinytoastr::toastr_info(
+          "Opening link to Best Practice", closeButton = TRUE,
+          position = "bottom-left", title = "Best Practice database")
+      }
+      dM$BPdatabaseChoice <- newchoice
+      # selects the chosen database
+      # the active $BPdatabaseChoice will also write to the configuration file
+      # will reject the choice if not possible (e.g. bad database definition)
+      if (dM$BPdatabaseChoice == "None" & newchoice != "None") {
+        # if opening input$server_chosen failed, then
+        # $BPdatabaseChoice 'reverts' to "None"
+        shinytoastr::toastr_error(
+          "Error opening Best Practice database",
+          closeButton = TRUE, position = "bottom-left",
+          timeOut = 10000) # stays open ten seconds
+      } else if (newchoice != "None") {
+        shinytoastr::toastr_success(
+          "Linking to Best Practice database successful!",
+          closeButton = TRUE,
+          position = "bottom-left",
+          title = "Best Practice database")
+      }
+    }
   })
 
   ### callback definitions for DTedit

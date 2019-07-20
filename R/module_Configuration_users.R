@@ -85,10 +85,15 @@ userconfig_resetpassword <- function(input, output, session, dM) {
 
   shiny::observeEvent(input$confirmRemovePassword, {
     # reset password has been confirmed
-    dm$password.reset(input$User_toReset_Password)
-    # $password.reset sets $UserConfig and writes to SQLite configuration
-
-    removeModal()
+    tryCatch(
+      dM$password.reset(input$User_toReset_Password),
+      error = function(e) {
+        shinytoastr::toastr_error(
+        paste(e$message), title = "Reset password error",
+        closeButton = TRUE, position = "bottom-left",
+        timeOut = 10000) # stays open ten seconds}
+        # $password.reset sets $UserConfig and writes to SQLite configuration
+      })
   })
 
 }
@@ -269,7 +274,7 @@ userconfig_datatable <- function(input, output, session, dM) {
     # possible errors include "This user is already configured"
     # or invalid description (although the UI should prevent invalid descriptions)
 
-    # dm$userconfig.insert will change the SQLite configuration file if appropriate
+    # dM$userconfig.insert will change the SQLite configuration file if appropriate
     # and $UserConfig
 
     userconfig_list_change(userconfig_list_change() + 1)
@@ -288,7 +293,7 @@ userconfig_datatable <- function(input, output, session, dM) {
     # if restrictions have been placed on who can modify the server or user configuration
     # then at least one user must have the restricted attribute
 
-    # dm$userconfig.insert will change the SQLite configuration file if appropriate
+    # dM$userconfig.insert will change the SQLite configuration file if appropriate
     # and $UserConfig
 
     userconfig_list_change(userconfig_list_change() + 1)
@@ -308,7 +313,7 @@ userconfig_datatable <- function(input, output, session, dM) {
     # if restrictions have been placed on who can modify the server or user configuration
     # then at least one user must have the restricted attribute
 
-    # dm$userconfig.insert will change the SQLite configuration file if appropriate
+    # dM$userconfig.insert will change the SQLite configuration file if appropriate
     # and $UserConfig
 
     userconfig_list_change(userconfig_list_change() + 1)
@@ -341,7 +346,8 @@ userconfig_datatable <- function(input, output, session, dM) {
                input.choices.reactive = list(Fullname = usernames,
                                              # usernames was defined in this function
                                              # userconfig_datatable
-                                             LocationNames = dM$location_listR),
+                                             # $location_groupR does not include 'None'
+                                             LocationNames = dM$location_groupR),
                callback.update = userconfig.update.callback,
                callback.insert = userconfig.insert.callback,
                callback.delete = userconfig.delete.callback

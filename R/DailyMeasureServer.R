@@ -49,18 +49,18 @@ DailyMeasureServer <- function(input, output, session) {
     if (newdb != dM$BPdatabaseChoice) {
       shinytoastr::toastr_info(
         "Opening link to Best Practice", closeButton = TRUE,
-        position = "bottom-center", title = "Best Practice database")
+        position = "bottom-left", title = "Best Practice database")
       opened_base <- dM$open_emr_db()
       if (opened_base == "None") {
         shinytoastr::toastr_error(
-          paste0(e), title = "Error opening Best Practice database",
-          closeButton = TRUE, position = "bottom-center",
-          timeOut = 0) # stays open until clicked
+          "Error opening Best Practice database",
+          closeButton = TRUE, position = "bottom-left",
+          timeOut = 10000) # stays open ten seconds
       } else {
         shinytoastr::toastr_success(
           "Linking to Best Practice database successful!",
           closeButton = TRUE,
-          position = "bottom-center",
+          position = "bottom-left",
           title = "Best Practice database")
       }
     }
@@ -68,45 +68,6 @@ DailyMeasureServer <- function(input, output, session) {
   invisible(dM$configuration_file_path)
   # this will also set $configuration_file_pathR
 
-  ### database initialization
-
-#  observeEvent(BPdatabaseChoice(), ignoreInit = TRUE, {
-#    print(paste("ChosenServerName:", BPdatabaseChoice()))
-
-#    if (BPdatabaseChoice() == "None") {
-#      dM$BPdatabaseChoice <- BPdatabaseChoice()
-      # the '$BPdatabaseChoice' is an active field.
-      # setting to "None" will close any currently open databases
-#    } else if (!is.null(BPdatabaseChoice())) {
-#      shinytoastr::toastr_info(
-#        "Opening link to Best Practice", closeButton = TRUE,
-#        position = "bottom-center", title = "Best Practice database")
-
-#      dM$BPdatabaseChoice <- BPdatabaseChoice()
-      # setting $BPdatabaseChoice 'active field' will try to
-      # open the requested database
-#      if (dm$BPdatabaseChoice == "None") {
-        # failed to open database, has been re-set to "None"
-#        shinytoastr::toastr_error(
-#          paste0(e), title = "Error opening Best Practice database",
-#          closeButton = TRUE, position = "bottom-center",
-#          timeOut = 0) # stays open until clicked
-        # SweetAlert from shinyWidgets not working as of June/2019
-        # (including in shinyWidget's gallery)
-        # shinyWidgets::sendSweetAlert(
-        #  session = session,
-        #  title = "Error opening database",
-        #  text = e,
-        #  type = "error")
-#      } else {
-#        shinytoastr::toastr_success(
-#          "Linking to Best Practice database successful!",
-#          closeButton = TRUE,
-#          position = "bottom-center",
-#          title = "Best Practice database")
-#      }
-#    }
-#  })
 
   # 'helper' functions for input panel
 
@@ -255,7 +216,8 @@ DailyMeasureServer <- function(input, output, session) {
     input, id = 'choose_configuration_file',
     session = session,
     roots = volumes,
-    filetypes = c('sqlite') # only files ending in '.sqlite'
+    filetypes = c('sqlite'), # only files ending in '.sqlite'
+    hidden = TRUE # the default is that configuration files have '.' hidden prefix
   )
 
   observeEvent(input$choose_configuration_file, ignoreNULL = TRUE, {
@@ -394,7 +356,7 @@ DailyMeasureServer <- function(input, output, session) {
     } else if (nchar(input$password1) < 6) {
       shinytoastr::toastr_error("Password must be at least six (6) characters long")
     } else {
-      dM$set_password(newpassword = input$password1)
+      dM$password.set(newpassword = input$password1)
       # will also set dM$authenticated to TRUE
       shiny::removeModal()
       shinytoastr::toastr_success(message = "Password set and Successful login",

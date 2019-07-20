@@ -28,13 +28,11 @@ passwordConfig_UI <- function(id) {
 #' @param dM dMeasure R6 object
 #'
 #' @return count - increments with each GUI edit of user configuration database
-passwordConfig_server <- function(input, output, session,
-                                  UserConfig, LoggedInUser,
-                                  config_db) {
+passwordConfig_server <- function(input, output, session, dM) {
   ns <- session$ns
 
   shiny::observeEvent(input$ChangePassword, {
-    if (dM$empty.password()) {
+    if (dM$empty_password()) {
       # empty or NA password, then asking for new password
       shiny::showModal(shiny::modalDialog(
         title="New password",
@@ -56,7 +54,7 @@ passwordConfig_server <- function(input, output, session,
           shiny::br(),
           shiny::passwordInput(ns("password1"), label = "Enter Password", value = ""),
           shiny::br(),
-          shiniy::passwordInput(ns("password2"), label = "Confirm Password", value = "")
+          shiny::passwordInput(ns("password2"), label = "Confirm Password", value = "")
         ),
         footer = shiny::tagList(
           shiny::actionButton(ns("confirmChangePassword"), "Confirm"),
@@ -76,7 +74,7 @@ passwordConfig_server <- function(input, output, session,
       shinytoastr::toastr_error("Password must be at least six (6) characters long",
                                 position = "bottom-left")
     } else {
-      dM$set_password(input$password1)
+      dM$password.set(input$password1)
       shiny::removeModal()
     }
   })
@@ -90,11 +88,13 @@ passwordConfig_server <- function(input, output, session,
     } else {
       tryCatch({
         success = TRUE
-        dM$setPassword(newpassword = input$password1,
+        dM$password.set(newpassword = input$password1,
                        oldpassword = input$passwordOld)
       },
       error = function(e) {
-        shinytoastr::toastr_error(e, closeButton = TRUE)
+        shinytoastr::toastr_error(e,
+                                  position = "bottom-left",
+                                  closeButton = TRUE)
         success = FALSE
       })
       if (success) {

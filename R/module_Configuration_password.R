@@ -89,10 +89,10 @@ passwordConfig_server <- function(input, output, session, dM) {
       tryCatch({
         success = TRUE
         dM$password.set(newpassword = input$password1,
-                       oldpassword = input$passwordOld)
+                        oldpassword = input$passwordOld)
       },
       error = function(e) {
-        shinytoastr::toastr_error(e,
+        shinytoastr::toastr_error(e$message,
                                   position = "bottom-left",
                                   closeButton = TRUE)
         success = FALSE

@@ -181,11 +181,23 @@ userconfig_enableRestrictions <- function (input, out, session, dM) {
             # so change the state 'back' to the what is, in fact, the old state
             shinyWidgets::updateMaterialSwitch(
               session, restrictionLocal$id,
-              state)
+              state$state)
+            if (length(state$error) > 0) {
+              shinytoastr::toastr_error(
+                title = state$error$title,
+                message = state$error$message,
+                closeButton = TRUE, position = "bottom-left")
+            }
           } else {
             # state returned is the same as the attempted change
             # $userrestriction.change has already updated the SQLite configuration
             # and $UserRestrictions
+            if (length(state$warn) > 0) {
+              shinytoastr::toastr_warning(
+                title = state$warn$title,
+                message = state$warn$message,
+                closeButton = TRUE, position = "bottom-left")
+            }
           }
         }
       })

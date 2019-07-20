@@ -4,8 +4,7 @@
 \alias{passwordConfig_server}
 \title{password configuration module - server function}
 \usage{
-passwordConfig_server(input, output, session, UserConfig, LoggedInUser,
-  config_db)
+passwordConfig_server(input, output, session, dM)
 }
 \arguments{
 \item{input}{as required by Shiny modules}

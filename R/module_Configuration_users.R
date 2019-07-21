@@ -305,7 +305,7 @@ userconfig_datatable <- function(input, output, session, dM) {
     # if restrictions have been placed on who can modify the server or user configuration
     # then at least one user must have the restricted attribute
 
-    # dM$userconfig.insert will change the SQLite configuration file if appropriate
+    # dM$userconfig.update will change the SQLite configuration file if appropriate
     # and $UserConfig
 
     userconfig_list_change(userconfig_list_change() + 1)
@@ -325,11 +325,16 @@ userconfig_datatable <- function(input, output, session, dM) {
     # if restrictions have been placed on who can modify the server or user configuration
     # then at least one user must have the restricted attribute
 
-    # dM$userconfig.insert will change the SQLite configuration file if appropriate
+    # dM$userconfig.delete will change the SQLite configuration file if appropriate
     # and $UserConfig
 
     userconfig_list_change(userconfig_list_change() + 1)
     # this value returned by module
+    
+    newdata <- data[-c(row),] # this 'creates' a no-row table
+    # if there are no rows left
+    # strangely, the return from $userconfig.delete is a 0x5 tibble
+    # which results in the error 'Replacement has 1 row, data has 0'
 
     return(newdata)
   }

@@ -227,8 +227,29 @@ DailyMeasureServer <- function(input, output, session) {
       inFile <- shinyFiles::parseFilePaths(volumes, input$choose_configuration_file)
       file_name <- paste(inFile$datapath)
       dM$configuration_file_path <- file_name
-       # this dMeasure method will also update the YAML configuration file
-
+      # this dMeasure method will also update the YAML configuration file
+    }
+  })
+  
+  shinyFiles::shinyFileSave(
+    input, id = 'create_configuration_file',
+    session = session,
+    roots = volumes,
+    hidden = TRUE
+  )
+  
+  observeEvent(input$create_configuration_file, ignoreNULL = TRUE, {
+    if (!is.integer(input$create_configuration_file)) {
+      # if input$choose_configuration_file is an integer,
+      # it is just the 'click' event on the filechoose button
+      inFile <- shinyFiles::parseSavePath(volumes, input$create_configuration_file)
+      file_name <- paste(inFile$datapath)
+      dM$configuration_file_path <- file_name
+      # this dMeasure method will create the .sqlite file and
+      # also update the YAML configuration file
+      dM$open_configuration_db()
+      # this will initialize the .sqlite configuration file and open it
+      dM$read_configuration_db()
     }
   })
 

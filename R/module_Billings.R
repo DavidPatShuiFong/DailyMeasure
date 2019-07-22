@@ -63,8 +63,10 @@ billings_datatable <- function(input, output, session, dM) {
 
 	billings_list <- shiny::reactive({
 	  shiny::validate(
-	    need(appointments_billings_sameday(), "No appointments in chosen range"),
-	    need(nrow(appointments_billings_sameday())>0, "No appointments in chosen range")
+	    shiny::need(appointments_billings_sameday(), 
+	                "No appointments in chosen range"),
+	    shiny::need(nrow(appointments_billings_sameday()) > 0,
+	                "No appointments in chosen range")
 	  )
 	  
 	  billingslist <- NULL
@@ -84,9 +86,9 @@ billings_datatable <- function(input, output, session, dM) {
 	  billingslist
 	})
 
-	styled_billings_list <- reactive({
+	styled_billings_list <- shiny::reactive({
 	  shiny::validate(
-	    need(billings_list(), "No appointments in selected range")
+	    shiny::need(billings_list(), "No appointments in selected range")
 	  )
 
 	  if (input$printcopy_view == TRUE) {

@@ -17,8 +17,8 @@ appointments_datatableUI <- function(id) {
       DT::DTOutput(ns("appointments_table")),
       type = 8,
       hide.element.when.recalculating = FALSE,
-	    proxy.height = NULL)
-	)
+      proxy.height = NULL)
+  )
 }
 
 ##### server side #####################
@@ -34,32 +34,26 @@ appointments_datatableUI <- function(id) {
 #'
 #' @return none
 appointments_datatable <- function(input, output, session, dM) {
-	ns <- session$ns
+  ns <- session$ns
 
-	# fomantic/semantic UI definitions not required
+  # fomantic/semantic UI definitions not required
 
-	# appointment list
-	output$appointments_dt <- DT::renderDT({datatable_styled(
-		dM$appointments_filtered_timeR() %>>%
-			dplyr::select(Patient, AppointmentDate, AppointmentTime, Provider, Status))
-	},
-	server = FALSE)
+  # appointment list
+  output$appointments_dt <- DT::renderDT({datatable_styled(
+    dM$appointments_filtered_timeR() %>>%
+      dplyr::select(Patient, AppointmentDate, AppointmentTime, Provider, Status))
+  },
+  server = FALSE)
 
 
-	styled_appointments_list <- reactive({
-	  validate(
-	    need(dM$appointments_filtered_timeR(),
-	         "No appointments in selected range"),
-	    need(nrow(dM$appointments_filtered_timeR()) > 0,
-	         "No appointments in selected range")
-	  )
+  styled_appointments_list <- shiny::reactive({
 
-		datatable_styled(dM$appointments_filtered_timeR() %>>%
-		                   dplyr::select(Patient, AppointmentDate, AppointmentTime,
-		                                 Provider, Status))
-	})
+    datatable_styled(dM$appointments_filtered_timeR() %>>%
+                       dplyr::select(Patient, AppointmentDate, AppointmentTime,
+                                     Provider, Status))
+  })
 
-	output$appointments_table <- DT::renderDT({
-	  styled_appointments_list()
-	})
+  output$appointments_table <- DT::renderDT({
+    styled_appointments_list()
+  })
 }

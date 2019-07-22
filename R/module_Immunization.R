@@ -38,7 +38,7 @@ zostavax_list <- function(appointments_list, dM) {
   # input - dM - access to Best Practice EMR database
 
   return(dM$zostavax_list(vaxtag = TRUE, vaxtag_print = TRUE))
-  
+
 }
 
 influenza_list <- function(appointments_list, dM) {
@@ -46,7 +46,7 @@ influenza_list <- function(appointments_list, dM) {
   #  Patient, InternalID, AppointmentDate, ApppointmentTime, Provider, DOB, Age
   #  vaxtag, vaxtag_print (these two are the 'semantic' tags and printable tags)
   # input - dM - access to Best Practice EMR database
-  
+
   return(dM$influenza_list(vaxtag = TRUE, vaxtag_print = TRUE))
 
 }
@@ -85,49 +85,53 @@ vax_datatable <- function(input, output, session, dM) {
 
   vax_list <- shiny::eventReactive(
     c(dM$appointments_listR(), input$vax_chosen), {
-    validate(
-      need(dM$appointments_listR(), "No appointments in chosen range"),
-      need(nrow(dM$appointments_listR())>0, "No appointments in chosen range")
-    )
+      shiny::validate(
+        shiny::need(dM$appointments_listR(),
+                    "No appointments in chosen range"),
+        shiny::need(nrow(dM$appointments_listR())>0,
+                    "No appointments in chosen range")
+      )
 
-    vlist <- NULL
-    # Zostavax (herpes zoster 'shingles' vaccine)
-    if ("Zostavax" %in% input$vax_chosen)
-    {vlist <- rbind(vlist, zostavax_list(appointments_list, dM))}
-    # influenza
-    if ("Influenza" %in% input$vax_chosen)
-    {vlist <- rbind(vlist, influenza_list(appointments_list, dM))}
+      vlist <- NULL
+      # Zostavax (herpes zoster 'shingles' vaccine)
+      if ("Zostavax" %in% input$vax_chosen)
+      {vlist <- rbind(vlist, zostavax_list(appointments_list, dM))}
+      # influenza
+      if ("Influenza" %in% input$vax_chosen)
+      {vlist <- rbind(vlist, influenza_list(appointments_list, dM))}
 
-    if (!is.null(vlist)) {
-      vlist <- vlist %>%
-                 group_by(Patient, InternalID, AppointmentDate, AppointmentTime, Provider,
-                          DOB, Age) %>%
-                 # gathers vaccination notifications on the same appointment into a single row
-                 summarise(vaxtag = paste(vaxtag, collapse = ""),
-                           vaxtag_print = paste(vaxtag_print, collapse = ", ")) %>%
-                 ungroup()
-    }
-    vlist
-  })
+      if (!is.null(vlist)) {
+        vlist <- vlist %>>%
+          dplyr::group_by(Patient, InternalID, AppointmentDate, AppointmentTime,
+                          Provider, DOB, Age) %>>%
+          # gathers vaccination notifications on the same appointment into a single row
+          dplyr::summarise(vaxtag = paste(vaxtag, collapse = ""),
+                           vaxtag_print = paste(vaxtag_print, collapse = ", ")) %>>%
+          dplyr::ungroup()
+      }
+      vlist
+    })
 
   styled_vax_list <- shiny::reactive({
-    validate(
-      need(dM$appointments_listR(), "No appointments in selected range"),
-      need(input$vax_chosen, "Choose at least one vaccination to display")
+    shiny::validate(
+      shiny::need(dM$appointments_listR(),
+                  "No appointments in selected range"),
+      shiny::need(input$vax_chosen,
+                  "Choose at least one vaccination to display")
     )
     dummy <- vax_list()
 
     if (input$printcopy_view == TRUE) {
       # printable/copyable view
-      datatable_styled(vax_list() %>%
-                         select(Patient, AppointmentDate, AppointmentTime,
-                                Provider, DOB, Age, vaxtag_print),
+      datatable_styled(vax_list() %>>%
+                         dplyr::select(Patient, AppointmentDate, AppointmentTime,
+                                       Provider, DOB, Age, vaxtag_print),
                        colnames = c('Vaccination' = 'vaxtag_print'))
     } else {
       # fomantic/semantic tag view
-      datatable_styled(vax_list() %>%
-                         select(Patient, AppointmentDate, AppointmentTime,
-                                Provider, DOB, Age, vaxtag),
+      datatable_styled(vax_list() %>>%
+                         dplyr::select(Patient, AppointmentDate, AppointmentTime,
+                                       Provider, DOB, Age, vaxtag),
                        escape = c(7),
                        dom = 'frltip', # no copy/print buttons
                        colnames = c('Vaccination' = 'vaxtag'))

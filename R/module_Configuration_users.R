@@ -272,7 +272,7 @@ userconfig_datatable <- function(input, output, session, dM) {
     }
   })
 
-  userconfig_list_change <- reactiveVal(0)
+  userconfig_list_change <- shiny::reactiveVal(0)
   # counts number of GUI edits of the user configuration table
 
   ### callback definitions for DTedit userconfig

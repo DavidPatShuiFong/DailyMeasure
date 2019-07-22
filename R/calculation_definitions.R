@@ -245,11 +245,11 @@ setPassword <- function(newpassword, UserConfig, LoggedInUser, config_db) {
   # tagging (hash) defined in calculation_definitions
 
   newUserConfig <-
-    UserConfig() %>%
-    mutate(Password =
-             replace(Password,
-                     LoggedInUser()$Fullname == Fullname,
-                     newpassword))
+    UserConfig() %>>%
+    dplyr::mutate(Password =
+                    dplyr::replace(Password,
+                                   LoggedInUser()$Fullname == Fullname,
+                                   newpassword))
   UserConfig(newUserConfig) # replace password with empty string
 
   query <- "UPDATE Users SET Password = ? WHERE id = ?"

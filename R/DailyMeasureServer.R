@@ -79,10 +79,10 @@ DailyMeasureServer <- function(input, output, session) {
     dM$choose_date(date_to = as.Date(input$date2)) # also update the dMeasure object
   })
 
-  date_today <- observeEvent(input$update_date_today, {
+  date_today <- shiny::observeEvent(input$update_date_today, {
     # 'today' button. change date range to today, and click the 'update' button
-    updateDateInput(session, 'date1', value = Sys.Date())
-    updateDateInput(session, 'date2', value = Sys.Date())
+    shiny::updateDateInput(session, 'date1', value = Sys.Date())
+    shiny::updateDateInput(session, 'date2', value = Sys.Date())
     # change date range to today
     shinyjs::click('update_date')
     # and click the 'update' button
@@ -93,9 +93,9 @@ DailyMeasureServer <- function(input, output, session) {
 
   })
 
-  output$locationList <- renderUI({
-    selectInput(inputId = 'location', label = 'Practice location',
-                choices = dM$location_list, selected = 'All')
+  output$locationList <- shiny::renderUI({
+    shiny::selectInput(inputId = 'location', label = 'Practice location',
+                       choices = dM$location_list, selected = 'All')
     # list of locations available in appointment picker
     # $location_list returns all locations in configuration, and add 'All'
   })
@@ -122,47 +122,54 @@ DailyMeasureServer <- function(input, output, session) {
   # )
 
   # list of clinicians shown depends on 'practice location' chosen
-  clinician_choice_list <- reactiveVal()
+  clinician_choice_list <- shiny::reactiveVal()
   #
-  observeEvent(c(dM$dbversion, input$location, dM$UserRestrictions, input$sidebartabs), {
-    # respond to database initialization or change in input choice
-    # respond to change in UserRestrictions and which sidebartab is selected
-    shiny::validate(
-      shiny::need(input$location, "Locations not available")
-    )
+  shiny::observeEvent(c(dM$dbversion, input$location,
+                        dM$UserRestrictions, input$sidebartabs), {
+                          # respond to database initialization or change in input choice
+                          # respond to change in UserRestrictions and which sidebartab is selected
+                          shiny::validate(
+                            shiny::need(input$location, "Locations not available")
+                          )
 
-    clinician_list <- dM$clinician_list(input$sidebartabs)
-    # find list of clinicians which can be selected to be viewed
-    #  filter by current $location setting
-    #  and also the view (input$sidebartabs) if a view restriction is activated
-    #  depending on user attributes/permissions and authentication/login status
-    #  this also sets dM$clinician_choice_list
+                          clinician_list <- dM$clinician_list(input$sidebartabs)
+                          # find list of clinicians which can be selected to be viewed
+                          #  filter by current $location setting
+                          #  and also the view (input$sidebartabs) if a view restriction is activated
+                          #  depending on user attributes/permissions and authentication/login status
+                          #  this also sets dM$clinician_choice_list
 
-    clinician_choice_list(clinician_list)
-  })
+                          clinician_choice_list(clinician_list)
 
-  output$clinicianList <- renderUI({
+                          dM$choose_clinicians(input$clinicians, input$sidebartabs)
+                          # change the clinician chosen list in dMeasure R6 object
+                          # will form 'intersection' between current choices (input$clinicians)
+                          # and what is permissible with the view 'input$sidebartabs'
+                        })
+
+  output$clinicianList <- shiny::renderUI({
     choice_list <- clinician_choice_list()
     chosen_list <- input$clinicians # retain previous selections
-    checkboxGroupInput('clinicians', label = 'Clinician',
-                       choices = choice_list, selected = chosen_list)
+    shiny::checkboxGroupInput('clinicians', label = 'Clinician',
+                              choices = choice_list, selected = chosen_list)
   })
 
-  observeEvent(input$clinicians, {
-    dM$choose_clinicians(input$clinicians)
+  shiny::observeEvent(input$clinicians, ignoreInit = TRUE, ignoreNULL = FALSE, {
+    # cannot ignoreNULL because sometimes an empty list will be chosen
+    dM$choose_clinicians(choices = input$clinicians)
     # alter dMeasure object according to user input
     # (or perhaps 'toggle' button below)
   })
 
-  toggle_clinicians <- observeEvent(input$toggle_clinician_list, {
+  toggle_clinicians <- shiny::observeEvent(input$toggle_clinician_list, {
     if (input$toggle_clinician_list == 0) {return(NULL)}
     else if (input$toggle_clinician_list%%2 == 1) {
-      updateCheckboxGroupInput(session, 'clinicians',
-                               selected = clinician_choice_list())
+      shiny::updateCheckboxGroupInput(session, 'clinicians',
+                                      selected = clinician_choice_list())
       # toggle all clinicians selected
     } else {
-      updateCheckboxGroupInput(session, 'clinicians',
-                               selected = character(0))
+      shiny::updateCheckboxGroupInput(session, 'clinicians',
+                                      selected = character(0))
       # no clinicians selected
     }
   })
@@ -230,14 +237,14 @@ DailyMeasureServer <- function(input, output, session) {
       # this dMeasure method will also update the YAML configuration file
     }
   })
-  
+
   shinyFiles::shinyFileSave(
     input, id = 'create_configuration_file',
     session = session,
     roots = volumes,
     hidden = TRUE
   )
-  
+
   observeEvent(input$create_configuration_file, ignoreNULL = TRUE, {
     if (!is.integer(input$create_configuration_file)) {
       # if input$choose_configuration_file is an integer,
@@ -263,7 +270,8 @@ DailyMeasureServer <- function(input, output, session) {
   shiny::observeEvent(c(location_list_change(), dM$location_listR()), {
     # change in location_listR (by GUI editor in locations_data module) prompts
     # change in location list filter (for providers) and location_list_names (for user config)
-    updateSelectInput(session, inputId = 'location', choices = dM$location_listR())
+    shiny::updateSelectInput(session, inputId = 'location',
+                             choices = dM$location_listR())
   })
 
   userconfig_change <- callModule(userconfig_datatable, "userconfig_dt", dM)
@@ -331,10 +339,10 @@ DailyMeasureServer <- function(input, output, session) {
                     dM$identified_user()$Fullname, "."),
               shiny::HTML("You need to set a password<br><br>"),
               shiny::passwordInput("password1",
-                            label = "Enter Password", value = ""),
+                                   label = "Enter Password", value = ""),
               shiny::br(),
               shiny::passwordInput("password2",
-                            label = "Confirm Password", value = "")
+                                   label = "Confirm Password", value = "")
             ),
             footer = shiny::tagList(shiny::actionButton("confirmNewPassword",
                                                         "Confirm"))
@@ -394,7 +402,7 @@ DailyMeasureServer <- function(input, output, session) {
     )
 
     if (!tryCatch(dM$user_login(input$password),
-                 error = function(e) {return(FALSE)})) {
+                  error = function(e) {return(FALSE)})) {
       # dM$user_login returns $authenticated if successful log-in i.e. TRUE
       # otherwise returns an error
       shinytoastr::toastr_error("Wrong password",

@@ -12,7 +12,7 @@ License: (C) David Fong. All rights reserved. License: file LICENSE
 Encoding: UTF-8
 LazyData: true
 ByteCompile: true
-RoxygenNote: 6.1.1
+RoxygenNote: 6.1.1.9000
 Imports:
     dplyr,
     dbplyr,
@@ -25,18 +25,19 @@ Imports:
     shinytoastr,
     shinyFiles (>= 0.7.2),
     shinycssloaders,
-    DBI,
-    odbc,
-    RSQLite,
-    pool,
     configr,
     DT (>= 0.5.3),
-    lubridate,
     DTedit,
-    stringr,
+    stringi,
     magrittr,
+    pipeR,
     jsonlite,
-    sodium
+    sodium,
+    R6,
+    dbConnection,
+    dMeasure
+Suggests:
+    pool
 ImportComments:
  shinycssloaders - loading animations
   custom version based on Gao Zheng's 'transparent' background version
@@ -44,11 +45,18 @@ ImportComments:
  DTedit - datatable edit wrapper.
   substantially based on jbryer/DTedit
   install with devtools::install_github('DavidPatShuiFong/DTedit')
+ dbConnection - generalize DBI or pool database connection
+  depends on preference and package availability
+  install with devtools::install_github('DavidPatShuiFong/dbConnection')
 Collate: 
     'DailyMeasure.R'
+    'utils-pipe.R'
     'calculation_definitions.R'
     'DailyMeasureServer.R'
-    'module_Configuration.R'
+    'module_Configuration_server.R'
+    'module_Configuration_password.R'
+    'module_Configuration_location.R'
+    'module_Configuration_users.R'
     'fomantic_definitions.R'
     'module_CDM.R'
     'module_Billings.R'
@@ -56,5 +64,4 @@ Collate:
     'module_Immunization.R'
     'module_Appointments.R'
     'DailyMeasureUI.R'
-    'utils-pipe.R'
     'zzz.R'

@@ -9,16 +9,16 @@
 #' @return Shiny user interface element
 appointments_datatableUI <- function(id) {
 
-	ns <- shiny::NS(id)
+  ns <- shiny::NS(id)
 
-	tagList(
-	  # print-view only (no semantic/fomantic buttons)
-	  shinycssloaders::withSpinner(
-	    DT::DTOutput(ns("appointments_table")),
-	    type = 8,
-	    hide.element.when.recalculating = FALSE,
-	    proxy.height = NULL)
-	)
+  shiny::tagList(
+    # print-view only (no semantic/fomantic buttons)
+    shinycssloaders::withSpinner(
+      DT::DTOutput(ns("appointments_table")),
+      type = 8,
+      hide.element.when.recalculating = FALSE,
+      proxy.height = NULL)
+  )
 }
 
 ##### server side #####################
@@ -30,35 +30,30 @@ appointments_datatableUI <- function(id) {
 #' @param input as required by Shiny modules
 #' @param output as required by Shiny modules
 #' @param session as required by Shiny modules
-#' @param appointments_filtered_time - reactive list of appointments
+#' @param dM - dMeasure R6 object
 #'
 #' @return none
-appointments_datatable <- function(input, output, session,
-                               appointments_filtered_time) {
-	ns <- session$ns
+appointments_datatable <- function(input, output, session, dM) {
+  ns <- session$ns
 
-	# fomantic/semantic UI definitions not required
+  # fomantic/semantic UI definitions not required
 
-	# appointment list
-	output$appointments_dt <- DT::renderDT({datatable_styled(
-		appointments_filtered_time() %>%
-			select(c('Patient', 'AppointmentDate', 'AppointmentTime', 'Provider', 'Status')))
-	},
-	server = FALSE)
+  # appointment list
+  output$appointments_dt <- DT::renderDT({datatable_styled(
+    dM$appointments_filtered_timeR() %>>%
+      dplyr::select(Patient, AppointmentDate, AppointmentTime, Provider, Status))
+  },
+  server = FALSE)
 
 
-	styled_appointments_list <- reactive({
-	  validate(
-	    need(appointments_filtered_time(), "No appointments in selected range"),
-	    need(nrow(appointments_filtered_time()) > 0, "No appointments in selected range")
-	  )
+  styled_appointments_list <- shiny::reactive({
 
-		datatable_styled(appointments_filtered_time() %>%
-										 	select(Patient, AppointmentDate, AppointmentTime,
-										 				 Provider, Status))
-	})
+    datatable_styled(dM$appointments_filtered_timeR() %>>%
+                       dplyr::select(Patient, AppointmentDate, AppointmentTime,
+                                     Provider, Status))
+  })
 
-	output$appointments_table <- DT::renderDT({
-	  styled_appointments_list()
-	})
+  output$appointments_table <- DT::renderDT({
+    styled_appointments_list()
+  })
 }

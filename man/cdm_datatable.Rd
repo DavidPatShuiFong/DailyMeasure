@@ -4,9 +4,7 @@
 \alias{cdm_datatable}
 \title{Chronic disease management list module - server}
 \usage{
-cdm_datatable(input, output, session, appointments_billings,
-  appointments_filtered, appointments_filtered_time, appointments_list,
-  diabetes_list, asthma_list, dbHistory)
+cdm_datatable(input, output, session, dM)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -15,23 +13,8 @@ cdm_datatable(input, output, session, appointments_billings,
 
 \item{session}{as required by Shiny modules}
 
-\item{appointments_billings}{reactive. joining appointments and billings}
-
-\item{appointments_filtered}{reactive}
-
-\item{appointments_filtered_time}{reactive. filtered appointments list}
-
-\item{appointments_list}{reactive. same as appointments_filtered_time, but with DOB and Age added}
-
-\item{diabetes_list}{vector of diabetic patients with appointments}
-
-\item{asthma_list}{vector of asthma patients with apponitments}
-
-\item{dbhistory}{table of history items, lazy evaluation}
-
-\item{appointments_filtered_time}{reactive list of appointments attached to all billings}
-
-\item{db}{access to database tables from Best Practice EMR}
+\item{dM}{dMeasure R6 object
+access to appointments lists, condition lists, history and EMR database}
 }
 \value{
 none

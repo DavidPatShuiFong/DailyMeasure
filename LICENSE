@@ -12,21 +12,6 @@ Details of these licenses, and copies of those licenses, follow below.
 Some software modified, included or bundled contain licensing details which
 are described in separate files in the "LICENSEdetails" folder.
 
-Inno Setup
-==========
-
-'Inno-Setup' itself is not distributed with "DailyMeasure".
-'Inno-Setup' is used to create an installer which is distributed with "DailyMeasure".
-Details of Inno-Setup's license is described later in the document.
-http://www.jrsoftware.org
-
-Advanced BAT to EXE Converter
-=============================
-
-'Advanced BAT to EXE Converter' is not distributed with "DailyMeasure".
-'Advanced BAT to EXE Converter' is used to create a batch-file which is distributed with "DailyMeasure".
-https://www.battoexeconverter.com/
-
 
 
 MIT License
@@ -56,6 +41,9 @@ https://github.com/jeroen/jsonlite/
 magrittr
 https://magrittr.tidyverse.org/
 
+pipeR
+https://github.com/renkun-ken/pipeR
+
 sodium
 https://cran.r-project.org/web/packages/sodium
 
@@ -63,6 +51,18 @@ fomantic-UI
 a modified version of fomantic-UI is used
 https://github.com/fomantic/Fomantic-U
 (fomantic-UI, in turn, is a fork of semantic-UI)
+
+R6
+https://github.com/r-lib/R6
+
+dbConnection
+https://github.com/DavidPatShuiFong/dbConnection
+
+BSD-3
+=====
+
+stringi
+https://github.com/gagolews/stringi
 
 GNU General Public License v2 (GPL v2)
 ======================================
@@ -81,12 +81,6 @@ other licensing details in LICENSE.shinydashboard
 shinydashboardPlus
 https://github.com/RinteRface/shinydashboardPlus
 other licensing details in LICENSE.shinydashboardplus
-
-lubridate
-https://lubridate.tidyverse.org/
-
-stringr
-https://stringr.tidyverse.org/
 
 
 GNU Lesser General Public License
@@ -135,7 +129,7 @@ https://github.com/Pill-GZ/shinycssloaders
 Gao Zheng's fork from
 https://cran.r-project.org/web/packages/shinycssloaders/
 
-pool
+pool (optional package, referenced through dbConnection which is MIT licensed)
 https://cran.r-project.org/web/packages/pool/
 
 GNU Affero General Public License (AGPL v3)
@@ -145,9 +139,20 @@ shinyjs
 https://github.com/daattali/shinyjs
 
 
+Inno Setup
+==========
 
+'Inno-Setup' itself is not distributed with "DailyMeasure".
+'Inno-Setup' is used to create an installer which is distributed with "DailyMeasure".
+Details of Inno-Setup's license is described later in the document.
+http://www.jrsoftware.org
 
+Advanced BAT to EXE Converter
+=============================
 
+'Advanced BAT to EXE Converter' is not distributed with "DailyMeasure".
+'Advanced BAT to EXE Converter' is used to create a batch-file which is distributed with "DailyMeasure".
+https://www.battoexeconverter.com/
 
 
 

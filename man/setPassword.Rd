@@ -4,7 +4,7 @@
 \alias{setPassword}
 \title{setPassword}
 \usage{
-setPassword(newpassword, UserConfig, LoggedInUser, config_pool)
+setPassword(newpassword, UserConfig, LoggedInUser, config_db)
 }
 \arguments{
 \item{newpassword}{the new password}
@@ -13,7 +13,7 @@ setPassword(newpassword, UserConfig, LoggedInUser, config_pool)
 
 \item{LoggedInUser}{reactive, the current user}
 
-\item{config_pool}{reactive, access to the user configuration database}
+\item{config_db}{R6 object, access to the user configuration database}
 }
 \value{
 nothing

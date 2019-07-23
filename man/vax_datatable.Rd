@@ -4,12 +4,7 @@
 \alias{vax_datatable}
 \title{immunization module - UI function}
 \usage{
-vax_datatable(input, output, session, appointments_list, db, diabetes_list,
-  asthma_list, atsi_list, malignancy_list, hiv_list,
-  haemoglobinopathy_list, asplenic_list, transplant_list,
-  cardiacdisease_list, trisomy21_list, bmi30_list, chroniclungdisease_list,
-  neurologic_list, chronicliverdisease_list, chronicrenaldisease_list,
-  pregnant_list)
+vax_datatable(input, output, session, dM)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -18,25 +13,7 @@ vax_datatable(input, output, session, appointments_list, db, diabetes_list,
 
 \item{session}{as required by Shiny modules}
 
-\item{appointments_list}{reactive. same as appointments_filtered_time, but with DOB and Age added}
-
-\item{db}{access to database tables from Best Practice EMR}
-
-\item{diabetes_list}{condition list}
-
-\item{asthma_list}{condition list}
-
-\item{atsi_list}{Aboriginal or Torres Strait islander}
-
-\item{transplant_list}{those who have had transplants}
-
-\item{malignancy}{patients with malignancy}
-
-\item{hiv}{patients with HIV}
-
-\item{haemoglobinopathy}{patients with blood conditions}
-
-\item{asplenic}{various immunocompromising conditions}
+\item{dM}{dMeasure R6 objection}
 }
 \value{
 none

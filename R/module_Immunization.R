@@ -88,7 +88,7 @@ vax_datatable <- function(input, output, session, dM) {
       shiny::validate(
         shiny::need(dM$appointments_listR(),
                     "No appointments in chosen range"),
-        shiny::need(nrow(dM$appointments_listR())>0,
+        shiny::need(nrow(dM$appointments_listR()) > 0,
                     "No appointments in chosen range")
       )
 

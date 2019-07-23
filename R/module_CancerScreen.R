@@ -74,8 +74,8 @@ cancerscreen_datatable <- function(input, output, session, dM) {
 
   cancerscreen_list <- shiny::reactive({
     shiny::validate(
-      shiny::need(dM$appointments_listR(), "No appointments in chosen range"),
-      shiny::need(nrow(dM$appointments_listR())>0, "No appointments in chosen range")
+      shiny::need(dM$appointments_listR(), "No appointments defined"),
+      shiny::need(nrow(dM$appointments_listR()) > 0, "No appointments in chosen range")
     )
 
     screenlist <- NULL
@@ -104,8 +104,12 @@ cancerscreen_datatable <- function(input, output, session, dM) {
 
   styled_cancerscreen_list <- reactive({
     shiny::validate(
-      shiny::need(dM$appointments_listR(), "No appointments in selected range"),
-      shiny::need(cancerscreen_list(), "Choose at least one screening to display")
+      shiny::need(dM$appointments_listR(),
+                  "No appointments in selected range"),
+      shiny::need(nrow(dM$appointments_listR()) > 0,
+                  "No appointments in chosen range"),
+      shiny::need(cancerscreen_list(),
+                  "Choose at least one screening to display")
     )
     dummy <- cancerscreen_list()
 
@@ -117,7 +121,7 @@ cancerscreen_datatable <- function(input, output, session, dM) {
                        colnames = c('Screening' = 'screentag_print'))
     } else {
       # fomantic/semantic tag view
-      datatable_styled(cancerscreen_list() %>%
+      datatable_styled(cancerscreen_list() %>>%
                          dplyr::select(c('Patient', 'AppointmentDate', 'AppointmentTime',
                                          'Provider', 'DOB', 'Age', 'screentag')),
                        escape = c(7),

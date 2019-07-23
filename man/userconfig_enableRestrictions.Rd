@@ -4,19 +4,15 @@
 \alias{userconfig_enableRestrictions}
 \title{userconfig_enableRestrictions - server component}
 \usage{
-userconfig_enableRestrictions(input, out, session, UserConfig,
-  UserRestrictions, config_pool)
+userconfig_enableRestrictions(input, out, session, dM)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
 
 \item{session}{as required by Shiny modules}
 
-\item{UserConfig}{reactiveval, list of user config}
-
-\item{UserRestrictions}{reactiveval, list of user restrictions}
-
-\item{config_pool}{reactiveval, access to configuration database}
+\item{dM}{dMeasure R6 object. configuration database access,
+user restrictions and $UserConfig}
 
 \item{output}{as required by Shiny modules}
 }

@@ -3,33 +3,95 @@
 calc_age <- function(birthDate, refDate = Sys.Date()) {
   # Calculate age at a given reference date
   # Create an interval between the date of birth and the enrollment date;
-  # intervals are specific to the two dates. Periods give the actual length
-  # of time between those dates, so convert to period and extract the year.
-  # written by 'mmparker' https://gist.github.com/mmparker/7254445
+  # note that arguments can be vectors, so needto use mapply
 
-  period <- lubridate::as.period(lubridate::interval(birthDate, refDate),
-                                 unit = "year")
-  period$year
+  period <- mapply(function(x, y)
+    (length(seq.Date(min(x, y), max(x, y), by = "year")) - 1 ) *
+      ifelse(y > x, 1, -1),
+    # note that seq.Date can't handle 'negative' periods
+    birthDate, refDate)
+
+  return(period)
 }
 
 calc_age_months <- function(birthDate, refDate = Sys.Date()) {
   # Calculate age at a given reference date, in months
   # Create an interval between the date of birth and the enrollment date;
-  # intervals are specific to the two dates. Periods give the actual length
-  # of time between those dates, so convert to period and extract the month.
-  # based on code written by 'mmparker' https://gist.github.com/mmparker/7254445
+  # note that arguments can be vectors, so need to use mapply
 
-  period <- lubridate::as.period(lubridate::interval(birthDate, refDate),
-                                 unit = "month")
-  period$month
+  period <- mapply(function(x, y)
+    (length(seq.Date(min(x, y), max(x, y), by = "month")) - 1) *
+      ifelse(y > x, 1, -1),
+    # note that seq.Date can't handle 'negative' periods
+    birthDate, refDate)
+
+  return(period)
 }
+
+interval <- function(date_a, date_b, unit = "none") {
+  # calculate period between date_a and date_b
+  # date_a and date_b can be lists
+  # returns $year, $month, $day
+  # can return 'negative' numbers
+  # returns NA if either of date_a or date_b is NA
+  # returns an arbitrarily large number of years if min(date_a, date_b) is -Inf
+  #
+  # if 'unit' = month, then convert all years to months
+
+  infinity_years <- Inf
+
+  interval <- list()
+
+  interval$year <- mapply(function(x, y)
+    ifelse(!is.na(min(x, y)),
+           ifelse(min(x,y) == -Inf,
+                  infinity_years,
+                  (length(seq.Date(min(x, y), max(x, y), by = "year")) - 1) *
+                    ifelse(y > x, 1, -1)),
+           NA),
+    # note that seq.Date can't handle 'negative' periods
+    date_a, date_b)
+
+  interval$month <- mapply(function(x, y, z)
+    ifelse(!is.na(min(x, y)),
+           (ifelse(min(x,y) == -Inf,
+                   0,
+                   length(seq.Date(tail(seq.Date(min(x, y), length.out = abs(z) + 1, by = "year"), 1),
+                                   # 'reduces' difference between dates by 'year' difference
+                                   max(x,y), by = "month")) -1 ) *
+              ifelse(y > x, 1, -1)),
+           NA),
+    date_a, date_b, interval$year)
+
+  interval$day <- mapply(function(x, y, z, zz)
+    ifelse(!is.na(min(x, y)),
+           (ifelse(min(x,y) == -Inf,
+                   0,
+                   length(seq.Date(tail(seq.Date(tail(seq.Date(min(x, y),
+                                                               length.out = abs(z) + 1,
+                                                               by = "year"), 1),
+                                                 length.out = abs(zz) + 1, by = "month"), 1),
+                                   # 'reduces' difference between dates by 'year' difference
+                                   max(x,y), by = "day")) -1 ) *
+              ifelse(y > x, 1, -1)),
+           NA),
+    date_a, date_b, interval$year, interval$month)
+
+  if (unit == "month") {
+    interval$month <- interval$month + interval$year*12
+    interval$year <- replicate(length(interval$month), 0)
+  }
+
+  return(interval)
+}
+
 
 hrmin <- function(t) {
   # converts seconds to a 'time' starting from midnight
   # t : value in seconds
   # returns 24-hour time of form '14:15' (hh:mm)
-  td <- lubridate::seconds_to_period(t)
-  sprintf('%02d:%02d', td@hour, td@minute)
+
+  format(as.POSIXct('1900-1-1') + t, '%H:%M')
 }
 
 # code for encoding/decoding. not 'very' secret
@@ -124,7 +186,7 @@ simple_tag <- function(msg, key = NULL) {
   }
   key <- sodium::hash(charToRaw(key))
   msg <- serialize(msg, NULL)
-  tag <- base64enc::base64encode(sodium::data_tag(msg, key))
+  tag <- jsonlite::base64_enc(sodium::data_tag(msg, key))
 
   return(tag)
 }
@@ -154,15 +216,13 @@ simple_tag_compare <- function(msg, tag, key = NULL) {
   key <- sodium::hash(charToRaw(key))
   msg <- serialize(msg, NULL)
   newtag <- sodium::data_tag(msg, key)
-  oldtag <- base64enc::base64decode(tag)
+  oldtag <- jsonlite::base64_dec(tag)
 
-  if (newtag == oldtag) {
-    result = TRUE
-  } else {
-    result = FALSE
-  }
+  result <- all(ifelse(newtag == oldtag, TRUE, FALSE))
+  # ifelse is vectorized, and will return a vector of TRUE/FALSE
+  # 'all' checks that that all the elements of the comparison vector are TRUE
 
-  return(newtag == oldtag)
+  return(result)
 }
 
 #' setPassword
@@ -174,32 +234,29 @@ simple_tag_compare <- function(msg, tag, key = NULL) {
 #' @param newpassword the new password
 #' @param UserConfig reactive, the User Configuration table
 #' @param LoggedInUser reactive, the current user
-#' @param config_pool reactive, access to the user configuration database
+#' @param config_db R6 object, access to the user configuration database
 #'
 #' @return nothing
 #'
-setPassword <- function(newpassword, UserConfig, LoggedInUser, config_pool) {
+setPassword <- function(newpassword, UserConfig, LoggedInUser, config_db) {
   # set the password for the user
 
   newpassword <- simple_tag(newpassword)
   # tagging (hash) defined in calculation_definitions
 
   newUserConfig <-
-    UserConfig() %>%
-    mutate(Password =
-             replace(Password,
-                     LoggedInUser()$Fullname == Fullname,
-                     newpassword))
+    UserConfig() %>>%
+    dplyr::mutate(Password =
+                    dplyr::replace(Password,
+                                   LoggedInUser()$Fullname == Fullname,
+                                   newpassword))
   UserConfig(newUserConfig) # replace password with empty string
 
   query <- "UPDATE Users SET Password = ? WHERE id = ?"
   # write to configuration database
   data_for_sql <- list(newpassword, LoggedInUser()$id[[1]])
 
-  connection <- pool::poolCheckout(config_pool())
-  # can't write with the pool
-  rs <- DBI::dbSendQuery(connection, query) # update database
-  DBI::dbBind(rs, data_for_sql)
-  DBI::dbClearResult(rs)
-  pool::poolReturn(connection)
+  config_db$dbSendQuery(query, data_for_sql)
+  # if the connection is a pool, can't send write query (a statement) directly
+  # so use the object's method
 }

@@ -4,8 +4,7 @@
 \alias{servers_datatable}
 \title{server configuration module - server}
 \usage{
-servers_datatable(input, output, session, BPdatabase, BPdatabaseChoice,
-  emrpool, config_pool)
+servers_datatable(input, output, session, dM)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -14,13 +13,9 @@ servers_datatable(input, output, session, BPdatabase, BPdatabaseChoice,
 
 \item{session}{as required by Shiny modules}
 
-\item{BPdatabase}{reactiveval, list of servers}
-
-\item{BPdatabaseChoice}{reactiveval, name of chosen server}
-
-\item{emrpool}{reactiveval, current Best Practice (electronic medical record 'EMR') database pool in use}
-
-\item{config_pool}{reactiveval, access to configuration database}
+\item{dM}{dMeasure R6 object
+list of database servers, name of chosen server
+access to EMR database, access to configuration database}
 }
 \value{
 count increments with each edit of server database

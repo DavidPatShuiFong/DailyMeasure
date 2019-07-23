@@ -15,6 +15,3 @@ Shiny user interface element
 \description{
 user configuration module - user interface function
 }
-\details{
-Editable datatable with list of servers
-}

@@ -85,14 +85,15 @@ userconfig_resetpassword <- function(input, output, session, dM) {
 
   shiny::observeEvent(input$confirmRemovePassword, {
     # reset password has been confirmed
-    tryCatch(
-      dM$password.reset(input$User_toReset_Password),
+    tryCatch({
+      dM$password.reset(input$User_toReset_Password)
+      shiny::removeModal()},
+      # $password.reset sets $UserConfig and writes to SQLite configuration
       error = function(e) {
         shinytoastr::toastr_error(
         paste(e$message), title = "Reset password error",
         closeButton = TRUE, position = "bottom-left",
         timeOut = 10000) # stays open ten seconds}
-        # $password.reset sets $UserConfig and writes to SQLite configuration
       })
   })
 
@@ -330,7 +331,7 @@ userconfig_datatable <- function(input, output, session, dM) {
 
     userconfig_list_change(userconfig_list_change() + 1)
     # this value returned by module
-    
+
     newdata <- data[-c(row),] # this 'creates' a no-row table
     # if there are no rows left
     # strangely, the return from $userconfig.delete is a 0x5 tibble

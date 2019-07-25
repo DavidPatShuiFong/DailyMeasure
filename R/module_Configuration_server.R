@@ -10,11 +10,11 @@
 #'
 #' @return Shiny user interface element
 servers_datatableUI <- function(id) {
-  ns <- NS(id)
+  ns <- shiny::NS(id)
 
-  tagList(
-    wellPanel(
-      uiOutput(ns("selection"))
+  shiny::tagList(
+    shiny::wellPanel(
+      shiny::uiOutput(ns("selection"))
     ),
     DTedit::dteditUI(ns("servers"))
   )
@@ -28,16 +28,15 @@ servers_datatableUI <- function(id) {
 #' @param input as required by Shiny modules
 #' @param output as required by Shiny modules
 #' @param session as required by Shiny modules
-#' @param	BPdatabase reactiveval, list of servers
-#' @param BPdatabaseChoice reactiveval, name of chosen server
-#' @param emr_db R6 object, current Best Practice (electronic medical record 'EMR') database in use
-#' @param config_db R6 object, access to configuration database
+#' @param dM dMeasure R6 object
+#'  list of database servers, name of chosen server
+#'  access to EMR database, access to configuration database
 #'
 #' @return count increments with each edit of server database
 #'
 #' @include calculation_definitions.R
 #' required for simple encoding/decoding
-servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoice, emr_db, config_db) {
+servers_datatable <- function(input, output, session, dM) {
   # as of 22nd June 2019, this function doesn't actually use emr_db
   #
   # Practice locations/groups server part of module
@@ -45,156 +44,122 @@ servers_datatable <- function(input, output, session, BPdatabase, BPdatabaseChoi
   # change in server_list_change to prompt change in selectable filter list of locations
   ns <- session$ns
 
-  servers_dt_viewcols <- c("id", "Name", "Address", "Database", "UserID")
-  # columns viewed in DTedit when adding/editing/removing servers
-  # 'id' is likely not necessary for end-users
-  servers_dt_editcols <- c("Name", "Address", "Database", "UserID", "dbPassword")
+  servers_list_change <- shiny::reactiveVal(0)
 
-  chosen_database <- reactiveVal(NULL) # ID of chosen database
-  servers_list_change <- reactiveVal(0)
-
-  servername_list <- reactiveVal(append("None", isolate(BPdatabase()$Name)))
+  servername_list <- shiny::reactiveVal(append("None",
+                                               dM$BPdatabaseNames))
   # add 'None' to the list of databases
-  observeEvent(c(BPdatabase(), reactive(config_db$conn())), {
-    # when the database list is updated, either change in list
-    # or configuration file has been opened
-    validate(
-      need(!is.null(BPdatabase()), "BPdatabase not defined")
+  shiny::observeEvent(dM$config_db_trigR(), {
+    # observe any configuration database change
+    shiny::validate(
+      shiny::need(dM$BPdatabaseNames, "BPdatabase not defined")
     )
-    servername_list(append("None", BPdatabase()$Name))
+    servername_list(append("None", dM$BPdatabaseNames))
   })
 
-  output$selection <- renderUI({
+  output$selection <- shiny::renderUI({
     # drop-down list of servers (including 'None')
-    selectInput(inputId = ns("server_chosen"), label = "Chosen Best Practice server",
-                choices = servername_list(), selected = isolate(BPdatabaseChoice()))
+    shiny::selectInput(inputId = ns("server_chosen"),
+                       label = "Chosen Best Practice server",
+                       choices = servername_list(),
+                       selected = dM$BPdatabaseChoice)
   })
 
-  observeEvent(BPdatabaseChoice(), {
-    # if the choice has been changed, changed the entry in the drop-down list
+  shiny::observeEvent(dM$BPdatabaseChoiceR(), {
+    # if the choice has been changed, change the entry in the drop-down list
     # this might happen if a choice has been changed to 'None' because
     # the previously chosen database entry was not successfully opened
-    updateSelectInput(session, inputId = "server_chosen", selected = BPdatabaseChoice())
+    shiny::updateSelectInput(session,
+                             inputId = "server_chosen",
+                             selected = dM$BPdatabaseChoiceR())
   })
 
-  observeEvent(input$server_chosen, {
+  shiny::observeEvent(input$server_chosen, {
     # when a different server is chosen from the input drop-down list
-    chosen_database(input$server_chosen)
     # this will be the server 'Name', a character string
-    BPdatabaseChoice(input$server_chosen)
-    ## then need to update configuraiton file
-    if (nrow(config_db$conn() %>% tbl("ServerChoice") %>% filter(id ==1) %>% collect())) {
-      # already an entry in the ServerChoice table
-      query <- "UPDATE ServerChoice SET Name = ? WHERE id = ?"
-      data_for_sql <- as.list.data.frame(c(input$server_chosen, 1))
-    } else {
-      # create a new entry
-      query <- "INSERT INTO ServerChoice (id, Name) VALUES (?, ?)"
-      data_for_sql <- as.list.data.frame(c(1, input$server_chosen))
-    }
 
-    config_db$dbSendQuery(query, data_for_sql)
-    # if the connection is a pool, can't send write query (a statement) directly
-    # so use the object's method
+    newchoice <- input$server_chosen
+
+    if (newchoice != dM$BPdatabaseChoice) {
+      if (newchoice == "None") {
+        shinytoastr::toastr_info(
+          "Closing link to Best Practice", closeButton = TRUE,
+          position = "bottom-left", title = "Best Practice database")
+      } else {
+        shinytoastr::toastr_info(
+          "Opening link to Best Practice", closeButton = TRUE,
+          position = "bottom-left", title = "Best Practice database")
+      }
+      dM$BPdatabaseChoice <- newchoice
+      # selects the chosen database
+      # the active $BPdatabaseChoice will also write to the configuration file
+      # will reject the choice if not possible (e.g. bad database definition)
+      if (dM$BPdatabaseChoice == "None" & newchoice != "None") {
+        # if opening input$server_chosen failed, then
+        # $BPdatabaseChoice 'reverts' to "None"
+        shinytoastr::toastr_error(
+          "Error opening Best Practice database",
+          closeButton = TRUE, position = "bottom-left",
+          timeOut = 10000) # stays open ten seconds
+      } else if (newchoice != "None") {
+        shinytoastr::toastr_success(
+          "Linking to Best Practice database successful!",
+          closeButton = TRUE,
+          position = "bottom-left",
+          title = "Best Practice database")
+      }
+    }
   })
 
   ### callback definitions for DTedit
   servers.insert.callback <- function(data, row) {
     # adding a new server description
-    if (toupper(data[row,]$Name) %in% toupper(append(data[-row,]$Name, "None"))) {
-      # if the proposed server is the same as one that already exists
-      # (ignoring case)
-      stop("New server name cannot be the same as existing names, or 'None'")
-    } else if (stringr::str_length(data[row,]$Name) == 0 |
-               stringr::str_length(data[row,]$Address) == 0 |
-               stringr::str_length(data[row,]$Database) == 0 |
-               stringr::str_length(data[row,]$UserID) == 0 |
-               stringr::str_length(data[row,]$dbPassword) == 0) {
-      stop("All entries must be described")
-    } else {
 
-      newid <- max(c(as.data.frame(BPdatabase())$id, 0)) + 1
-      # initially, BPdatabase()$id might be an empty set, so need to append a '0'
-      data[row, ]$id <- newid
-      data[row, ]$dbPassword <- simple_encode(data[row, ]$dbPassword)
-      # immediately encode password.
-      # stored encrypted both in memory and in configuration file
+    tryCatch(dM$server.insert(data[row,]),
+             error = function(e) stop(e))
+    # possible errors include $Name already being used
+    # or not all entries described
+    # $server.insert will write to the SQLite configuration
 
-      query <- "INSERT INTO Server (id, Name, Address, Database, UserID, dbPassword) VALUES (?, ?, ?, ?, ?, ?)"
-      data_for_sql <- as.list.data.frame(c(newid, data[row,]$Name, data[row,]$Address,
-                                           data[row,]$Database, data[row,]$UserID,
-                                           data[row,]$dbPassword))
+    servers_list_change(servers_list_change() + 1)
+    # this value returned by module
 
-      config_db$dbSendQuery(query, data_for_sql)
-      # if the connection is a pool, can't send write query (a statement) directly
-      # so use the object's method
-
-
-      BPdatabase(data) # update the dataframe in memory
-      servers_list_change(servers_list_change() + 1)
-      # this value returned by module
-
-      return(BPdatabase())
-    }
+    return(data)
   }
   servers.update.callback <- function(data, olddata, row) {
     # change (update) a server description
 
-    if (toupper(data[row,]$Name) %in% toupper(append(data[-row,]$Name, "None"))) {
-      # if the proposed server is the same as one that already exists
-      # (ignoring case)
-      stop("New server name cannot be the same as existing names, or 'None'")
-    } else if (toupper(data[row,]$Name) == toupper(BPdatabaseChoice())) {
-      stop(paste0("Cannot edit '", data[row,]$Name, "', currently in use!"))
-    } else if (toupper(data[row,]$Name == "NONE")) {
-      stop("New server name cannot be 'None'!")
-    } else if (stringr::str_length(data[row,]$Name) == 0 |
-               stringr::str_length(data[row,]$Address) == 0 |
-               stringr::str_length(data[row,]$Database) == 0 |
-               stringr::str_length(data[row,]$UserID) == 0 |
-               stringr::str_length(data[row,]$dbPassword) == 0) {
-      stop("All entries must be described")
-    } else {
-      data[row, ]$dbPassword <- simple_encode(data[row, ]$dbPassword)
-      # immediately encode password.
-      # stored encrypted both in memory and in configuration file
+    tryCatch(dM$server.update(data[row,]),
+             error = function(e) stop(e))
+    # possible errors include the server is currently being used
+    # or proposed name is same as another definition
+    # $server.update will write to the SQLite configuration
 
-      query <- "UPDATE Server SET Name = ?, Address = ?, Database = ?, UserID = ?, dbPassword = ? WHERE id = ?"
-      data_for_sql <- as.list.data.frame(c(data[row,]$Name, data[row,]$Address,
-                                           data[row,]$Database, data[row,]$UserID,
-                                           data[row,]$dbPassword, data[row,]$id))
+    servers_list_change(servers_list_change() + 1) # this value returned by module
 
-      config_db$dbSendQuery(query, data_for_sql)
-      # if the connection is a pool, can't send write query (a statement) directly
-      # so use the object's method
-
-      BPdatabase(data) # store new values in copy of settings in memory
-      servers_list_change(servers_list_change() + 1) # this value returned by module
-
-      return(BPdatabase())
-    }
+    return(data)
   }
   servers.delete.callback <- function(data, row) {
     # delete a server description
-    if (toupper(data[row,]$Name) == toupper(BPdatabaseChoice())) {
-      stop(paste0("Cannot remove '", data[row,]$Name, "', currently in use!"))
-    } else {
-      query <- "DELETE FROM Server WHERE id = ?"
-      data_for_sql <- as.list.data.frame(c(data[row,]$id))
 
-      config_db$dbSendQuery(query, data_for_sql)
-      # if the connection is a pool, can't send write query (a statement) directly
-      # so use the object's method
+    tryCatch(dM$server.delete(data[row,]),
+             error = function(e) stop(e))
+    # possible errors include the server is currently being used
+    # $server.delete will write to the SQLite configuration
 
-      BPdatabase(data[-c(row),])
-      servers_list_change(servers_list_change() + 1) # this value returned by module
-    }
-    return(BPdatabase())
+    servers_list_change(servers_list_change() + 1) # this value returned by module
+
+    return(data[-c(row),])
   }
+
+  servers_dt_viewcols <- c("id", "Name", "Address", "Database", "UserID")
+  # columns viewed in DTedit when adding/editing/removing servers
+  # 'id' is likely not necessary for end-users
+  servers_dt_editcols <- c("Name", "Address", "Database", "UserID", "dbPassword")
 
   # depends on modularized version of DTedit
   servers_edited <- callModule(DTedit::dtedit, "servers",
-                               thedataframe = BPdatabase, # pass a ReactiveVal
+                               thedataframe = dM$BPdatabaseR, # pass a ReactiveVal
                                view.cols = servers_dt_viewcols, # no need to show 'id' in future
                                edit.cols = servers_dt_editcols,
                                input.types = c(Name = 'textInput', Address = 'textInput',

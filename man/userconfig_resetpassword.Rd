@@ -2,9 +2,10 @@
 % Please edit documentation in R/module_Configuration_users.R
 \name{userconfig_resetpassword}
 \alias{userconfig_resetpassword}
-\title{userconfig_resetpassword - server component}
+\title{userconfig_resetpassword - server component
+reset password of selected user}
 \usage{
-userconfig_resetpassword(input, output, session, UserConfig, config_db)
+userconfig_resetpassword(input, output, session, dM)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -13,13 +14,12 @@ userconfig_resetpassword(input, output, session, UserConfig, config_db)
 
 \item{session}{as required by Shiny modules}
 
-\item{UserConfig}{reactiveval, list of user config}
-
-\item{config_db}{R6 object, access to configuration database}
+\item{dM}{dMeasure R6 object, access to databases, user config}
 }
 \value{
 nothing
 }
 \description{
+userconfig_resetpassword - server component
 reset password of selected user
 }

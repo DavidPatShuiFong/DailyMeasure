@@ -149,11 +149,11 @@ DailyMeasureUI <- function() {
 														 		label = 'Choose configuration file',
 														 		title = "Choose configuration file (must end in '.sqlite')",
 														 		multiple = FALSE),
-														 	# actionButton('choose_configuration_file',
-														 	# 'Choose configuration file', icon('refresh'),
-														 	#              class = 'btn btn-primary'),
-														 	actionButton('create_configuration_file', 'Create configuration file',
-														 							 class = 'btn btn-primary'),
+														 	shinyFiles::shinySaveButton(
+														 	  "create_configuration_file",
+														 	  label = "Create configuration file",
+														 	  title = "Create configuration file (must end in '.sqlite')",
+														 	  filetype = list(sqlite = c('sqlite'))),
 														 	helpText("Choose location of an existing configuration file,
                                       or create a new configuration file")
 														 ))

@@ -12,21 +12,6 @@ Details of these licenses, and copies of those licenses, follow below.
 Some software modified, included or bundled contain licensing details which
 are described in separate files in the "LICENSEdetails" folder.
 
-Inno Setup
-==========
-
-'Inno-Setup' itself is not distributed with "DailyMeasure".
-'Inno-Setup' is used to create an installer which is distributed with "DailyMeasure".
-Details of Inno-Setup's license is described later in the document.
-http://www.jrsoftware.org
-
-Advanced BAT to EXE Converter
-=============================
-
-'Advanced BAT to EXE Converter' is not distributed with "DailyMeasure".
-'Advanced BAT to EXE Converter' is used to create a batch-file which is distributed with "DailyMeasure".
-https://www.battoexeconverter.com/
-
 
 
 MIT License
@@ -55,6 +40,9 @@ https://github.com/jeroen/jsonlite/
 
 magrittr
 https://magrittr.tidyverse.org/
+
+pipeR
+https://github.com/renkun-ken/pipeR
 
 sodium
 https://cran.r-project.org/web/packages/sodium
@@ -93,9 +81,6 @@ other licensing details in LICENSE.shinydashboard
 shinydashboardPlus
 https://github.com/RinteRface/shinydashboardPlus
 other licensing details in LICENSE.shinydashboardplus
-
-lubridate
-https://lubridate.tidyverse.org/
 
 
 GNU Lesser General Public License
@@ -154,9 +139,20 @@ shinyjs
 https://github.com/daattali/shinyjs
 
 
+Inno Setup
+==========
 
+'Inno-Setup' itself is not distributed with "DailyMeasure".
+'Inno-Setup' is used to create an installer which is distributed with "DailyMeasure".
+Details of Inno-Setup's license is described later in the document.
+http://www.jrsoftware.org
 
+Advanced BAT to EXE Converter
+=============================
 
+'Advanced BAT to EXE Converter' is not distributed with "DailyMeasure".
+'Advanced BAT to EXE Converter' is used to create a batch-file which is distributed with "DailyMeasure".
+https://www.battoexeconverter.com/
 
 
 

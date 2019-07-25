@@ -10,7 +10,7 @@
 #'
 #' @return None
 #'
-#' @import shiny tidyverse dbplyr
+#' @import shiny dbplyr
 #' @importFrom shinydashboard menuItem tabItems tabItem
 #'
 #' @export

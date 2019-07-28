@@ -74,8 +74,8 @@ DailyMeasureServer <- function(input, output, session) {
   # only adjust appointment view after dates are 'submitted' using 'submit' button
   shiny::observeEvent(input$update_date, ignoreNULL = FALSE, {
     tryCatch({
-      dM$choose_date(date_from = as.Date(input$date1)) # also update the dMeasure object
-      dM$choose_date(date_to = as.Date(input$date2)) # also update the dMeasure object
+      dM$choose_date(date_from = as.Date(input$date1),
+                     date_to = as.Date(input$date2)) # also update the dMeasure object
     },
     error = function(e) {shinytoastr::toastr_warning(message = e$message,
                                                      position = "bottom-left")})

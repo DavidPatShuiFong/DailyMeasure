@@ -5,4 +5,6 @@
   shiny::addResourcePath('themes',
                          system.file("www/themes", package = "DailyMeasure"))
   # 'themes' referred to in fomantic/semantic CSS
+  # note that 'DailyMeasure' needs to be loads as a library()
+  # e.g. library(DailyMeausre), for these ResourcePaths to be valid
 }

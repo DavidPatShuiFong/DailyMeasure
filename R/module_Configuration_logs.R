@@ -36,7 +36,7 @@ logging_datatableUI <- function(id) {
       solidHeader = FALSE,
       collapsible = TRUE,
       shiny::column(
-        width=12,
+        width = 12,
         shiny::wellPanel(
           textOutput(ns('logDB_file_details'))
           # location of sqlite configuration file
@@ -57,8 +57,26 @@ logging_datatableUI <- function(id) {
                   "or create a new configuration file"))
         )
       )
+    ),
+    shinydashboardPlus::boxPlus(
+      title = "Access logs",
+      width = 12,
+      closable = FALSE,
+      status = "primary",
+      solidHeader = FALSE,
+      collapsible = TRUE,
+      shiny::column(
+        width = 12,
+        shiny::wellPanel(
+          shiny::actionButton(ns("update_logs"), "Update",
+                              shiny::icon("refresh"), class = "btn btn-primary")
+        )
+      ),
+      shiny::column(
+        width = 12,
+        DT::DTOutput(ns("logs_table"))
+      )
     )
-#    DT::DTOutput(ns("logs_table"))
   )
 }
 
@@ -132,7 +150,7 @@ logging_datatable <- function(input, output, session, dM) {
     hidden = TRUE
   )
 
-  observeEvent(input$create_logDB_file, ignoreNULL = TRUE, {
+  shiny::observeEvent(input$create_logDB_file, ignoreNULL = TRUE, {
     if (!is.integer(input$create_logDB_file)) {
       # if input$choose_configuration_file is an integer,
       # it is just the 'click' event on the filechoose button
@@ -158,8 +176,26 @@ logging_datatable <- function(input, output, session, dM) {
     }
   })
 
-#  output$logs_table <- DT::renderDT({
-#    dM$config_db$log_db$conn %>>% dplyr::tbl("logs") %>>% dplyr::collect()
-#  }) %>>% DT::formatRound(columns = c("Duration"), digits = 3)
+  log_dt <- shiny::eventReactive(input$update_logs, ignoreInit = TRUE, {
+    dM$ReadLog
+  })
 
+  output$logs_table <- DT::renderDT({
+    DT::datatable(log_dt(),
+                  fillContainer = TRUE,
+                  extensions = c('Buttons', 'Scroller', 'Responsive'),
+                  options = list(dom = 'frltiBp',
+                                 buttons = list('copyHtml5', 'print', list(
+                                   extend = 'collection',
+                                   buttons = list(
+                                     list(extend = 'csvHtml5', filename = 'DailyMeasureLog'),
+                                     list(extend = 'excel', filename = 'DailyMeasureLog'),
+                                     list(extend = 'pdf', filename = 'DailyMeasureLog')),
+                                   text = 'Download'
+                                 )),
+                                 paging = FALSE,
+                                 scrollY = "60vh")
+                  ) %>>%
+      DT::formatRound(columns = c("Duration"), digits = 3)
+  })
 }

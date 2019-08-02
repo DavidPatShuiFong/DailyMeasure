@@ -266,6 +266,10 @@ DailyMeasureServer <- function(input, output, session) {
   serverconfig_change <- callModule(servers_datatable, "servers_dt", dM)
   # returns $count
 
+  # logging configuration tab
+  loggingconfig_change <- callModule(logging_datatable, "logging_dt", dM)
+  # returns $count
+
   # location configuration tab
   location_list_change <- callModule(locations_datatable, "locations_dt", dM)
 
@@ -286,14 +290,17 @@ DailyMeasureServer <- function(input, output, session) {
       shiny::need(dM$identified_user(), "No user information")
     )
     if ("ServerAdmin" %in% unlist(dM$UserRestrictions()$Restriction)) {
-      # only some users allowed to see/change server settings
+      # only some users allowed to see/change server settings and logging
       if ("ServerAdmin" %in% unlist(dM$identified_user()$Attributes)) {
         shiny::showTab("tab_config", "ServerPanel")
+        shiny::showTab("tab_config", "LoggingPanel")
       } else {
         shiny::hideTab("tab_config", "ServerPanel")
+        shiny::hideTab("tab_config", "LoggingPanel")
       }
     } else {
       shiny::showTab("tab_config", "ServerPanel")
+      shiny::showTab("tab_config", "LoggingPanel")
     }
     if ("UserAdmin" %in% unlist(dM$UserRestrictions()$Restriction)) {
       # only some users allowed to see/change user settings

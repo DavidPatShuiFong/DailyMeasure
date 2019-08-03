@@ -73,11 +73,13 @@ DailyMeasureServer <- function(input, output, session) {
 
   # only adjust appointment view after dates are 'submitted' using 'submit' button
   shiny::observeEvent(input$update_date, ignoreNULL = FALSE, {
-    dM$choose_date(date_from = as.Date(input$date1)) # also update the dMeasure object
+    tryCatch({
+      dM$choose_date(date_from = as.Date(input$date1),
+                     date_to = as.Date(input$date2)) # also update the dMeasure object
+    },
+    error = function(e) {shinytoastr::toastr_warning(message = e$message,
+                                                     position = "bottom-left")})
   }) # initialize on first run, after that only update if 'update' button used
-  shiny::observeEvent(input$update_date, ignoreNULL = FALSE, {
-    dM$choose_date(date_to = as.Date(input$date2)) # also update the dMeasure object
-  })
 
   date_today <- shiny::observeEvent(input$update_date_today, {
     # 'today' button. change date range to today, and click the 'update' button
@@ -264,6 +266,10 @@ DailyMeasureServer <- function(input, output, session) {
   serverconfig_change <- callModule(servers_datatable, "servers_dt", dM)
   # returns $count
 
+  # logging configuration tab
+  loggingconfig_change <- callModule(logging_datatable, "logging_dt", dM)
+  # returns $count
+
   # location configuration tab
   location_list_change <- callModule(locations_datatable, "locations_dt", dM)
 
@@ -284,14 +290,17 @@ DailyMeasureServer <- function(input, output, session) {
       shiny::need(dM$identified_user(), "No user information")
     )
     if ("ServerAdmin" %in% unlist(dM$UserRestrictions()$Restriction)) {
-      # only some users allowed to see/change server settings
+      # only some users allowed to see/change server settings and logging
       if ("ServerAdmin" %in% unlist(dM$identified_user()$Attributes)) {
         shiny::showTab("tab_config", "ServerPanel")
+        shiny::showTab("tab_config", "LoggingPanel")
       } else {
         shiny::hideTab("tab_config", "ServerPanel")
+        shiny::hideTab("tab_config", "LoggingPanel")
       }
     } else {
       shiny::showTab("tab_config", "ServerPanel")
+      shiny::showTab("tab_config", "LoggingPanel")
     }
     if ("UserAdmin" %in% unlist(dM$UserRestrictions()$Restriction)) {
       # only some users allowed to see/change user settings

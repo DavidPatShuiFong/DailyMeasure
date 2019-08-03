@@ -12,69 +12,81 @@
 logging_datatableUI <- function(id) {
   ns <- shiny::NS(id)
 
-
   shiny::tagList(
-    shiny::wellPanel(
-      "Enable logging",
-      shiny::br(), shiny::br(),
+    shiny::fluidPage(
       shiny::fluidRow(
-        shiny::column(width = 3,
-                      shinyWidgets::materialSwitch(
-                        inputId = ns("enable_logging"),
-                        label = "Enable logging",
-                        right = TRUE,
-                        value = FALSE,
-                        status = "primary")),
-        shiny::column(width = 8, "")
-      )
-    ),
-    shinydashboardPlus::boxPlus(
-      title = "Access log database location",
-      width = 12,
-      closable = FALSE,
-      status = "primary",
-      solidHeader = FALSE,
-      collapsible = TRUE,
-      shiny::column(
-        width = 12,
-        shiny::wellPanel(
-          textOutput(ns('logDB_file_details'))
-          # location of sqlite configuration file
-        ),
-        shiny::wellPanel(
-          shinyFiles::shinyFilesButton(
-            id = ns("choose_logDB_file"),
-            label = "Choose log database file",
-            title = "Choose log database file (must end in '.sqlite')",
-            multiple = FALSE),
-          shinyFiles::shinySaveButton(
-            id = ns("create_logDB_file"),
-            label = "Create log database file",
-            title = "Create log database file (must end in '.sqlite')",
-            filetype = list(sqlite = c('sqlite'))),
-          shiny::helpText(
-            paste("Choose location of an existing configuration file",
-                  "or create a new configuration file"))
-        )
-      )
-    ),
-    shinydashboardPlus::boxPlus(
-      title = "Access logs",
-      width = 12,
-      closable = FALSE,
-      status = "primary",
-      solidHeader = FALSE,
-      collapsible = TRUE,
-      shiny::column(
-        width = 12,
-        shiny::wellPanel(
-          shiny::actionButton(ns("update_logs"), "Update",
-                              shiny::icon("refresh"), class = "btn btn-primary")
+        shinydashboard::tabBox(
+          title = "Configuration",
+          id = "log_config",
+          width = 9,
+          shiny::tabPanel(
+            "Logs",
+            shiny::wellPanel(
+              shiny::br(),
+              shiny::fluidRow(
+                shiny::column(1),
+                shiny::column(11,
+                              shiny::fluidRow(
+                                shinyWidgets::materialSwitch(
+                                  inputId = ns("enable_logging"),
+                                  label = "Enable logging",
+                                  right = TRUE,
+                                  value = FALSE,
+                                  status = "primary")
+                              )
+                )
+              )
+            )
+          ),
+          shiny::tabPanel(
+            "Log file configuration",
+            shiny::fluidRow(
+              shiny::column(
+                width = 4,
+                shiny::wellPanel(
+                  shiny::br(),
+                  textOutput(ns('logDB_file_details')),
+                  # location of sqlite configuration file
+                  shiny::br()
+                )),
+              shiny::column(
+                width = 8,
+                shiny::wellPanel(
+                  shinyFiles::shinyFilesButton(
+                    id = ns("choose_logDB_file"),
+                    label = "Choose log database file",
+                    title = "Choose log database file (must end in '.sqlite')",
+                    multiple = FALSE),
+                  shinyFiles::shinySaveButton(
+                    id = ns("create_logDB_file"),
+                    label = "Create log database file",
+                    title = "Create log database file (must end in '.sqlite')",
+                    filetype = list(sqlite = c('sqlite'))),
+                  shiny::helpText(
+                    paste("Choose location of an existing configuration file",
+                          "or create a new configuration file"))
+                )
+              )
+            )
+          )
         )
       ),
-      shiny::column(
-        width = 12,
-        DT::DTOutput(ns("logs_table"))
+      shiny::fluidRow(
+        shinydashboardPlus::boxPlus(
+          title = "Access logs",
+          width = 12,
+          closable = FALSE,
+          status = "primary",
+          solidHeader = FALSE,
+          collapsible = TRUE,
+          shiny::column(
+            width = 12,
+            shiny::wellPanel(
+              shiny::actionButton(ns("update_logs"), "Update and Show",
+                                  shiny::icon("refresh"), class = "btn btn-primary")
+            )
+          )
+        )
       )
     )
   )
@@ -102,13 +114,40 @@ logging_datatable <- function(input, output, session, dM) {
   })
 
   shiny::observeEvent(input$enable_logging, ignoreInit = TRUE, {
-    dM$Log <- input$enable_logging
+    tryCatch(dM$Log <- input$enable_logging,
+             warning = function(w) {
+               shinytoastr::toastr_warning(message = w$message,
+                                           position = "bottom-left")
+             })
     # try to change logging status
     if (dM$Log != input$enable_logging) {
       # failure to change logging status
       shinyWidgets::updateMaterialSwitch(
         session, "enable_logging",
         dM$Log)
+    }
+  })
+
+  shiny::observeEvent(dM$LogFileR(), {
+    if (is.null(dM$LogFileR()) || dM$LogFileR() == "") {
+      # if an empty string, then cannot enable logging
+      # or view log file
+      # shinyjs::disable("enable_logging") - has it's own warning tryCatch
+      shinyjs::disable("update_logs")
+    } else {
+      # shinyjs::enable("enable_logging")
+      shinyjs::enable("update_logs")
+    }
+  })
+
+  shiny::observeEvent(dM$LogR(), {
+    if (is.null(dM$LogR()) || dM$LogR() == FALSE) {
+      # can only choose/create log file if logging currently disabled
+      shinyjs::enable("choose_logDB_file")
+      shinyjs::enable("create_logDB_file")
+    } else {
+      shinyjs::disable("choose_logDB_file")
+      shinyjs::disable("create_logDB_file")
     }
   })
 
@@ -164,9 +203,9 @@ logging_datatable <- function(input, output, session, dM) {
           dM$Log <- TRUE # turn logging on, then off, to create logging file
           dM$Log <- FALSE},
           warning = function(w) {
-          shinytoastr::toastr_warning(message = w,
-                                      position = "bottom-left")
-        })
+            shinytoastr::toastr_warning(message = w$message,
+                                        position = "bottom-left")
+          })
       } else {
         shinytoastr::toastr_warning(
           message = paste("Unable to create LogFile when logging is turned on.",
@@ -176,26 +215,34 @@ logging_datatable <- function(input, output, session, dM) {
     }
   })
 
-  log_dt <- shiny::eventReactive(input$update_logs, ignoreInit = TRUE, {
-    dM$ReadLog
-  })
+  shiny::observeEvent(input$update_logs, ignoreInit = TRUE, {
+    tryCatch(logs <- dM$ReadLog,
+             warning = function(w) {
+               shinytoastr::toastr_warning(message = w$message,
+                                           position = "bottom-left")
+             })
 
-  output$logs_table <- DT::renderDT({
-    DT::datatable(log_dt(),
-                  fillContainer = TRUE,
-                  extensions = c('Buttons', 'Scroller', 'Responsive'),
-                  options = list(dom = 'frltiBp',
-                                 buttons = list('copyHtml5', 'print', list(
-                                   extend = 'collection',
-                                   buttons = list(
-                                     list(extend = 'csvHtml5', filename = 'DailyMeasureLog'),
-                                     list(extend = 'excel', filename = 'DailyMeasureLog'),
-                                     list(extend = 'pdf', filename = 'DailyMeasureLog')),
-                                   text = 'Download'
-                                 )),
-                                 paging = FALSE,
-                                 scrollY = "60vh")
-                  ) %>>%
-      DT::formatRound(columns = c("Duration"), digits = 3)
+    if (!is.null(logs)) {
+      shiny::showModal(shiny::modalDialog(
+        title = "Logs",
+        size = c("l"),
+        DT::renderDT(DT::datatable(logs,
+                      fillContainer = TRUE,
+                      extensions = c('Buttons', 'Scroller', 'Responsive'),
+                      options = list(dom = 'frltiBp',
+                                     buttons = list('copyHtml5', 'print', list(
+                                       extend = 'collection',
+                                       buttons = list(
+                                         list(extend = 'csvHtml5', filename = 'DailyMeasureLog'),
+                                         list(extend = 'excel', filename = 'DailyMeasureLog'),
+                                         list(extend = 'pdf', filename = 'DailyMeasureLog')),
+                                       text = 'Download'
+                                     )),
+                                     paging = FALSE,
+                                     scrollY = "60vh")
+        ) %>>%
+          DT::formatRound(columns = c("Duration"), digits = 3))
+      ))
+    }
   })
 }

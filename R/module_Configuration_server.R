@@ -16,6 +16,45 @@ servers_datatableUI <- function(id) {
     shiny::wellPanel(
       shiny::uiOutput(ns("selection"))
     ),
+    shiny::fluidRow(
+      shiny::div(style = "display: inline-block; vertical-align:top",
+                 shiny::h3("Server descriptions")),
+      shiny::div(style = "display: inline-block; vertical-align:-100%",
+                 # '-50%' still results in a '+50%' compraed to the h3 title!
+                 # '-100%' results in a dropdown widget roughly in line with the title
+                 shinyWidgets::dropdown(
+                   shiny::tags$h3("Server descriptions"),
+                   shiny::br(),
+                   shiny::tags$h4("Address"),
+                   "This can be found in Best Practice through Setup-Configuration-Database menu.",
+                   "Click 'Find Servers', which will show the available Best Practice servers (usually just one!).",
+                   "Add '\\BPSINSTANCE' to the server name you are using.",
+                   shiny::br(),
+                   "For example, if your server name is 'CLINICSERVERPC', then the address is 'CLINICSERVERPC\\BPSINSTANCE'.",
+                   "This is the same as would be found as 'Server Name' in Microsoft's SQL Server Management Studio.",
+                   shiny::br(),
+                   shiny::tags$h4("Database"),
+                   "This will usually be 'BPSPatients'.",
+                   "The samples database is 'BPSSamples'",
+                   shiny::br(),
+                   shiny::tags$h4("UserID"),
+                   "This should always be 'bpsrawdata'.",
+                   shiny::br(),
+                   shiny::tags$h4("Password"),
+                   "This is set in Best Practice through the Setup-Configuration-Database menu.",
+                   shiny::br(),
+                   status = "primary",
+                   size = "xs",
+                   width = "600px",
+                   icon = icon("question-circle"),
+                   animate = shinyWidgets::animateOptions(
+                     enter = shinyWidgets::animations$fading_entrances$fadeIn,
+                     exit = shinyWidgets::animations$fading_exits$fadeOut),
+                   tooltip = shinyWidgets::tooltipOptions(placement = "top",
+                                                          title = "Server description details")
+                 )
+      )
+    ),
     DTedit::dteditUI(ns("servers"))
   )
 }

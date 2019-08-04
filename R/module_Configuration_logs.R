@@ -45,6 +45,7 @@ logging_datatableUI <- function(id) {
                 width = 4,
                 shiny::wellPanel(
                   shiny::br(),
+                  "Log database file:",
                   textOutput(ns('logDB_file_details')),
                   # location of sqlite configuration file
                   shiny::br()
@@ -64,7 +65,9 @@ logging_datatableUI <- function(id) {
                     filetype = list(sqlite = c('sqlite'))),
                   shiny::helpText(
                     paste("Choose location of an existing configuration file",
-                          "or create a new configuration file"))
+                          "or create a new configuration file. Can only be",
+                          "chosen/created if logging is turned off.")
+                  )
                 )
               )
             )
@@ -151,8 +154,8 @@ logging_datatable <- function(input, output, session, dM) {
     }
   })
 
-  output$logDB_file_details <- renderText({
-    paste('Log file location: "', dM$LogFileR(), '"')
+  output$logDB_file_details <- shiny::renderText({
+    paste('"', dM$LogFileR(), '"')
   })
 
   volumes <- c(shinyFiles::getVolumes()(), base = '.', home = Sys.getenv("USERPROFILE"))
@@ -227,19 +230,19 @@ logging_datatable <- function(input, output, session, dM) {
         title = "Logs",
         size = c("l"),
         DT::renderDT(DT::datatable(logs,
-                      fillContainer = TRUE,
-                      extensions = c('Buttons', 'Scroller', 'Responsive'),
-                      options = list(dom = 'frltiBp',
-                                     buttons = list('copyHtml5', 'print', list(
-                                       extend = 'collection',
-                                       buttons = list(
-                                         list(extend = 'csvHtml5', filename = 'DailyMeasureLog'),
-                                         list(extend = 'excel', filename = 'DailyMeasureLog'),
-                                         list(extend = 'pdf', filename = 'DailyMeasureLog')),
-                                       text = 'Download'
-                                     )),
-                                     paging = FALSE,
-                                     scrollY = "60vh")
+                                   fillContainer = TRUE,
+                                   extensions = c('Buttons', 'Scroller', 'Responsive'),
+                                   options = list(dom = 'frltiBp',
+                                                  buttons = list('copyHtml5', 'print', list(
+                                                    extend = 'collection',
+                                                    buttons = list(
+                                                      list(extend = 'csvHtml5', filename = 'DailyMeasureLog'),
+                                                      list(extend = 'excel', filename = 'DailyMeasureLog'),
+                                                      list(extend = 'pdf', filename = 'DailyMeasureLog')),
+                                                    text = 'Download'
+                                                  )),
+                                                  paging = FALSE,
+                                                  scrollY = "60vh")
         ) %>>%
           DT::formatRound(columns = c("Duration"), digits = 3))
       ))

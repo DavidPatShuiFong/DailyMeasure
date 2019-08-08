@@ -184,6 +184,9 @@ DailyMeasureServer <- function(input, output, session) {
   # chronic disease management table
   cdm_table_results <- callModule(cdm_datatable, "cdm_dt", dM)
 
+  # administration and result management tab
+  admin_table_results <- callModule(administration, "admin_dt", dM)
+
   # appointment list
 
   callModule(appointments_datatable, "appointments_dt", dM)

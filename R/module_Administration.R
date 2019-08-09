@@ -33,7 +33,10 @@ admin_result_datatableUI <- function(id) {
                       label = "<i class=\"fas fa-print\"></i> </i><i class=\"far fa-copy\"></i>  Print and Copy View",
                       labelWidth = "100%")
       ),
-      shiny::column(2, offset = 6, # note that total 'column' width = 12
+      shiny::column(2, offset = 4, # note that total 'column' width = 12
+                    shiny::uiOutput(ns("actioned_choice"))
+      ),
+      shiny::column(2, # note that total 'column' width = 12
                     shiny::uiOutput(ns("action_choice"))
       )
     ),
@@ -102,6 +105,40 @@ admin_result_datatable <- function(input, output, session, dM) {
     dM$filter_incoming_Action <- input$action_chosen
   })
 
+  output$actioned_choice <- renderUI({
+    shinyWidgets::dropdown(
+      input_id = "actioned_choice_dropdown",
+      icon = icon("gear"),
+      label = "Actioned status",
+      shinyWidgets::radioGroupButtons(
+        inputId = ns("actioned_chosen"), label = "Actioned status",
+        choices = c("Any status", "Not actioned", "Actioned", "Actioned before..."),
+        status = "primary",
+      ),
+      shiny::dateInput(ns("actioned_date"), label = "Actioned before:",
+                       format= "D dd/M/yyyy",
+                       min = Sys.Date()-6000, max = Sys.Date(),
+                       value = Sys.Date())
+    )
+  })
+  observeEvent(input$actioned_chosen, {
+    if (input$actioned_chosen == "Actioned before...") {
+      shinyjs::enable("actioned_date")
+      dM$filter_incoming_Actioned <- as.Date(input$actioned_date)
+    } else {
+      shinyjs::disable("actioned_date")
+      switch(input$actioned_chosen,
+             "Any status" = {dM$filter_incoming_Actioned <- NULL},
+             "Not actioned" = {dM$filter_incoming_Actioned <- FALSE},
+             "Actioned" = {dM$filter_incoming_Actioned <- TRUE})
+    }
+  })
+  observeEvent(input$actioned_date, {
+    if (input$actioned_chosen == "Actioned before...") {
+      dM$filter_incoming_Actioned <- as.Date(input$actioned_date)
+    }
+  })
+
   results <-
     shiny::eventReactive(
       c(dM$correspondence_filtered_namedR(),
@@ -138,19 +175,18 @@ admin_result_datatable <- function(input, output, session, dM) {
       } else {
         # fomantic/semantic tag view
         datatable_styled(results() %>>%
-                           dplyr::select(Patient, RecordNo, DOB, Age,
-                                         TestName, Reported, Checked, CheckedBy,
+                           dplyr::select(patienttag, RecordNo,
+                                         testtag, Checked, CheckedBy,
                                          Notation, Action, Actioned, Comment, labeltag),
-                         colnames = c('Patient', 'RecordNo', 'DOB', 'Age',
-                                      'Report',
-                                      'Reported', 'Checked', 'Checked By',
+                         colnames = c('Patient', 'RecordNo',
+                                      'Report', 'Checked', 'Checked By',
                                       'Notation', 'Action', 'Actioned', 'Comment',
                                       'Appointments'),
                          dom = 'frltip', # no copy/print buttons
                          scrollX = '100%', # allow horizontal scroll-bar
                          extensions = c('Buttons', 'Scroller'),
                          # no 'Responsive' column collapsing
-                         escape = c(12))# only interpret HTML for last column
+                         escape = c(1, 3, 10))# only interpret HTML for last column
       }
     }
   })

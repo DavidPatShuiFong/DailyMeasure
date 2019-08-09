@@ -102,9 +102,11 @@ datatable_styled <- function(data, fillContainer = TRUE,
 														 initComplete = DT::JS(semantic_popupJS),
 														 paging = FALSE,
 														 scrollY = "60vh",
+														 scrollX = FALSE,
+														 fixedColumns = FALSE,
 														 # 60% of window height, otherwise will be just a few rows in size
 														 ...) {
 	options <- list(dom = dom, buttons = buttons, initComplete = initComplete,
-									paging = paging, scrollY = scrollY)
+									paging = paging, scrollY = scrollY, scrollX = scrollX, fixedColumns = fixedColumns)
 	DT::datatable(data, fillContainer = fillContainer, extensions = extensions, options = options, ... )
 }

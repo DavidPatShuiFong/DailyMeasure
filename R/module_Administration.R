@@ -15,6 +15,7 @@ administration_UI <- function(id) {
       shiny::tabPanel(
         title = "ResultManagement",
         width = 12,
+        shiny::br(),
         admin_result_datatableUI(ns("result_management"))
       )
     )
@@ -146,7 +147,10 @@ admin_result_datatable <- function(input, output, session, dM) {
                                       'Notation', 'Action', 'Actioned', 'Comment',
                                       'Appointments'),
                          dom = 'frltip', # no copy/print buttons
-                         escape = c(12)) # only interpret HTML for last column
+                         scrollX = '100%', # allow horizontal scroll-bar
+                         extensions = c('Buttons', 'Scroller'),
+                         # no 'Responsive' column collapsing
+                         escape = c(12))# only interpret HTML for last column
       }
     }
   })

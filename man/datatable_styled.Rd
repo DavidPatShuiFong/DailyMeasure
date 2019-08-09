@@ -11,7 +11,7 @@ datatable_styled(data, fillContainer = TRUE, extensions = c("Buttons",
   list(extend = "excel", filename = "DailyMeasure"), list(extend = "pdf",
   filename = "DailyMeasure")), text = "Download")),
   initComplete = DT::JS(semantic_popupJS), paging = FALSE,
-  scrollY = "60vh", ...)
+  scrollY = "60vh", scrollX = FALSE, fixedColumns = FALSE, ...)
 }
 \arguments{
 \item{initComplete}{by default, execute JS code to enable semantic popups}

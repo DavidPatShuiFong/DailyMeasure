@@ -11,9 +11,13 @@ administration_UI <- function(id) {
   ns <- shiny::NS(id)
 
   shiny::tagList(
-    shiny::tabsetPanel(
+    shinydashboard::tabBox(
+      id = "tab_admin",
+      title = "Administration",
+      width = 12,
+      height = "85vh",
       shiny::tabPanel(
-        title = "ResultManagement",
+        title = "Result Management",
         width = 12,
         shiny::br(),
         admin_result_datatableUI(ns("result_management"))
@@ -30,8 +34,11 @@ admin_result_datatableUI <- function(id) {
       shiny::column(4,
                     shinyWidgets::switchInput(
                       inputId = ns("printcopy_view"),
-                      label = "<i class=\"fas fa-print\"></i> </i><i class=\"far fa-copy\"></i>  Print and Copy View",
-                      labelWidth = "100%")
+                      label = paste("<i class=\"fas fa-print\"></i>",
+                                    "</i><i class=\"far fa-copy\"></i>",
+                                    " Print and Copy"),
+                      labelWidth = "100%",
+                      width = "100%")
       ),
       shiny::column(2, offset = 4, # note that total 'column' width = 12
                     shiny::uiOutput(ns("actioned_choice"))
@@ -182,9 +189,9 @@ admin_result_datatable <- function(input, output, session, dM) {
                                       'Report', 'Checked', 'Checked By',
                                       'Notation', 'Action', 'Actioned', 'Comment',
                                       'Appointments'),
-                         dom = 'frltip', # no copy/print buttons
-                         scrollX = '100%', # allow horizontal scroll-bar
-                         extensions = c('Buttons', 'Scroller'),
+                         buttons = list('colvis'), # no copy/print buttons
+                         #scrollX = '100%', # allow horizontal scroll-bar
+                         #extensions = c('Buttons', 'Scroller'),
                          # no 'Responsive' column collapsing
                          escape = c(1, 3, 10))# only interpret HTML for last column
       }

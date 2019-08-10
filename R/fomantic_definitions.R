@@ -91,7 +91,7 @@ semantic_popupJS <- c("window.onload = function() {$('.ui.button') .popup({on: '
 datatable_styled <- function(data, fillContainer = TRUE,
 														 extensions = c('Buttons', 'Scroller', 'Responsive'),
 														 dom = 'frltiBp',
-														 buttons = list('copyHtml5', 'print', list(
+														 buttons = list('colvis', 'copyHtml5', 'print', list(
 														   extend = 'collection',
 														   buttons = list(
 														     list(extend = 'csvHtml5', filename = 'DailyMeasure'),
@@ -99,14 +99,22 @@ datatable_styled <- function(data, fillContainer = TRUE,
 														     list(extend = 'pdf', filename = 'DailyMeasure')),
 														   text = 'Download'
 														 )),
-														 initComplete = DT::JS(semantic_popupJS),
+														 # initComplete = DT::JS(semantic_popupJS),
+														 drawCallback = DT::JS(semantic_popupJS),
+														 `responsive-resize` = DT::JS(semantic_popupJS),
+														 `responsive-display` = DT::JS(paste(
+														 "function ( e, datatable, row, showHide, update )",
+														 "{console.log( 'Details for row '+row.index()+' '",
+														 "+(showHide ? 'shown' : 'hidden'))}")),
+														 # responsive-display doesn't seem to work
 														 paging = FALSE,
 														 scrollY = "60vh",
+														 # 60% of window height, otherwise will be just a few rows in size
 														 scrollX = FALSE,
 														 fixedColumns = FALSE,
-														 # 60% of window height, otherwise will be just a few rows in size
 														 ...) {
-	options <- list(dom = dom, buttons = buttons, initComplete = initComplete,
-									paging = paging, scrollY = scrollY, scrollX = scrollX, fixedColumns = fixedColumns)
+	options <- list(dom = dom, buttons = buttons, drawCallback = drawCallback,
+									paging = paging, scrollY = scrollY, scrollX = scrollX, fixedColumns = fixedColumns,
+									`responsive-resize` = `responsive-resize`, `responsive-display` = `responsive-display`)
 	DT::datatable(data, fillContainer = fillContainer, extensions = extensions, options = options, ... )
 }

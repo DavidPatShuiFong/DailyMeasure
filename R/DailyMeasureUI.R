@@ -148,8 +148,8 @@ DailyMeasureUI <- function() {
         ),
         shinydashboard::tabItem(
           tabName = "administration",
-          shiny::fluidRow(column(width = 12, align = "center",
-                                 h2("Administration"))),
+          #shiny::fluidRow(column(width = 12, align = "center",
+          #                       h2("Administration"))),
           shiny::fluidRow(column(width = 12,
                                  administration_UI("admin_dt")))
         ),

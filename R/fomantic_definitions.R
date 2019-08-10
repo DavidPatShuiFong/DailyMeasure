@@ -11,27 +11,32 @@
 #'
 #' @return vector of semantic/fomantic tags
 semantic_tag <- function(tag, colour="", popuptext = NA, popuphtml = NA) {
-	#
-	paste0('<span class="huge ', colour, ' ui tag label"',
-				 ifelse(!is.na(popuphtml),
-				 			 paste0('data-variation="wide" data-position = "left center" data-html="',
-				 			 			 popuphtml,
-				 			 			 '"', sep=""),
-				 			 # 'data-variation' is only available in the
-				 			 # fomantic version of semantic.ui
-				 			 # as of writing, semantic.ui does not allow
-				 			 # variation in text-size of javascript-free tag
-				 			 ''),
-				 '> ',
-				 ifelse(!is.na(popuptext),
-				 			 paste0('<span data-tooltip = "',
-				 			 			 popuptext,
-				 			 			 '" data-variation = "wide huge" data-position = "left center">', sep=""),
-				 			 ''),
-				 tag,
-				 ifelse(!is.na(popuptext), '</span>', ''),
-				 ' </span>', sep = "")
-	# paste0 is vectorized version of 'paste'
+  #
+  paste0('<span class="huge ', colour, ' ui tag label"',
+         ifelse(!is.na(popuphtml),
+                paste0('data-variation="wide" data-position = "left center"',
+                       'data-htmltagX="', # this is a 'dummy' attribute
+                       # to help datatables order this column alphabetically!
+                       tag, # will order this column alphabetically by 'tag'
+                       '"',
+                       'data-html="',
+                       popuphtml,
+                       '"', sep=""),
+                # 'data-variation' is only available in the
+                # fomantic version of semantic.ui
+                # as of writing, semantic.ui does not allow
+                # variation in text-size of javascript-free tag
+                ''),
+         '> ',
+         ifelse(!is.na(popuptext),
+                paste0('<span data-tooltip = "',
+                       popuptext,
+                       '" data-variation = "wide huge" data-position = "left center">', sep=""),
+                ''),
+         tag,
+         ifelse(!is.na(popuptext), '</span>', ''),
+         ' </span>', sep = "")
+  # paste0 is vectorized version of 'paste'
 }
 
 #' Create semantic/fomantic buttons with attached tooltips (text and HTML)
@@ -45,26 +50,26 @@ semantic_tag <- function(tag, colour="", popuptext = NA, popuphtml = NA) {
 #'
 #' @return vector of semantic/fomantic buttons
 semantic_button <- function(button, colour="", popuptext = NA, popuphtml = NA) {
-	paste0('<span class="huge ', colour, ' ui button"',
-				 ifelse(!is.na(popuphtml),
-				 			 paste0('data-variation="wide" data-position = "left center" data-html="',
-				 			 			 popuphtml,
-				 			 			 '"', sep=""),
-				 			 # 'data-variation' is only available
-				 			 # in the fomantic version of semantic.ui
-				 			 # as of writing, semantic.ui does not allow variation
-				 			 # in text-size of javascript-free tags
-				 			 ''),
-				 '> ',
-				 ifelse(!is.na(popuptext),
-				 			 paste0('<span data-tooltip = "',
-				 			 			 popuptext,
-				 			 			 '" data-variation = "wide huge" data-position = "left center">', sep=""),
-				 			 ''),
-				 button,
-				 ifelse(!is.na(popuptext), '</span>', ''),
-				 ' </span>', sep = "")
-	# paste0 is vectorized version of 'paste'
+  paste0('<span class="huge ', colour, ' ui button"',
+         ifelse(!is.na(popuphtml),
+                paste0('data-variation="wide" data-position = "left center" data-html="',
+                       popuphtml,
+                       '"', sep=""),
+                # 'data-variation' is only available
+                # in the fomantic version of semantic.ui
+                # as of writing, semantic.ui does not allow variation
+                # in text-size of javascript-free tags
+                ''),
+         '> ',
+         ifelse(!is.na(popuptext),
+                paste0('<span data-tooltip = "',
+                       popuptext,
+                       '" data-variation = "wide huge" data-position = "left center">', sep=""),
+                ''),
+         button,
+         ifelse(!is.na(popuptext), '</span>', ''),
+         ' </span>', sep = "")
+  # paste0 is vectorized version of 'paste'
 }
 
 ## datatables functions and definitions
@@ -89,22 +94,32 @@ semantic_popupJS <- c("window.onload = function() {$('.ui.button') .popup({on: '
 #'
 #' @return DT datatable object
 datatable_styled <- function(data, fillContainer = TRUE,
-														 extensions = c('Buttons', 'Scroller', 'Responsive'),
-														 dom = 'frltiBp',
-														 buttons = list('copyHtml5', 'print', list(
-														   extend = 'collection',
-														   buttons = list(
-														     list(extend = 'csvHtml5', filename = 'DailyMeasure'),
-														     list(extend = 'excel', filename = 'DailyMeasure'),
-														     list(extend = 'pdf', filename = 'DailyMeasure')),
-														   text = 'Download'
-														 )),
-														 initComplete = DT::JS(semantic_popupJS),
-														 paging = FALSE,
-														 scrollY = "60vh",
-														 # 60% of window height, otherwise will be just a few rows in size
-														 ...) {
-	options <- list(dom = dom, buttons = buttons, initComplete = initComplete,
-									paging = paging, scrollY = scrollY)
-	DT::datatable(data, fillContainer = fillContainer, extensions = extensions, options = options, ... )
+                             extensions = c('Buttons', 'Scroller', 'Responsive'),
+                             dom = 'frltiBp',
+                             buttons = list('colvis', 'copyHtml5', 'print', list(
+                               extend = 'collection',
+                               buttons = list(
+                                 list(extend = 'csvHtml5', filename = 'DailyMeasure'),
+                                 list(extend = 'excel', filename = 'DailyMeasure'),
+                                 list(extend = 'pdf', filename = 'DailyMeasure')),
+                               text = 'Download'
+                             )),
+                             # initComplete = DT::JS(semantic_popupJS),
+                             drawCallback = DT::JS(semantic_popupJS),
+                             `responsive-resize` = DT::JS(semantic_popupJS),
+                             `responsive-display` = DT::JS(paste(
+                               "function ( e, datatable, row, showHide, update )",
+                               "{console.log( 'Details for row '+row.index()+' '",
+                               "+(showHide ? 'shown' : 'hidden'))}")),
+                             # responsive-display doesn't seem to work
+                             paging = FALSE,
+                             scrollY = "60vh",
+                             # 60% of window height, otherwise will be just a few rows in size
+                             scrollX = FALSE,
+                             fixedColumns = FALSE,
+                             ...) {
+  options <- list(dom = dom, buttons = buttons, drawCallback = drawCallback,
+                  paging = paging, scrollY = scrollY, scrollX = scrollX, fixedColumns = fixedColumns,
+                  `responsive-resize` = `responsive-resize`, `responsive-display` = `responsive-display`)
+  DT::datatable(data, fillContainer = fillContainer, extensions = extensions, options = options, ... )
 }

@@ -64,5 +64,6 @@ Collate:
     'module_Immunization.R'
     'module_Appointments.R'
     'DailyMeasureUI.R'
+    'module_Administration.R'
     'module_Configuration_logs.R'
     'zzz.R'

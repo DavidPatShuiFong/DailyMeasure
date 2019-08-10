@@ -87,6 +87,49 @@ DailyMeasureUI <- function() {
                           shiny::actionButton('update_date_today', 'Today',
                                               shiny::icon('calendar'), class = 'btn btn-info'))
           # manually change date range to 'today'
+        )),
+      shinydashboardPlus::rightSidebarTabContent(
+        id = 3,
+        title = "Contact details",
+        icon = "handshake",
+        shiny::wellPanel(
+          shinyWidgets::pickerInput(
+            inputId = "contact_types",
+            label = "Contact types",
+            choices = c("Appointments", "Visits", "Services (billing)"),
+            selected = c("Appointments", "Visits", "Services (billing)"),
+            options = list(style = "btn-primary",
+                           `actions-box` = TRUE),
+            multiple = TRUE
+          )
+        ),
+        shiny::wellPanel(
+          shinyWidgets::pickerInput(
+            inputId = "appointment_types_chosen",
+            label = "Appointment types shown",
+            choices = c("Booked", "Waiting", "With doctor",
+                        "At billing", "Completed"),
+            selected = c("With doctor", "At billing", "With doctor"),
+            # all 'completed' choices initially selected
+            options = list(style = "btn-primary",
+                           `actions-box` = TRUE),
+            multiple = TRUE),
+          shinyWidgets::pickerInput(
+            inputId = "visit_types_chosen",
+            label = "Visit types shown",
+            choices = c("Surgery", "Home", "Non Visit", "Hospital",
+                        "RACF", "Telephone",
+                        "SMS", "Email", "Locum Service", "Out of Office",
+                        "Other", "Hostel",
+                        "Telehealth"),
+            selected = c("Surgery", "Home", "Hospital",
+                         "RACF", "Locum Service", "Out of Office",
+                         "Hostel", "Telehealth"),
+            # consult choices initially selected
+            options = list(style = "btn-primary",
+                           `actions-box` = TRUE),
+            multiple = TRUE
+          )
         )
       )
     ),

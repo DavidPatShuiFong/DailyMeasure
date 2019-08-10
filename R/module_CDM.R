@@ -15,8 +15,11 @@ cdm_datatableUI <- function(id) {
       shiny::column(4,
                     shinyWidgets::switchInput(
                       inputId = ns("printcopy_view"),
-                      label = "<i class=\"fas fa-print\"></i> </i><i class=\"far fa-copy\"></i>  Print and Copy View",
-                      labelWidth = "100%")
+                      label = paste("<i class=\"fas fa-print\"></i>",
+                                    "<i class=\"far fa-copy\"></i>",
+                                    " Print and Copy View"),
+                      labelWidth = "12em",
+                      width = "20em")
       ),
       shiny::column(2, offset = 6, # note that total 'column' width = 12
                     shiny::uiOutput(ns("cdm_item_choice"))
@@ -120,7 +123,7 @@ cdm_datatable <- function(input, output, session, dM) {
                                          AppointmentTime, Provider, cdm),
                          colnames = c('Patient', 'Appointment Date', 'Appointment Time',
                                       'Provider', 'CDM items'),
-                         dom = 'frltip', # no copy/print buttons
+                         buttons = list('colvis'), # no copy/print buttons
                          escape = c(5)) # only interpret HTML for last column
       }
     }

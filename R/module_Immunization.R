@@ -12,13 +12,16 @@ vax_datatableUI <- function(id) {
 
   shiny::tagList(
     shiny::fluidRow(
-      shiny::column(4,
+      shiny::column(5,
                     shinyWidgets::switchInput(
                       inputId = ns("printcopy_view"),
-                      label = "<i class=\"fas fa-print\"></i> </i><i class=\"far fa-copy\"></i>  Print and Copy View",
-                      labelWidth = "100%")
+                      label = paste("<i class=\"fas fa-print\"></i>",
+                                    "<i class=\"far fa-copy\"></i>",
+                                    " Print and Copy View"),
+                      labelWidth = "12em",
+                      width = "20em")
       ),
-      shiny::column(2, offset = 6, # note that total 'column' width = 12
+      shiny::column(2, offset = 5, # note that total 'column' width = 12
                     shiny::uiOutput(ns("vax_item_choice"))
       )
     ),
@@ -133,7 +136,7 @@ vax_datatable <- function(input, output, session, dM) {
                          dplyr::select(Patient, AppointmentDate, AppointmentTime,
                                        Provider, DOB, Age, vaxtag),
                        escape = c(7),
-                       dom = 'frltip', # no copy/print buttons
+                       buttons = list('colvis'), # no copy/print buttons
                        colnames = c('Vaccination' = 'vaxtag'))
     }
   })

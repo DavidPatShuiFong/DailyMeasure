@@ -35,17 +35,22 @@ admin_result_datatableUI <- function(id) {
                     shinyWidgets::switchInput(
                       inputId = ns("printcopy_view"),
                       label = paste("<i class=\"fas fa-print\"></i>",
-                                    "</i><i class=\"far fa-copy\"></i>",
-                                    " Print and Copy"),
-                      labelWidth = "100%",
-                      width = "100%")
-      ),
-      shiny::column(2, offset = 4, # note that total 'column' width = 12
-                    shiny::uiOutput(ns("actioned_choice"))
-      ),
+                                    "<i class=\"far fa-copy\"></i>",
+                                    " Print and Copy View"),
+                      labelWidth = "12em",
+                      width = "20em")),
+      shiny::column(2, offset = 2, # note that total 'column' width = 12
+                    shinyWidgets::checkboxGroupButtons(
+                      inputId = ns("ignorePast_appt"),
+                      checkIcon = list(yes = shiny::icon("calendar-times"),
+                                       no = shiny::icon("calendar-alt")),
+                      choices = c("Ignore Past Appointments"),
+                      status = "primary",
+                      width = "30em")),
+      shiny::column(2,
+                    shiny::uiOutput(ns("actioned_choice"))),
       shiny::column(2, # note that total 'column' width = 12
-                    shiny::uiOutput(ns("action_choice"))
-      )
+                    shiny::uiOutput(ns("action_choice")))
     ),
     shinycssloaders::withSpinner(
       DT::DTOutput(ns("result_table")),
@@ -146,6 +151,11 @@ admin_result_datatable <- function(input, output, session, dM) {
     }
   })
 
+  observeEvent(input$ignorePast_appt, ignoreNULL = FALSE, {
+    # if selected, will filter out appointments older than current date
+    dM$filter_incoming_ignorePast <- ("Ignore Past Appointments" %in% input$ignorePast_appt)
+  })
+
   results <-
     shiny::eventReactive(
       c(dM$correspondence_filtered_namedR(),
@@ -190,8 +200,8 @@ admin_result_datatable <- function(input, output, session, dM) {
                                       'Notation', 'Action', 'Actioned', 'Comment',
                                       'Appointments'),
                          buttons = list('colvis'), # no copy/print buttons
-                         #scrollX = '100%', # allow horizontal scroll-bar
-                         #extensions = c('Buttons', 'Scroller'),
+                         scrollX = '100%', # allow horizontal scroll-bar
+                         extensions = c('Buttons', 'Scroller'),
                          # no 'Responsive' column collapsing
                          escape = c(1, 3, 10))# only interpret HTML for last column
       }

@@ -35,7 +35,7 @@ DailyMeasureUI <- function() {
         shinydashboard::menuItem("CDM items",
                                  tabName = "cdm", icon = shiny::icon("file-medical-alt")),
         shinydashboard::menuItem("PIP Quality Improvement",
-                                 tabName = "qim", icon = shiny::icon("file-medical-alt")),
+                                 tabName = "qim", icon = shiny::icon("chart-line")),
         shinydashboard::menuItem("Administration",
                                  tabName = "administration", icon = shiny::icon("microscope")),
         shinydashboard::menuItem("Configuration",

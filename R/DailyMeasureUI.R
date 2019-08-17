@@ -34,6 +34,8 @@ DailyMeasureUI <- function() {
                                  tabName = "billings", icon = shiny::icon("receipt")),
         shinydashboard::menuItem("CDM items",
                                  tabName = "cdm", icon = shiny::icon("file-medical-alt")),
+        shinydashboard::menuItem("PIP Quality Improvement",
+                                 tabName = "qim", icon = shiny::icon("file-medical-alt")),
         shinydashboard::menuItem("Administration",
                                  tabName = "administration", icon = shiny::icon("microscope")),
         shinydashboard::menuItem("Configuration",
@@ -188,6 +190,13 @@ DailyMeasureUI <- function() {
                                  h2("Chronic Disease Management items"))),
           shiny::fluidRow(column(width = 12,
                                  cdm_datatableUI("cdm_dt")))
+        ),
+        shinydashboard::tabItem(
+          tabName = "qim",
+          #shiny::fluidRow(column(width = 12, align = "center",
+          #                       h2("Administration"))),
+          shiny::fluidRow(column(width = 12,
+                                 qim_UI("qim")))
         ),
         shinydashboard::tabItem(
           tabName = "administration",

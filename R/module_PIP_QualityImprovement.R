@@ -17,12 +17,41 @@ qim_UI <- function(id) {
       width = 12,
       height = "85vh",
       shiny::tabPanel(
+        title = "Active",
+        width = 12,
+        shiny::br(),
+        qim_active_UI(ns("qim_active"))
+      ),
+      shiny::tabPanel(
         title = "Diabetes",
         width = 12,
         shiny::br(),
         qim_diabetes_UI(ns("qim_diabetes"))
       )
     )
+  )
+}
+
+qim_active_UI <- function(id) {
+  ns <- shiny::NS(id)
+
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(3,
+                    shinyWidgets::switchInput(
+                      inputId = ns("list_view"),
+                      label = paste("<i class=\"fas fa-clipboard-list\"></i>",
+                                    " List View"),
+                      labelWidth = "10em",
+                      width = "15em")),
+      shiny::column(2, offset = 4,
+                    shiny::uiOutput(ns("demographic_group")))
+    ),
+    shinycssloaders::withSpinner(
+      DT::DTOutput(ns("active_qim_table")),
+      type = 8,
+      hide.element.when.recalculating = FALSE,
+      proxy.height = NULL)
   )
 }
 
@@ -73,10 +102,11 @@ qim <- function(input, output, session, dM) {
   ns <- session$ns
 
   # result management
+  callModule(qim_active, "qim_active", dM)
   callModule(qim_diabetes, "qim_diabetes", dM)
 }
 
-#' Quality Improvement - server
+#' Quality Improvement 'active' list - server
 #'
 #' @param input as required by Shiny modules
 #' @param output as required by Shiny modules
@@ -87,10 +117,10 @@ qim <- function(input, output, session, dM) {
 #' @include fomantic_definitions.R
 #'
 #' @return none
-qim_diabetes <- function(input, output, session, dM) {
+qim_active <- function(input, output, session, dM) {
   ns <- session$ns
 
-  output$demographic_group <- renderUI({
+  output$demographic_group <- shiny::renderUI({
     shinyWidgets::dropdown(
       input_id = "demographic_group_dropdown",
       shinyWidgets::checkboxGroupButtons(
@@ -104,12 +134,79 @@ qim_diabetes <- function(input, output, session, dM) {
       label = "Demographic groupings"
     )
   })
-  observeEvent(input$demographic_chosen, {
+  shiny::observeEvent(input$demographic_chosen, ignoreNULL = FALSE, {
     # change the filter depending on the dropdown
     dM$qim_demographicGroup <- input$demographic_chosen
   })
 
-  output$measure_group <- renderUI({
+  qim_active_datatable <- shiny::eventReactive(
+    c(input$list_view,
+      dM$qim_active_listR(),
+      dM$qim_active_reportR(),
+      input$demographic_chosen), ignoreInit = TRUE, {
+        if (input$list_view) {
+          datatable_styled(
+            dM$qim_active_list %>>%
+              dplyr::select(Patient, RecordNo,
+                            Age5, Sex, Ethnicity,
+                            MaritalStatus, Sexuality) %>>%
+              # re-orders the fields
+              {remove_demographic <- setdiff(dM$qim_demographicGroupings,
+                                             input$demographic_chosen)
+              # finds the demographics that were NOT chosen
+              dplyr::select(., -remove_demographic)},
+            columnDefs = list(list(targets = 1:2, visible = FALSE))
+            # Patient Name and RecordNo hidden by default
+            # can be shown again with 'colVis' button
+          )
+        } else {
+          datatable_styled(dM$qim_active_report)
+        }
+
+      }
+  )
+
+  output$active_qim_table <- DT::renderDT({
+    qim_active_datatable()
+  },
+  server = TRUE)
+
+}
+
+#' Quality Improvement diabetes - server
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param dM dMeasure R6 object
+#'  access to appointments lists, results, correspondence and EMR database
+#'
+#' @include fomantic_definitions.R
+#'
+#' @return none
+qim_diabetes <- function(input, output, session, dM) {
+  ns <- session$ns
+
+  output$demographic_group <- shiny::renderUI({
+    shinyWidgets::dropdown(
+      input_id = "demographic_group_dropdown",
+      shinyWidgets::checkboxGroupButtons(
+        inputId = ns("demographic_chosen"), label = "Demographic grouping",
+        choices = dM$qim_demographicGroupings,
+        selected = dM$qim_demographicGroupings,
+        # all choices initially selected
+        status = "primary",
+        checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
+      icon = icon("gear"),
+      label = "Demographic groupings"
+    )
+  })
+  shiny::observeEvent(input$demographic_chosen, ignoreNULL = FALSE, {
+    # change the filter depending on the dropdown
+    dM$qim_demographicGroup <- input$demographic_chosen
+  })
+
+  output$measure_group <- shiny::renderUI({
     shinyWidgets::dropdown(
       input_id = "measure_group_dropdown",
       icon = icon("gear"),
@@ -123,41 +220,52 @@ qim_diabetes <- function(input, output, session, dM) {
       )
     )
   })
-  observeEvent(input$measure_chosen, ignoreNULL = FALSE, {
+  shiny::observeEvent(input$measure_chosen, ignoreNULL = FALSE, {
     dM$qim_diabetes_measure <- input$measure_chosen
   })
 
-  observeEvent(input$ignore_old, ignoreNULL = FALSE, {
+  shiny::observeEvent(input$ignore_old, ignoreNULL = FALSE, {
     # if selected, will filter out appointments older than current date
     dM$qim_ignoreOld <- ("Ignore old measurements" %in% input$ignore_old)
   })
 
-  report_table <-
-    shiny::eventReactive(
-      c(dM$qim_diabetes_reportR()), ignoreInit = TRUE, {
-        # respond to changes in $qim_diabetes_reportR
-        # when clinician or dates is changed
-        report <- datatable_styled(dM$qim_diabetes_report)
+  qim_diabetes_datatable <- shiny::eventReactive(
+    c(input$list_view,
+      dM$qim_diabetes_listR(),
+      dM$qim_diabetes_reportR(),
+      input$demographic_chosen), ignoreInit = TRUE, {
+        if (input$list_view) {
+          datatable_styled(
+            dM$qim_diabetes_list %>>%
+              dplyr::select(Patient, RecordNo,
+                            Age5, Sex, Ethnicity,
+                            MaritalStatus, Sexuality,
+                            HbA1CDate, HbA1CValue, HbA1CUnits,
+                            FluvaxDate, FluvaxName,
+                            BPDate, BP) %>>%
+              # re-orders the fields
+              {remove_demographic <- setdiff(dM$qim_demographicGroupings,
+                                             input$demographic_chosen)
+              # finds the demographics that were NOT chosen
+              dplyr::select(., -remove_demographic)} %>>%
+              {if ("HbA1C" %in% input$measure_chosen) {.}
+                else {dplyr::select(., -c(HbA1CDate, HbA1CValue, HbA1CUnits))}} %>>%
+              {if ("Influenza" %in% input$measure_chosen) {.}
+                else {dplyr::select(., -c(FluvaxDate, FluvaxName))}} %>>%
+              {if ("BP" %in% input$measure_chosen) {.}
+                else {dplyr::select(., -c(BPDate, BP))}},
+            columnDefs = list(list(targets = 1:2, visible = FALSE))
+            # Patient Name and RecordNo hidden by default
+          )
+        } else {
+          datatable_styled(dM$qim_diabetes_report)
+        }
 
-        return(report)
-      })
-
-  report_list <-
-    shiny::eventReactive(
-      c(dM$qim_diabetes_listR()), ignoreInit = TRUE, {
-        # respond to changes in $qim_diabetes_reportR
-        # when clinician or dates is changed
-        report <- datatable_styled(dM$qim_diabetes_list)
-
-        return(report)
-      })
+      }
+  )
 
   output$diabetes_qim_table <- DT::renderDT({
-    if (input$list_view) {
-      report_list()
-    } else {
-      report_table()
-    }
+      qim_diabetes_datatable()
   },
   server = TRUE)
 

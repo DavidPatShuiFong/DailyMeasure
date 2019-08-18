@@ -96,10 +96,10 @@ DailyMeasureUI <- function() {
         icon = "handshake",
         shiny::wellPanel(
           shinyWidgets::pickerInput(
-            inputId = "contact_types",
+            inputId = "contact_type",
             label = "Contact types",
-            choices = c("Appointments", "Visits", "Services (billing)"),
-            selected = c("Appointments", "Visits", "Services (billing)"),
+            choices = c("Appointments", "Visits", "Services"),
+            selected = c("Services"),
             options = list(style = "btn-primary",
                            `actions-box` = TRUE),
             multiple = TRUE
@@ -107,17 +107,17 @@ DailyMeasureUI <- function() {
         ),
         shiny::wellPanel(
           shinyWidgets::pickerInput(
-            inputId = "appointment_types_chosen",
-            label = "Appointment types shown",
+            inputId = "appointment_status",
+            label = "Appointment status shown",
             choices = c("Booked", "Waiting", "With doctor",
                         "At billing", "Completed"),
-            selected = c("With doctor", "At billing", "With doctor"),
+            selected = c("With doctor", "At billing", "Completed"),
             # all 'completed' choices initially selected
             options = list(style = "btn-primary",
                            `actions-box` = TRUE),
             multiple = TRUE),
           shinyWidgets::pickerInput(
-            inputId = "visit_types_chosen",
+            inputId = "visit_type",
             label = "Visit types shown",
             choices = c("Surgery", "Home", "Non Visit", "Hospital",
                         "RACF", "Telephone",

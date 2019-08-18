@@ -170,6 +170,24 @@ DailyMeasureServer <- function(input, output, session) {
     }
   })
 
+  shiny::observeEvent(input$contact_type, ignoreInit = TRUE, ignoreNULL = FALSE, {
+    # cannot ignoreNULL because sometimes an empty list will be chosen
+    dM$contact_type <- input$contact_type
+    # alter dMeasure object according to user input
+  })
+
+  shiny::observeEvent(input$appointment_status, ignoreInit = TRUE, ignoreNULL = FALSE, {
+    # cannot ignoreNULL because sometimes an empty list will be chosen
+    dM$dateContact$appointment_status <- input$appointment_status
+    # alter dMeasure object according to user input
+  })
+
+  shiny::observeEvent(input$visit_type, ignoreInit = TRUE, ignoreNULL = FALSE, {
+    # cannot ignoreNULL because sometimes an empty list will be chosen
+    dM$dateContact$visit_type <- input$visit_type
+    # alter dMeasure object according to user input
+  })
+
   # Immunization functions
 
   vax_table_results <- callModule(vax_datatable, "vax_dt", dM)

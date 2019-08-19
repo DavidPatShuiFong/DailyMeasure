@@ -105,7 +105,6 @@ admin_result_datatable <- function(input, output, session, dM) {
         inputId = ns("action_chosen"), label = "Actions shown",
         choices = action_names,
         selected = c("Non-urgent appointment", "Urgent appointment"),
-        # all choices initially selected
         status = "primary",
         checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
       icon = icon("gear"),

@@ -170,6 +170,24 @@ DailyMeasureServer <- function(input, output, session) {
     }
   })
 
+  shiny::observeEvent(input$contact_type, ignoreInit = TRUE, ignoreNULL = FALSE, {
+    # cannot ignoreNULL because sometimes an empty list will be chosen
+    dM$contact_type <- input$contact_type
+    # alter dMeasure object according to user input
+  })
+
+  shiny::observeEvent(input$appointment_status, ignoreInit = TRUE, ignoreNULL = FALSE, {
+    # cannot ignoreNULL because sometimes an empty list will be chosen
+    dM$appointment_status <- input$appointment_status
+    # alter dMeasure object according to user input
+  })
+
+  shiny::observeEvent(input$visit_type, ignoreInit = TRUE, ignoreNULL = FALSE, {
+    # cannot ignoreNULL because sometimes an empty list will be chosen
+    dM$visit_type <- input$visit_type
+    # alter dMeasure object according to user input
+  })
+
   # Immunization functions
 
   vax_table_results <- callModule(vax_datatable, "vax_dt", dM)
@@ -186,6 +204,9 @@ DailyMeasureServer <- function(input, output, session) {
 
   # administration and result management tab
   admin_table_results <- callModule(administration, "admin_dt", dM)
+
+  # Practice Incentive Program (PIP) Quality Improvement (QI) measures
+  qim_results <- callModule(qim, "qim", dM)
 
   # appointment list
 

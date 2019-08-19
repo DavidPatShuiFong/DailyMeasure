@@ -1,11 +1,5 @@
 ##### Define server logic #####################################################
 
-#' @import tidyr
-#' @import shiny
-#' @import dplyr
-#' @import dbplyr
-NULL
-
 #' Shiny app server function
 #'
 #' @param input required for shiny server
@@ -77,8 +71,8 @@ DailyMeasureServer <- function(input, output, session) {
       dM$choose_date(date_from = as.Date(input$date1),
                      date_to = as.Date(input$date2)) # also update the dMeasure object
     },
-    error = function(e) {shinytoastr::toastr_warning(message = e$message,
-                                                     position = "bottom-left")})
+    warning = function(w) {shinytoastr::toastr_warning(message = w$message,
+                                                       position = "bottom-left")})
   }) # initialize on first run, after that only update if 'update' button used
 
   date_today <- shiny::observeEvent(input$update_date_today, {
@@ -134,7 +128,7 @@ DailyMeasureServer <- function(input, output, session) {
                             shiny::need(input$location, "Locations not available")
                           )
 
-                          clinician_list <- dM$clinician_list(input$sidebartabs)
+                          clinician_list <- dM$clinician_list(input$sidebartabs, input$location)
                           # find list of clinicians which can be selected to be viewed
                           #  filter by current $location setting
                           #  and also the view (input$sidebartabs) if a view restriction is activated
@@ -176,6 +170,24 @@ DailyMeasureServer <- function(input, output, session) {
     }
   })
 
+  shiny::observeEvent(input$contact_type, ignoreInit = TRUE, ignoreNULL = FALSE, {
+    # cannot ignoreNULL because sometimes an empty list will be chosen
+    dM$contact_type <- input$contact_type
+    # alter dMeasure object according to user input
+  })
+
+  shiny::observeEvent(input$appointment_status, ignoreInit = TRUE, ignoreNULL = FALSE, {
+    # cannot ignoreNULL because sometimes an empty list will be chosen
+    dM$appointment_status <- input$appointment_status
+    # alter dMeasure object according to user input
+  })
+
+  shiny::observeEvent(input$visit_type, ignoreInit = TRUE, ignoreNULL = FALSE, {
+    # cannot ignoreNULL because sometimes an empty list will be chosen
+    dM$visit_type <- input$visit_type
+    # alter dMeasure object according to user input
+  })
+
   # Immunization functions
 
   vax_table_results <- callModule(vax_datatable, "vax_dt", dM)
@@ -189,6 +201,12 @@ DailyMeasureServer <- function(input, output, session) {
 
   # chronic disease management table
   cdm_table_results <- callModule(cdm_datatable, "cdm_dt", dM)
+
+  # administration and result management tab
+  admin_table_results <- callModule(administration, "admin_dt", dM)
+
+  # Practice Incentive Program (PIP) Quality Improvement (QI) measures
+  qim_results <- callModule(qim, "qim", dM)
 
   # appointment list
 

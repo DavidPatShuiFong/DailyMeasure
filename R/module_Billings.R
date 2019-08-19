@@ -15,10 +15,11 @@ billings_datatableUI <- function(id) {
 	    shiny::column(4,
 	                  shinyWidgets::switchInput(
 	                    inputId = ns("printcopy_view"),
-	                    label = paste("<i class=\"fas fa-print\"></i> </i>",
+	                    label = paste("<i class=\"fas fa-print\"></i>",
 	                                  "<i class=\"far fa-copy\"></i>",
-	                                  "  Print and Copy View", sep = ""),
-	                    labelWidth = "100%")
+	                                  "  Print and Copy View"),
+	                    labelWidth = "12em",
+	                    width = "20em")
 			)
 		),
 		shinycssloaders::withSpinner(
@@ -63,12 +64,12 @@ billings_datatable <- function(input, output, session, dM) {
 
 	billings_list <- shiny::reactive({
 	  shiny::validate(
-	    shiny::need(appointments_billings_sameday(), 
+	    shiny::need(appointments_billings_sameday(),
 	                "No appointments in chosen range"),
 	    shiny::need(nrow(appointments_billings_sameday()) > 0,
 	                "No appointments in chosen range")
 	  )
-	  
+
 	  billingslist <- NULL
 	  billingslist <- rbind(billingslist, appointments_billings_sameday())
 
@@ -103,7 +104,7 @@ billings_datatable <- function(input, output, session, dM) {
 	                       dplyr::select(Patient, AppointmentDate, AppointmentTime,
 	                                     Provider, billingtag),
 	                     escape = c(5),
-	                     dom = 'frltip', # no copy/print buttons
+	                     buttons = list('colvis'), # no copy/print buttons
 	                     colnames = c('Billings' = 'billingtag'))
 	  }
 	})

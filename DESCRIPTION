@@ -1,7 +1,7 @@
 Package: DailyMeasure
 Type: Package
 Title: Case-finds from patient appointment list
-Version: 1.1.0
+Version: 1.2.0
 Author: David Fong
 Maintainer: David Fong <vkelim@bigpond.com>
 Description: R Shiny application looking through Electronic Medical Record's (EMR)
@@ -64,5 +64,7 @@ Collate:
     'module_Immunization.R'
     'module_Appointments.R'
     'DailyMeasureUI.R'
+    'module_Administration.R'
     'module_Configuration_logs.R'
+    'module_PIP_QualityImprovement.R'
     'zzz.R'

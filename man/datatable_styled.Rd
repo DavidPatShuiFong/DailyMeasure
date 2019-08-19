@@ -5,18 +5,26 @@
 \title{styled DT datatable}
 \usage{
 datatable_styled(data, fillContainer = TRUE, extensions = c("Buttons",
-  "Scroller", "Responsive"), dom = "frltiBp",
-  buttons = list("copyHtml5", "print", list(extend = "collection",
-  buttons = list(list(extend = "csvHtml5", filename = "DailyMeasure"),
-  list(extend = "excel", filename = "DailyMeasure"), list(extend = "pdf",
-  filename = "DailyMeasure")), text = "Download")),
-  initComplete = DT::JS(semantic_popupJS), paging = FALSE,
-  scrollY = "60vh", ...)
+  "Scroller", "Responsive"), dom = "frltiBp", buttons = list("colvis",
+  list(extend = "copyHtml5", exportOptions = list(columns = ":visible")),
+  list(extend = "print", exportOptions = list(columns = ":visible")),
+  list(extend = "collection", buttons = list(list(extend = "csvHtml5",
+  exportOptions = list(columns = ":visible"), filename = "DailyMeasure"),
+  list(extend = "excel", exportOptions = list(columns = ":visible"),
+  filename = "DailyMeasure"), list(extend = "pdf", exportOptions =
+  list(columns = ":visible"), filename = "DailyMeasure")), text =
+  "Download")), drawCallback = DT::JS(semantic_popupJS),
+  `responsive-resize` = DT::JS(semantic_popupJS),
+  `responsive-display` = DT::JS(paste("function ( e, datatable, row, showHide, update )",
+  "{console.log( 'Details for row '+row.index()+' '",
+  "+(showHide ? 'shown' : 'hidden'))}")), paging = FALSE,
+  scrollY = "60vh", scrollX = FALSE, fixedColumns = FALSE,
+  columnDefs = list(list()), ...)
 }
 \arguments{
-\item{initComplete}{by default, execute JS code to enable semantic popups}
-
 \item{paging}{set to FALSE, otherwise hard to 'print'/copy a whole table}
+
+\item{initComplete}{by default, execute JS code to enable semantic popups}
 }
 \value{
 DT datatable object

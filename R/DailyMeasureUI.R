@@ -34,6 +34,10 @@ DailyMeasureUI <- function() {
                                  tabName = "billings", icon = shiny::icon("receipt")),
         shinydashboard::menuItem("CDM items",
                                  tabName = "cdm", icon = shiny::icon("file-medical-alt")),
+        shinydashboard::menuItem("PIP Quality Improvement",
+                                 tabName = "qim", icon = shiny::icon("chart-line")),
+        shinydashboard::menuItem("Administration",
+                                 tabName = "administration", icon = shiny::icon("microscope")),
         shinydashboard::menuItem("Configuration",
                                  tabName = "configuration", icon = shiny::icon("wrench"))
         # menuItem("Test", tabName = "test")
@@ -70,10 +74,10 @@ DailyMeasureUI <- function() {
         # appointment date range
         shiny::wellPanel(
           shiny::dateInput('date1', label = 'From:', format='D dd/M/yyyy',
-                           min = Sys.Date()-4000, max = Sys.Date()+180,
+                           min = Sys.Date()-6000, max = Sys.Date()+180,
                            value = Sys.Date()),
           shiny::dateInput('date2', label = 'To:', format='D dd/M/yyyy',
-                           min = Sys.Date()-4000, max = Sys.Date()+180,
+                           min = Sys.Date()-6000, max = Sys.Date()+180,
                            value = Sys.Date()),
           # range of dates, by default will be 'today'
           shiny::actionButton('update_date', 'Update',
@@ -85,6 +89,49 @@ DailyMeasureUI <- function() {
                           shiny::actionButton('update_date_today', 'Today',
                                               shiny::icon('calendar'), class = 'btn btn-info'))
           # manually change date range to 'today'
+        )),
+      shinydashboardPlus::rightSidebarTabContent(
+        id = 3,
+        title = "Contact details",
+        icon = "handshake",
+        shiny::wellPanel(
+          shinyWidgets::pickerInput(
+            inputId = "contact_type",
+            label = "Contact types",
+            choices = c("Appointments", "Visits", "Services"),
+            selected = c("Services"),
+            options = list(style = "btn-primary",
+                           `actions-box` = TRUE),
+            multiple = TRUE
+          )
+        ),
+        shiny::wellPanel(
+          shinyWidgets::pickerInput(
+            inputId = "appointment_status",
+            label = "Appointment status shown",
+            choices = c("Booked", "Waiting", "With doctor",
+                        "At billing", "Completed"),
+            selected = c("With doctor", "At billing", "Completed"),
+            # all 'completed' choices initially selected
+            options = list(style = "btn-primary",
+                           `actions-box` = TRUE),
+            multiple = TRUE),
+          shinyWidgets::pickerInput(
+            inputId = "visit_type",
+            label = "Visit types shown",
+            choices = c("Surgery", "Home", "Non Visit", "Hospital",
+                        "RACF", "Telephone",
+                        "SMS", "Email", "Locum Service", "Out of Office",
+                        "Other", "Hostel",
+                        "Telehealth"),
+            selected = c("Surgery", "Home", "Hospital",
+                         "RACF", "Locum Service", "Out of Office",
+                         "Hostel", "Telehealth"),
+            # consult choices initially selected
+            options = list(style = "btn-primary",
+                           `actions-box` = TRUE),
+            multiple = TRUE
+          )
         )
       )
     ),
@@ -143,6 +190,20 @@ DailyMeasureUI <- function() {
                                  h2("Chronic Disease Management items"))),
           shiny::fluidRow(column(width = 12,
                                  cdm_datatableUI("cdm_dt")))
+        ),
+        shinydashboard::tabItem(
+          tabName = "qim",
+          #shiny::fluidRow(column(width = 12, align = "center",
+          #                       h2("Administration"))),
+          shiny::fluidRow(column(width = 12,
+                                 qim_UI("qim")))
+        ),
+        shinydashboard::tabItem(
+          tabName = "administration",
+          #shiny::fluidRow(column(width = 12, align = "center",
+          #                       h2("Administration"))),
+          shiny::fluidRow(column(width = 12,
+                                 administration_UI("admin_dt")))
         ),
         shinydashboard::tabItem(
           tabName = "configuration",

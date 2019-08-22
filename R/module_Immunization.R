@@ -40,7 +40,7 @@ zostavax_list <- function(appointments_list, dM) {
   # input - appointment_list - reactive of appointment list
   # input - dM - access to Best Practice EMR database
 
-  return(dM$zostavax_list(vaxtag = TRUE, vaxtag_print = TRUE))
+  return(dM$list_zostavax(vaxtag = TRUE, vaxtag_print = TRUE))
 
 }
 
@@ -50,7 +50,7 @@ influenza_list <- function(appointments_list, dM) {
   #  vaxtag, vaxtag_print (these two are the 'semantic' tags and printable tags)
   # input - dM - access to Best Practice EMR database
 
-  return(dM$influenza_list(vaxtag = TRUE, vaxtag_print = TRUE))
+  return(dM$list_influenza(vaxtag = TRUE, vaxtag_print = TRUE))
 
 }
 

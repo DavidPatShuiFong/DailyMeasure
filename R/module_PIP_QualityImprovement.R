@@ -265,7 +265,7 @@ qim_diabetes <- function(input, output, session, dM) {
   )
 
   output$diabetes_qim_table <- DT::renderDT({
-      qim_diabetes_datatable()
+    qim_diabetes_datatable()
   },
   server = TRUE)
 

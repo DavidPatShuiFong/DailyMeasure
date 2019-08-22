@@ -85,7 +85,7 @@ cancerscreen_datatable <- function(input, output, session, dM) {
     # Zostavax (herpes zoster 'shingles' vaccine)
     if ("Bowel cancer" %in% input$cancerscreen_chosen)
     {screenlist <- rbind(screenlist,
-                         dM$fobt_list(appointments_list = dM$appointments_listR(),
+                         dM$list_fobt(appointments_list = dM$appointments_listR(),
                                       screentag = TRUE, screentag_print = TRUE))}
     # both HTML and printable versions of tags requested
 

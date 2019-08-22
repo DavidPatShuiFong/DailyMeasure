@@ -5,7 +5,7 @@
 \title{DailyMeasure
 (C) David Fong, 2019}
 \usage{
-DailyMeasure(appmode = "", launch.browser = TRUE)
+DailyMeasure(appmode = "chrome", launch.browser = TRUE)
 }
 \arguments{
 \item{appmode}{set to "chrome" if wanting to launch chrome in app mode

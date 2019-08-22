@@ -7,3 +7,5 @@ DailyMeasure.Rproj
 DailyMeasure_cfg\.sqlite
 
 DailyMeasure_cfg\.yaml
+
+debug.log

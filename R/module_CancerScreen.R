@@ -53,8 +53,8 @@ cancerscreen_datatable <- function(input, output, session, dM) {
 
   ns <- session$ns
 
-  # MBS (medicare benefits schedule) item numbers for CDM
-  cancerscreen_names <- c("Bowel cancer")
+  # Cancer screening types
+  cancerscreen_names <- c("Bowel", "Cervical")
 
   output$cancerscreen_choice <- shiny::renderUI({
     shinyWidgets::dropdown(
@@ -82,12 +82,18 @@ cancerscreen_datatable <- function(input, output, session, dM) {
     )
 
     screenlist <- NULL
-    # Zostavax (herpes zoster 'shingles' vaccine)
-    if ("Bowel cancer" %in% input$cancerscreen_chosen)
+    # Bowel cancer
+    if ("Bowel" %in% input$cancerscreen_chosen)
     {screenlist <- rbind(screenlist,
                          dM$list_fobt(appointments_list = dM$appointments_listR(),
                                       screentag = TRUE, screentag_print = TRUE))}
     # both HTML and printable versions of tags requested
+    # Cervical cancer
+    if ("Cervical" %in% input$cancerscreen_chosen)
+    {screenlist <- rbind(screenlist,
+                         dM$list_cst(appointments_list = dM$appointments_listR(),
+                                      screentag = TRUE, screentag_print = TRUE))}
+
 
     if (is.null(screenlist)) {
       return(screenlist)

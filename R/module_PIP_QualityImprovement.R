@@ -27,6 +27,12 @@ qim_UI <- function(id) {
         width = 12,
         shiny::br(),
         qim_diabetes_UI(ns("qim_diabetes"))
+      ),
+      shiny::tabPanel(
+        title = "Cervical Screening",
+        width = 12,
+        shiny::br(),
+        qim_cst_UI(ns("qim_cst"))
       )
     )
   )
@@ -89,6 +95,38 @@ qim_diabetes_UI <- function(id) {
   )
 }
 
+qim_cst_UI <- function(id) {
+  ns <- shiny::NS(id)
+
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(3,
+                    shinyWidgets::switchInput(
+                      inputId = ns("list_view"),
+                      label = paste("<i class=\"fas fa-clipboard-list\"></i>",
+                                    " List View"),
+                      labelWidth = "10em",
+                      width = "15em")),
+      shiny::column(2, offset = 1, # note that total 'column' width = 12
+                    shinyWidgets::checkboxGroupButtons(
+                      inputId = ns("ignore_old"),
+                      checkIcon = list(yes = shiny::icon("calendar-times"),
+                                       no = shiny::icon("calendar-alt")),
+                      choices = c("Ignore old measurements"),
+                      selected = c("Ignore old measurements"),
+                      status = "primary",
+                      width = "30em")),
+      shiny::column(2, offset = 1,
+                    shiny::uiOutput(ns("demographic_group")))
+    ),
+    shinycssloaders::withSpinner(
+      DT::DTOutput(ns("cst_qim_table")),
+      type = 8,
+      hide.element.when.recalculating = FALSE,
+      proxy.height = NULL)
+  )
+}
+
 #' Quality Improvement user interface
 #'
 #'
@@ -104,6 +142,7 @@ qim <- function(input, output, session, dM) {
   # result management
   callModule(qim_active, "qim_active", dM)
   callModule(qim_diabetes, "qim_diabetes", dM)
+  callModule(qim_cst, "qim_cst", dM)
 }
 
 #' Quality Improvement 'active' list - server
@@ -151,10 +190,10 @@ qim_active <- function(input, output, session, dM) {
                             Age5, Sex, Ethnicity,
                             MaritalStatus, Sexuality) %>>%
               # re-orders the fields
-              {remove_demographic <- setdiff(dM$qim_demographicGroupings,
-                                             input$demographic_chosen)
-              # finds the demographics that were NOT chosen
-              dplyr::select(., -remove_demographic)},
+                            {remove_demographic <- setdiff(dM$qim_demographicGroupings,
+                                                           input$demographic_chosen)
+                            # finds the demographics that were NOT chosen
+                            dplyr::select(., -remove_demographic)},
             columnDefs = list(list(targets = 1:2, visible = FALSE))
             # Patient Name and RecordNo hidden by default
             # can be shown again with 'colVis' button
@@ -216,7 +255,7 @@ qim_diabetes <- function(input, output, session, dM) {
         choices = dM$qim_diabetes_measureTypes,
         selected = dM$qim_diabetes_measureTypes,
         # initially all chosen
-        status = "primary",
+        status = "primary"
       )
     )
   })
@@ -244,16 +283,16 @@ qim_diabetes <- function(input, output, session, dM) {
                             FluvaxDate, FluvaxName,
                             BPDate, BP) %>>%
               # re-orders the fields
-              {remove_demographic <- setdiff(dM$qim_demographicGroupings,
-                                             input$demographic_chosen)
-              # finds the demographics that were NOT chosen
-              dplyr::select(., -remove_demographic)} %>>%
-              {if ("HbA1C" %in% input$measure_chosen) {.}
-                else {dplyr::select(., -c(HbA1CDate, HbA1CValue, HbA1CUnits))}} %>>%
-              {if ("Influenza" %in% input$measure_chosen) {.}
-                else {dplyr::select(., -c(FluvaxDate, FluvaxName))}} %>>%
-              {if ("BP" %in% input$measure_chosen) {.}
-                else {dplyr::select(., -c(BPDate, BP))}},
+                            {remove_demographic <- setdiff(dM$qim_demographicGroupings,
+                                                           input$demographic_chosen)
+                            # finds the demographics that were NOT chosen
+                            dplyr::select(., -remove_demographic)} %>>%
+                            {if ("HbA1C" %in% input$measure_chosen) {.}
+                              else {dplyr::select(., -c(HbA1CDate, HbA1CValue, HbA1CUnits))}} %>>%
+                              {if ("Influenza" %in% input$measure_chosen) {.}
+                                else {dplyr::select(., -c(FluvaxDate, FluvaxName))}} %>>%
+                                {if ("BP" %in% input$measure_chosen) {.}
+                                  else {dplyr::select(., -c(BPDate, BP))}},
             columnDefs = list(list(targets = 1:2, visible = FALSE))
             # Patient Name and RecordNo hidden by default
           )
@@ -266,6 +305,79 @@ qim_diabetes <- function(input, output, session, dM) {
 
   output$diabetes_qim_table <- DT::renderDT({
     qim_diabetes_datatable()
+  },
+  server = TRUE)
+
+}
+
+
+#' Quality Improvement cervical screening test - server
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param dM dMeasure R6 object
+#'  access to appointments lists, results, correspondence and EMR database
+#'
+#' @include fomantic_definitions.R
+#'
+#' @return none
+qim_cst <- function(input, output, session, dM) {
+  ns <- session$ns
+
+  output$demographic_group <- shiny::renderUI({
+    shinyWidgets::dropdown(
+      input_id = "demographic_group_dropdown",
+      shinyWidgets::checkboxGroupButtons(
+        inputId = ns("demographic_chosen"), label = "Demographic grouping",
+        choices = dM$qim_demographicGroupings,
+        selected = dM$qim_demographicGroupings,
+        # all choices initially selected
+        status = "primary",
+        checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
+      icon = icon("gear"),
+      label = "Demographic groupings"
+    )
+  })
+  shiny::observeEvent(input$demographic_chosen, ignoreNULL = FALSE, {
+    # change the filter depending on the dropdown
+    dM$qim_demographicGroup <- input$demographic_chosen
+  })
+
+  shiny::observeEvent(input$ignore_old, ignoreNULL = FALSE, {
+    # if selected, will filter out appointments older than current date
+    dM$qim_ignoreOld <- ("Ignore old measurements" %in% input$ignore_old)
+  })
+
+  qim_cst_datatable <- shiny::eventReactive(
+    c(input$list_view,
+      dM$qim_cst_listR(),
+      dM$qim_cst_reportR(),
+      input$demographic_chosen), ignoreInit = TRUE, {
+        if (input$list_view) {
+          datatable_styled(
+            dM$qim_cst_list %>>%
+              dplyr::select(Patient, RecordNo,
+                            Age5, Sex, Ethnicity,
+                            MaritalStatus, Sexuality,
+                            CSTDate, CSTName) %>>%
+              # re-orders the fields
+                            {remove_demographic <- setdiff(dM$qim_demographicGroupings,
+                                                           input$demographic_chosen)
+                            # finds the demographics that were NOT chosen
+                            dplyr::select(., -remove_demographic)},
+              columnDefs = list(list(targets = 1:2, visible = FALSE))
+            # Patient Name and RecordNo hidden by default
+          )
+        } else {
+          datatable_styled(dM$qim_cst_report)
+        }
+
+      }
+  )
+
+  output$cst_qim_table <- DT::renderDT({
+    qim_cst_datatable()
   },
   server = TRUE)
 

@@ -54,7 +54,7 @@ cancerscreen_datatable <- function(input, output, session, dM) {
   ns <- session$ns
 
   # Cancer screening types
-  cancerscreen_names <- c("Bowel", "Cervical")
+  cancerscreen_names <- c("Bowel", "Cervical", "Breast")
 
   output$cancerscreen_choice <- shiny::renderUI({
     shinyWidgets::dropdown(
@@ -92,7 +92,13 @@ cancerscreen_datatable <- function(input, output, session, dM) {
     if ("Cervical" %in% input$cancerscreen_chosen)
     {screenlist <- rbind(screenlist,
                          dM$list_cst(appointments_list = dM$appointments_listR(),
-                                      screentag = TRUE, screentag_print = TRUE))}
+                                     screentag = TRUE, screentag_print = TRUE))}
+
+    # Breast cancer
+    if ("Breast" %in% input$cancerscreen_chosen)
+    {screenlist <- rbind(screenlist,
+                         dM$list_mammogram(appointments_list = dM$appointments_listR(),
+                                           screentag = TRUE, screentag_print = TRUE))}
 
 
     if (is.null(screenlist)) {

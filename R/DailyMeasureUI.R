@@ -103,6 +103,13 @@ DailyMeasureUI <- function() {
             options = list(style = "btn-primary",
                            `actions-box` = TRUE),
             multiple = TRUE
+          ),
+          shinyWidgets::sliderTextInput(
+            inputId = "min_contact",
+            label = "Minimum number of contacts",
+            choices = c(1:10),
+            grid = TRUE,
+            selected = 1
           )
         ),
         shiny::wellPanel(

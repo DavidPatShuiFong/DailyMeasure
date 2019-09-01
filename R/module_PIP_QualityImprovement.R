@@ -349,7 +349,7 @@ qim_active <- function(input, output, session, dM) {
             dM$qim_active_list %>>%
               dplyr::select(Patient, RecordNo,
                             Age5, Sex, Ethnicity,
-                            MaritalStatus, Sexuality) %>>%
+                            MaritalStatus, Sexuality, Count) %>>%
               # re-orders the fields
               {remove_demographic <- setdiff(dM$qim_demographicGroupings,
                                              input$demographic_chosen)

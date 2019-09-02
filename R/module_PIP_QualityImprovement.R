@@ -349,7 +349,7 @@ qim_active <- function(input, output, session, dM) {
             dM$qim_active_list %>>%
               dplyr::select(Patient, RecordNo,
                             Age5, Sex, Ethnicity,
-                            MaritalStatus, Sexuality, Count) %>>%
+                            MaritalStatus, Sexuality, Count, Proportion) %>>%
               # re-orders the fields
               {remove_demographic <- setdiff(dM$qim_demographicGroupings,
                                              input$demographic_chosen)
@@ -360,7 +360,9 @@ qim_active <- function(input, output, session, dM) {
             # can be shown again with 'colVis' button
           )
         } else {
-          datatable_styled(dM$qim_active_report)
+          df <- dM$qim_active_report
+          datatable_styled(df) %>>%
+            DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
         }
 
       }

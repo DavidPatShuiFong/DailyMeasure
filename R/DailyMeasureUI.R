@@ -17,7 +17,7 @@ DailyMeasureUI <- function() {
       enable_rightsidebar = TRUE,
       rightSidebarIcon = "address-card",
       title = shiny::tagList(
-        shiny::span(class = "logo-lg", "Daily Measure"),
+        shiny::span(class = "logo-lg", "GPstat"),
         icon = icon("heartbeat")),
       shinydashboardPlus::userOutput("user")
     ),
@@ -103,6 +103,13 @@ DailyMeasureUI <- function() {
             options = list(style = "btn-primary",
                            `actions-box` = TRUE),
             multiple = TRUE
+          ),
+          shinyWidgets::sliderTextInput(
+            inputId = "min_contact",
+            label = "Minimum number of contacts",
+            choices = c(1:10),
+            grid = TRUE,
+            selected = 1
           )
         ),
         shiny::wellPanel(

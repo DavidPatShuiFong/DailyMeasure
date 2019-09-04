@@ -338,6 +338,12 @@ qim_active <- function(input, output, session, dM) {
     # change the filter depending on the dropdown
     dM$qim_demographicGroup <- input$demographic_chosen
   })
+  shiny::observeEvent(dM$qim_demographicGroupR(), ignoreNULL = FALSE, {
+    # change the dropdown depending on the group chosen (possibly in another tab)
+    shinyWidgets::updateCheckboxGroupButtons(
+      session, inputId = "demographic_chosen",
+      selected = dM$qim_demographicGroup)
+  })
 
   qim_active_datatable <- shiny::eventReactive(
     c(input$list_view,
@@ -407,6 +413,13 @@ qim_diabetes <- function(input, output, session, dM) {
     # change the filter depending on the dropdown
     dM$qim_demographicGroup <- input$demographic_chosen
   })
+  shiny::observeEvent(dM$qim_demographicGroupR(), ignoreNULL = FALSE, {
+    # change the dropdown depending on the group chosen (possibly in another tab)
+    shinyWidgets::updateCheckboxGroupButtons(
+      session, inputId = "demographic_chosen",
+      selected = dM$qim_demographicGroup)
+  })
+
 
   output$measure_group <- shiny::renderUI({
     shinyWidgets::dropdown(
@@ -460,7 +473,9 @@ qim_diabetes <- function(input, output, session, dM) {
             # Patient Name and RecordNo hidden by default
           )
         } else {
-          datatable_styled(dM$qim_diabetes_report)
+          df <- dM$qim_diabetes_report
+          datatable_styled(df) %>>%
+            DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
         }
 
       }
@@ -506,6 +521,13 @@ qim_cst <- function(input, output, session, dM) {
     # change the filter depending on the dropdown
     dM$qim_demographicGroup <- input$demographic_chosen
   })
+  shiny::observeEvent(dM$qim_demographicGroupR(), ignoreNULL = FALSE, {
+    # change the dropdown depending on the group chosen (possibly in another tab)
+    shinyWidgets::updateCheckboxGroupButtons(
+      session, inputId = "demographic_chosen",
+      selected = dM$qim_demographicGroup)
+  })
+
 
   shiny::observeEvent(input$ignore_old, ignoreNULL = FALSE, {
     # if selected, will filter out appointments older than current date
@@ -533,7 +555,9 @@ qim_cst <- function(input, output, session, dM) {
             # Patient Name and RecordNo hidden by default
           )
         } else {
-          datatable_styled(dM$qim_cst_report)
+          df <- dM$qim_cst_report
+          datatable_styled(df) %>>%
+            DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
         }
 
       }
@@ -578,6 +602,12 @@ qim_15plus <- function(input, output, session, dM) {
   shiny::observeEvent(input$demographic_chosen, ignoreNULL = FALSE, {
     # change the filter depending on the dropdown
     dM$qim_demographicGroup <- input$demographic_chosen
+  })
+  shiny::observeEvent(dM$qim_demographicGroupR(), ignoreNULL = FALSE, {
+    # change the dropdown depending on the group chosen (possibly in another tab)
+    shinyWidgets::updateCheckboxGroupButtons(
+      session, inputId = "demographic_chosen",
+      selected = dM$qim_demographicGroup)
   })
 
   output$measure_group <- shiny::renderUI({
@@ -639,7 +669,9 @@ qim_15plus <- function(input, output, session, dM) {
             # Patient Name and RecordNo hidden by default, as well as various alcohol details etc.
             scrollX = TRUE))
         } else {
-          return(datatable_styled(dM$qim_15plus_report))
+          df <- dM$qim_15plus_report
+          return(datatable_styled(df) %>>%
+            DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3))
         }
 
       }
@@ -685,6 +717,12 @@ qim_65plus <- function(input, output, session, dM) {
     # change the filter depending on the dropdown
     dM$qim_demographicGroup <- input$demographic_chosen
   })
+  shiny::observeEvent(dM$qim_demographicGroupR(), ignoreNULL = FALSE, {
+    # change the dropdown depending on the group chosen (possibly in another tab)
+    shinyWidgets::updateCheckboxGroupButtons(
+      session, inputId = "demographic_chosen",
+      selected = dM$qim_demographicGroup)
+  })
 
   shiny::observeEvent(input$ignore_old, ignoreNULL = FALSE, {
     # if selected, will filter out appointments older than current date
@@ -713,9 +751,10 @@ qim_65plus <- function(input, output, session, dM) {
             # Patient Name and RecordNo hidden by default
             scrollX = TRUE))
         } else {
-          return(datatable_styled(dM$qim_65plus_report))
+          df <- dM$qim_65plus_report
+          return(datatable_styled(df) %>>%
+                   DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3))
         }
-
       }
   )
 
@@ -759,6 +798,12 @@ qim_copd <- function(input, output, session, dM) {
     # change the filter depending on the dropdown
     dM$qim_demographicGroup <- input$demographic_chosen
   })
+  shiny::observeEvent(dM$qim_demographicGroupR(), ignoreNULL = FALSE, {
+    # change the dropdown depending on the group chosen (possibly in another tab)
+    shinyWidgets::updateCheckboxGroupButtons(
+      session, inputId = "demographic_chosen",
+      selected = dM$qim_demographicGroup)
+  })
 
   shiny::observeEvent(input$ignore_old, ignoreNULL = FALSE, {
     # if selected, will filter out appointments older than current date
@@ -787,7 +832,10 @@ qim_copd <- function(input, output, session, dM) {
             # Patient Name and RecordNo hidden by default
             scrollX = TRUE))
         } else {
-          return(datatable_styled(dM$qim_copd_report))
+          df <- dM$qim_copd_report
+          return(datatable_styled(df) %>>%
+                   DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
+          )
         }
 
       }
@@ -797,7 +845,6 @@ qim_copd <- function(input, output, session, dM) {
     qim_copd_datatable()
   },
   server = TRUE)
-
 }
 
 
@@ -833,6 +880,12 @@ qim_cvdRisk <- function(input, output, session, dM) {
   shiny::observeEvent(input$demographic_chosen, ignoreNULL = FALSE, {
     # change the filter depending on the dropdown
     dM$qim_demographicGroup <- input$demographic_chosen
+  })
+  shiny::observeEvent(dM$qim_demographicGroupR(), ignoreNULL = FALSE, {
+    # change the dropdown depending on the group chosen (possibly in another tab)
+    shinyWidgets::updateCheckboxGroupButtons(
+      session, inputId = "demographic_chosen",
+      selected = dM$qim_demographicGroup)
   })
 
   output$groups <- shiny::renderUI({
@@ -884,7 +937,9 @@ qim_cvdRisk <- function(input, output, session, dM) {
             scrollX = TRUE) %>>%
               DT::formatRound(which(names(df) %in% c("CholHDLRatio", "frisk")), digits = 3))
         } else {
-          return(datatable_styled(dM$qim_cvdRisk_report))
+          df <- dM$qim_cvdRisk_report
+          return(datatable_styled(df) %>>%
+                   DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3))
         }
       }
   )

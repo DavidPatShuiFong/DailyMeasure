@@ -14,7 +14,7 @@
 #' @importFrom shinydashboard menuItem tabItems tabItem
 #'
 #' @export
-DailyMeasure <- function (appmode = "chrome", launch.browser = TRUE) {
+GPstat <- function (appmode = "chrome", launch.browser = TRUE) {
 
   if (appmode == "chrome") {
     launch.browser = function(shinyurl) {

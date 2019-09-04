@@ -2,7 +2,7 @@
 
 export("%>%")
 export("%>>%")
-export(DailyMeasure)
+export(GPstat)
 import(dbplyr)
 import(shiny)
 importFrom(magrittr,"%>%")

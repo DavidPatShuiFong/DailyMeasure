@@ -176,6 +176,11 @@ DailyMeasureServer <- function(input, output, session) {
     # alter dMeasure object according to user input
   })
 
+  shiny::observeEvent(input$min_contact, ignoreInit = TRUE, {
+    dM$contact_min <- input$min_contact
+    # alter dMeasure object according to user input
+  })
+
   shiny::observeEvent(input$appointment_status, ignoreInit = TRUE, ignoreNULL = FALSE, {
     # cannot ignoreNULL because sometimes an empty list will be chosen
     dM$appointment_status <- input$appointment_status

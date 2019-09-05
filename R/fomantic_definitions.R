@@ -93,6 +93,7 @@ semantic_popupJS <- c("window.onload = function() {$('.ui.button') .popup({on: '
 #' @param paging set to FALSE, otherwise hard to 'print'/copy a whole table
 #'
 #' @return DT datatable object
+#' @export
 datatable_styled <- function(data, fillContainer = TRUE,
                              extensions = c('Buttons', 'Scroller', 'Responsive'),
                              dom = 'frltiBp',

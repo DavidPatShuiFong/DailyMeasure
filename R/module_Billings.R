@@ -66,11 +66,9 @@ billings_datatable <- function(input, output, session, dM) {
                     "No appointments in chosen range")
       )
 
-      billingslist <- dM$list_billings(lazy = FALSE,
+      billingslist <- dM$list_billings(lazy = TRUE,
                                        screentag = !input$printcopy_view,
                                        screentag_print = input$printcopy_view)
-      # ideally lazy = TRUE, but unfortunately sometimes billingtag
-      # or billingtag_print will not be defined
 
       return(billingslist)
     })

@@ -1,0 +1,15 @@
+GP Stat! (c) David Fong, 2019
+
+front-end to DailyMeasure package
+
+
+
+Version 1.3.1, 8th September 2019
+---------------------------------
+
+* Requires dMeasure back-end 0.4.99
+
+* Changes to billing display
+  Integrates appointment, visit and billing view
+
+* Bugfix : view Quality Improvement Measures failed if no open database

@@ -17,7 +17,7 @@ DailyMeasureUI <- function() {
       enable_rightsidebar = TRUE,
       rightSidebarIcon = "address-card",
       title = shiny::tagList(
-        shiny::span(class = "logo-lg", shiny::HTML('<p style = "font-family:Verdana">GP stat!</p>')),
+        shiny::span(class = "logo-lg", shiny::HTML('<p style = "font-family:Verdana">GP&thinsp;stat!</p>')),
         icon = icon("heartbeat")),
       shinydashboardPlus::userOutput("user")
     ),

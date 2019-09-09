@@ -160,6 +160,13 @@ servers_datatable <- function(input, output, session, dM) {
     # or not all entries described
     # $server.insert will write to the SQLite configuration
 
+    data[row,]$id <- max(c(data$id, 0), na.rm = TRUE) +1
+    # give a new ID which is the max of the current $id
+    # (including zero, if there are no data$id)
+    # this is a kludge, it is the same logic as used in dM$server.insert
+    # another possibility could be to copy back from dM
+    # e.g. data <- dM$BPdatabase
+
     servers_list_change(servers_list_change() + 1)
     # this value returned by module
 

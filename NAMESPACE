@@ -3,6 +3,7 @@
 export("%>%")
 export("%>>%")
 export(GPstat)
+export(datatable_styled)
 import(dbplyr)
 import(shiny)
 importFrom(magrittr,"%>%")

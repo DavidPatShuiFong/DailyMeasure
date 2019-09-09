@@ -355,7 +355,7 @@ qim_active <- function(input, output, session, dM) {
             dM$qim_active_list %>>%
               dplyr::select(Patient, RecordNo,
                             Age5, Sex, Ethnicity,
-                            MaritalStatus, Sexuality, Count, Proportion) %>>%
+                            MaritalStatus, Sexuality, Count) %>>%
               # re-orders the fields
               {remove_demographic <- setdiff(dM$qim_demographicGroupings,
                                              input$demographic_chosen)
@@ -367,8 +367,13 @@ qim_active <- function(input, output, session, dM) {
           )
         } else {
           df <- dM$qim_active_report
-          datatable_styled(df) %>>%
-            DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
+          dt <- datatable_styled(df)
+          if (dim(df)[[2]] > 0) {
+            # not an empty dataframe
+            dt <- dt %>>%
+              DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
+          }
+          return(dt)
         }
 
       }
@@ -474,8 +479,13 @@ qim_diabetes <- function(input, output, session, dM) {
           )
         } else {
           df <- dM$qim_diabetes_report
-          datatable_styled(df) %>>%
-            DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
+          dt <- datatable_styled(df)
+          if (dim(df)[[2]] > 0) {
+            # not an empty dataframe
+            dt <- dt %>>%
+              DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
+          }
+          return(dt)
         }
 
       }
@@ -556,8 +566,13 @@ qim_cst <- function(input, output, session, dM) {
           )
         } else {
           df <- dM$qim_cst_report
-          datatable_styled(df) %>>%
-            DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
+          dt <- datatable_styled(df)
+          if (dim(df)[[2]] > 0) {
+            # not an empty dataframe
+            dt <- dt %>>%
+              DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
+          }
+          return(dt)
         }
 
       }
@@ -670,8 +685,13 @@ qim_15plus <- function(input, output, session, dM) {
             scrollX = TRUE))
         } else {
           df <- dM$qim_15plus_report
-          return(datatable_styled(df) %>>%
-            DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3))
+          dt <- datatable_styled(df)
+          if (dim(df)[[2]] > 0) {
+            # not an empty dataframe
+            dt <- dt %>>%
+              DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
+          }
+          return(dt)
         }
 
       }
@@ -752,8 +772,13 @@ qim_65plus <- function(input, output, session, dM) {
             scrollX = TRUE))
         } else {
           df <- dM$qim_65plus_report
-          return(datatable_styled(df) %>>%
-                   DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3))
+          dt <- datatable_styled(df)
+          if (dim(df)[[2]] > 0) {
+            # not an empty dataframe
+            dt <- dt %>>%
+              DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
+          }
+          return(dt)
         }
       }
   )
@@ -833,9 +858,13 @@ qim_copd <- function(input, output, session, dM) {
             scrollX = TRUE))
         } else {
           df <- dM$qim_copd_report
-          return(datatable_styled(df) %>>%
-                   DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
-          )
+          dt <- datatable_styled(df)
+          if (dim(df)[[2]] > 0) {
+            # not an empty dataframe
+            dt <- dt %>>%
+              DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
+          }
+          return(dt)
         }
 
       }
@@ -938,8 +967,13 @@ qim_cvdRisk <- function(input, output, session, dM) {
               DT::formatRound(which(names(df) %in% c("CholHDLRatio", "frisk")), digits = 3))
         } else {
           df <- dM$qim_cvdRisk_report
-          return(datatable_styled(df) %>>%
-                   DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3))
+          dt <- datatable_styled(df)
+          if (dim(df)[[2]] > 0) {
+            # not an empty dataframe
+            dt <- dt %>>%
+              DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
+          }
+          return(dt)
         }
       }
   )

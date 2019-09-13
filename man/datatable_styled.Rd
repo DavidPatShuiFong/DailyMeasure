@@ -7,14 +7,14 @@
 datatable_styled(data, fillContainer = TRUE, extensions = c("Buttons",
   "Scroller", "Responsive"), dom = "frltiBp",
   buttons = list(list(extend = "colvis", collectionLayout =
-  "four-column"), list(extend = "copyHtml5", exportOptions = list(columns =
-  ":visible")), list(extend = "print", exportOptions = list(columns =
-  ":visible")), list(extend = "collection", buttons = list(list(extend =
-  "csvHtml5", exportOptions = list(columns = ":visible"), filename =
-  "DailyMeasure"), list(extend = "excel", exportOptions = list(columns =
-  ":visible"), filename = "DailyMeasure"), list(extend = "pdf",
-  exportOptions = list(columns = ":visible"),      filename =
-  "DailyMeasure")), text = "Download")),
+  "four-column", dropup = TRUE), list(extend = "copyHtml5", exportOptions =
+  list(columns = ":visible")), list(extend = "print", exportOptions =
+  list(columns = ":visible")), list(extend = "collection", buttons =
+  list(list(extend = "csvHtml5", exportOptions = list(columns =
+  ":visible"), filename = "DailyMeasure"), list(extend = "excel",
+  exportOptions = list(columns = ":visible"), filename = "DailyMeasure"),
+  list(extend = "pdf", exportOptions = list(columns = ":visible"),     
+  filename = "DailyMeasure")), text = "Download")),
   drawCallback = DT::JS(semantic_popupJS),
   `responsive-resize` = DT::JS(semantic_popupJS),
   `responsive-display` = DT::JS(paste("function ( e, datatable, row, showHide, update )",

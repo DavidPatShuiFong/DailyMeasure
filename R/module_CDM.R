@@ -63,8 +63,9 @@ cdm_datatable <- function(input, output, session, dM) {
       input_id = "choice_dropdown",
       shinyWidgets::checkboxGroupButtons(
         inputId = ns("cdm_chosen"), label = "CDM items shown",
-        choices = cdm_item_names, selected = cdm_item_names,
-        # all choices initially selected
+        choices = cdm_item_names,
+        selected = setdiff(cdm_item_names, c("DiabetesSIP", "AsthmaSIP")),
+        # DiabetesSIP and AsthmaSIP no longer valid items :(
         status = "primary",
         checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
       icon = icon("gear"),

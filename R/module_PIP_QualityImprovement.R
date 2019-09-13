@@ -474,8 +474,10 @@ qim_diabetes <- function(input, output, session, dM) {
                 else {dplyr::select(., -c(FluvaxDate, FluvaxName))}} %>>%
               {if ("BP" %in% input$measure_chosen) {.}
                 else {dplyr::select(., -c(BPDate, BP))}},
-            columnDefs = list(list(targets = 1:2, visible = FALSE))
+            extensions = c('Buttons', 'Scroller'),
+            columnDefs = list(list(targets = 1:2, visible = FALSE)),
             # Patient Name and RecordNo hidden by default
+            scrollX = TRUE # this is a wide table
           )
         } else {
           df <- dM$qim_diabetes_report

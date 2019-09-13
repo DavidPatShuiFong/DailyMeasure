@@ -98,7 +98,13 @@ datatable_styled <- function(data, fillContainer = TRUE,
                              extensions = c('Buttons', 'Scroller', 'Responsive'),
                              dom = 'frltiBp',
                              buttons = list(list(extend = 'colvis',
-                                                 collectionLayout = "four-column"),
+                                                 collectionLayout = "four-column",
+                                                 # https://datatables.net/reference/button/collection
+                                                 # force 'dropdown' to drop-up
+                                                 # because this button is at bottom of page
+                                                 # another option is to add 'fixed' to collectionLayout
+                                                 # to result in 'centred' drop-down
+                                                 dropup = TRUE),
                                             list(extend = 'copyHtml5',
                                                  exportOptions = list(columns = ':visible')),
                                             list(extend = 'print',

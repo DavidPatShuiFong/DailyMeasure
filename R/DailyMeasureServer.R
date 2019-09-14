@@ -175,10 +175,18 @@ DailyMeasureServer <- function(input, output, session) {
     dM$contact_type <- input$contact_type
     # alter dMeasure object according to user input
   })
+  shiny::observeEvent(dM$contact_typeR(), {
+    shinyWidgets::updatePickerInput(session, inputId = "contact_type",
+                                    selected = dM$contact_type)
+  })
 
   shiny::observeEvent(input$min_contact, ignoreInit = TRUE, {
     dM$contact_min <- input$min_contact
     # alter dMeasure object according to user input
+  })
+  shiny::observeEvent(dM$contact_minR(), {
+    shinyWidgets::updateSliderTextInput(session, inputId = "min_contact",
+                                        selected = dM$contact_min)
   })
 
   shiny::observeEvent(input$appointment_status, ignoreInit = TRUE, ignoreNULL = FALSE, {
@@ -186,11 +194,19 @@ DailyMeasureServer <- function(input, output, session) {
     dM$appointment_status <- input$appointment_status
     # alter dMeasure object according to user input
   })
+  shiny::observeEvent(dM$appointment_statusR(), {
+    shinyWidgets::updatePickerInput(session, inputId = "appointment_status",
+                                    selected = dM$appointment_status)
+  })
 
   shiny::observeEvent(input$visit_type, ignoreInit = TRUE, ignoreNULL = FALSE, {
     # cannot ignoreNULL because sometimes an empty list will be chosen
     dM$visit_type <- input$visit_type
     # alter dMeasure object according to user input
+  })
+  shiny::observeEvent(dM$visit_typeR(), {
+    shinyWidgets::updatePickerInput(session, inputId = "visit_type",
+                                    selected = dM$visit_type)
   })
 
   # Immunization functions

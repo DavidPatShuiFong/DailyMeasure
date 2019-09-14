@@ -340,7 +340,7 @@ qim_active <- function(input, output, session, dM) {
     c(input$list_view,
       dM$qim_active_listR(),
       dM$qim_active_reportR(),
-      input$demographic_chosen), ignoreInit = TRUE, {
+      dM$qim_demographicGroupR()), ignoreInit = TRUE, {
         if (input$list_view) {
           datatable_styled(
             dM$qim_active_list %>>%
@@ -349,7 +349,7 @@ qim_active <- function(input, output, session, dM) {
                             MaritalStatus, Sexuality, Count) %>>%
               # re-orders the fields
               {remove_demographic <- setdiff(dM$qim_demographicGroupings,
-                                             input$demographic_chosen)
+                                             dM$qim_demographicGroup)
               # finds the demographics that were NOT chosen
               dplyr::select(., -remove_demographic)},
             columnDefs = list(list(targets = 1:2, visible = FALSE))
@@ -418,7 +418,7 @@ qim_diabetes <- function(input, output, session, dM) {
     c(input$list_view,
       dM$qim_diabetes_listR(),
       dM$qim_diabetes_reportR(),
-      input$demographic_chosen), ignoreInit = TRUE, {
+      dM$qim_demographicGroupR()), ignoreInit = TRUE, {
         if (input$list_view) {
           datatable_styled(
             dM$qim_diabetes_list %>>%
@@ -430,7 +430,7 @@ qim_diabetes <- function(input, output, session, dM) {
                             BPDate, BP) %>>%
               # re-orders the fields
               {remove_demographic <- setdiff(dM$qim_demographicGroupings,
-                                             input$demographic_chosen)
+                                             dM$qim_demographicGroup)
               # finds the demographics that were NOT chosen
               dplyr::select(., -remove_demographic)} %>>%
               {if ("HbA1C" %in% input$measure_chosen) {.}
@@ -489,7 +489,7 @@ qim_cst <- function(input, output, session, dM) {
     c(input$list_view,
       dM$qim_cst_listR(),
       dM$qim_cst_reportR(),
-      input$demographic_chosen), ignoreInit = TRUE, {
+      dM$qim_demographicGroupR()), ignoreInit = TRUE, {
         if (input$list_view) {
           datatable_styled(
             dM$qim_cst_list %>>%
@@ -499,7 +499,7 @@ qim_cst <- function(input, output, session, dM) {
                             CSTDate, CSTName) %>>%
               # re-orders the fields
               {remove_demographic <- setdiff(dM$qim_demographicGroupings,
-                                             input$demographic_chosen)
+                                             dM$qim_demographicGroup)
               # finds the demographics that were NOT chosen
               dplyr::select(., -remove_demographic)},
             columnDefs = list(list(targets = 1:2, visible = FALSE))
@@ -568,13 +568,13 @@ qim_15plus <- function(input, output, session, dM) {
     c(input$list_view,
       dM$qim_15plus_listR(),
       dM$qim_15plus_reportR(),
-      input$demographic_chosen), ignoreInit = TRUE, {
+      dM$qim_demographicGroupR()), ignoreInit = TRUE, {
         if (input$list_view) {
           df <- dM$qim_15plus_list %>>%
             {remove_demographic <- setdiff(dM$qim_demographicGroupings,
-                                           input$demographic_chosen)
+                                           dM$qim_demographicGroup)
             # finds the demographics that were NOT chosen
-            dplyr::select(., -remove_demographic)} %>>%
+            dplyr::select(., -c(remove_demographic, InternalID))} %>>%
             {if ("Smoking" %in% input$measure_chosen) {.}
               else {dplyr::select(., -c(SmokingDate, SmokingStatus))}} %>>%
             {if ("Weight" %in% input$measure_chosen) {.}
@@ -644,13 +644,13 @@ qim_65plus <- function(input, output, session, dM) {
     c(input$list_view,
       dM$qim_65plus_listR(),
       dM$qim_65plus_reportR(),
-      input$demographic_chosen), ignoreInit = TRUE, {
+      dM$qim_demographicGroupR()), ignoreInit = TRUE, {
         if (input$list_view) {
           df <- dM$qim_65plus_list %>>%
             {remove_demographic <- setdiff(dM$qim_demographicGroupings,
-                                           input$demographic_chosen)
+                                           dM$qim_demographicGroup)
             # finds the demographics that were NOT chosen
-            dplyr::select(., -remove_demographic)}
+            dplyr::select(., -c(remove_demographic, InternalID))}
           return(datatable_styled(
             df, extensions = c('Buttons', 'Scroller'),
             columnDefs = list(list(targets =
@@ -705,13 +705,13 @@ qim_copd <- function(input, output, session, dM) {
     c(input$list_view,
       dM$qim_copd_listR(),
       dM$qim_copd_reportR(),
-      input$demographic_chosen), ignoreInit = TRUE, {
+      dM$qim_demographicGroupR()), ignoreInit = TRUE, {
         if (input$list_view) {
           df <- dM$qim_copd_list %>>%
             {remove_demographic <- setdiff(dM$qim_demographicGroupings,
-                                           input$demographic_chosen)
+                                           dM$qim_demographicGroup)
             # finds the demographics that were NOT chosen
-            dplyr::select(., -remove_demographic)}
+            dplyr::select(., -c(remove_demographic, InternalID))}
           return(datatable_styled(
             df, extensions = c('Buttons', 'Scroller'),
             columnDefs = list(list(targets =
@@ -788,13 +788,13 @@ qim_cvdRisk <- function(input, output, session, dM) {
     c(input$list_view,
       dM$qim_cvdRisk_listR(),
       dM$qim_cvdRisk_reportR(),
-      input$demographic_chosen), ignoreInit = TRUE, {
+      dM$qim_demographicGroupR()), ignoreInit = TRUE, {
         if (input$list_view) {
           df <- dM$qim_cvdRisk_list %>>%
             {remove_demographic <- setdiff(dM$qim_demographicGroupings,
-                                           input$demographic_chosen)
+                                           dM$qim_demographicGroup)
             # finds the demographics that were NOT chosen
-            dplyr::select(., -remove_demographic)}
+            dplyr::select(., -c(remove_demographic, InternalID))}
           return(datatable_styled(
             df, extensions = c('Buttons', 'Scroller'),
             columnDefs = list(list(targets =

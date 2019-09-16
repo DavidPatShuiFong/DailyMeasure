@@ -35,7 +35,8 @@ Imports:
     sodium,
     R6,
     dbConnection,
-    dMeasure
+    dMeasure,
+    dMeasureQIM
 Suggests:
     pool
 ImportComments:

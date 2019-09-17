@@ -31,6 +31,7 @@ DailyMeasureServer <- function(input, output, session) {
   # create dMeasureQIM objects
   dMQIM <- dMeasureQIM::dMeasureQIM$new(dM)
   dMQIMappt <- dMeasureQIM::dMeasureQIM$new(dM)
+  dMQIMappt$qim_contact <- FALSE # use appointment list, not contact list
 
   # read config files
 
@@ -219,7 +220,7 @@ DailyMeasureServer <- function(input, output, session) {
 
   # Practice Incentive Program (PIP) Quality Improvement (QI) measures
   # appointment view
-  # qim_results_appt <- callModule(qimAppt, "qimAppt", dMQIMappt)
+  qim_results_appt <- callModule(qim, "qimAppt", dMQIMappt, contact = FALSE)
 
   # appointment list
 

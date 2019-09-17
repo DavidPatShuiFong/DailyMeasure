@@ -94,14 +94,7 @@ qim_diabetes_UI <- function(id) {
   shiny::tagList(
     shiny::fluidRow(
       shiny::column(3,
-                    shinyWidgets::pickerInput(
-                      inputId = ns("list_view"),
-                      choices = c("Report", "List", "Appointments"),
-                      choicesOpt = list(icon = c("fa fa-book-reader",
-                                                 "fa fa-clipboard-list",
-                                                 "fa fa-calendar-check")),
-                      options = list(`icon-base` = ""),
-                      width = "15em")),
+                    shiny::uiOutput(ns("list_group"))),
       shiny::column(2, offset = 7, # note that total 'column' width = 12
                     shiny::uiOutput(ns("measure_group")))
     ),
@@ -119,14 +112,7 @@ qim_cst_UI <- function(id) {
   shiny::tagList(
     shiny::fluidRow(
       shiny::column(3,
-                    shinyWidgets::pickerInput(
-                      inputId = ns("list_view"),
-                      choices = c("Report", "List", "Appointments"),
-                      choicesOpt = list(icon = c("fa fa-book-reader",
-                                                 "fa fa-clipboard-list",
-                                                 "fa fa-calendar-check")),
-                      options = list(`icon-base` = ""),
-                      width = "15em"))),
+                    shiny::uiOutput(ns("list_group")))),
     shinycssloaders::withSpinner(
       DT::DTOutput(ns("cst_qim_table")),
       type = 8,
@@ -141,14 +127,7 @@ qim_15plus_UI <- function(id) {
   shiny::tagList(
     shiny::fluidRow(
       shiny::column(3,
-                    shinyWidgets::pickerInput(
-                      inputId = ns("list_view"),
-                      choices = c("Report", "List", "Appointments"),
-                      choicesOpt = list(icon = c("fa fa-book-reader",
-                                                 "fa fa-clipboard-list",
-                                                 "fa fa-calendar-check")),
-                      options = list(`icon-base` = ""),
-                      width = "15em")),
+                    shiny::uiOutput(ns("list_group"))),
       shiny::column(2, offset = 7, # note that total 'column' width = 12
                     shiny::uiOutput(ns("measure_group")))
     ),
@@ -166,14 +145,7 @@ qim_65plus_UI <- function(id) {
   shiny::tagList(
     shiny::fluidRow(
       shiny::column(3,
-                    shinyWidgets::pickerInput(
-                      inputId = ns("list_view"),
-                      choices = c("Report", "List", "Appointments"),
-                      choicesOpt = list(icon = c("fa fa-book-reader",
-                                                 "fa fa-clipboard-list",
-                                                 "fa fa-calendar-check")),
-                      options = list(`icon-base` = ""),
-                      width = "15em"))),
+                    shiny::uiOutput(ns("list_group")))),
     shinycssloaders::withSpinner(
       DT::DTOutput(ns("sixtyfiveplus_qim_table")),
       type = 8,
@@ -188,14 +160,7 @@ qim_copd_UI <- function(id) {
   shiny::tagList(
     shiny::fluidRow(
       shiny::column(3,
-                    shinyWidgets::pickerInput(
-                      inputId = ns("list_view"),
-                      choices = c("Report", "List", "Appointments"),
-                      choicesOpt = list(icon = c("fa fa-book-reader",
-                                                 "fa fa-clipboard-list",
-                                                 "fa fa-calendar-check")),
-                      options = list(`icon-base` = ""),
-                      width = "15em"))),
+                    shiny::uiOutput(ns("list_group")))),
     shinycssloaders::withSpinner(
       DT::DTOutput(ns("copd_qim_table")),
       type = 8,
@@ -210,14 +175,7 @@ qim_cvdRisk_UI <- function(id) {
   shiny::tagList(
     shiny::fluidRow(
       shiny::column(3,
-                    shinyWidgets::pickerInput(
-                      inputId = ns("list_view"),
-                      choices = c("Report", "List", "Appointments"),
-                      choicesOpt = list(icon = c("fa fa-book-reader",
-                                                 "fa fa-clipboard-list",
-                                                 "fa fa-calendar-check")),
-                      options = list(`icon-base` = ""),
-                      width = "15em")),
+                    shiny::uiOutput(ns("list_group"))),
       shiny::column(2, offset = 7, # note that total 'column' width = 12
                     shiny::uiOutput(ns("groups")))
     ),
@@ -363,6 +321,25 @@ qim_active <- function(input, output, session, dMQIM, contact) {
 qim_diabetes <- function(input, output, session, dMQIM, contact) {
   ns <- session$ns
 
+  output$list_group <- shiny::renderUI({
+    # chooses between Report, List and Appointment views
+    # only Report, List view available in 'contact' list mode
+    # only Appointment view available in 'appointment' list mode
+    if (contact) {
+      choices <- c("Report", "List")
+      choicesOpt <- list(icon = c("fa fa-book-reader",
+                                  "fa fa-clipboard-list"))
+    } else {
+      choices <- c("Appointments")
+      choicesOpt <- list(icon = c("fa fa-calendar-check"))
+    }
+    shinyWidgets::pickerInput(
+      inputId = ns("list_view"),
+      choices = choices,
+      choicesOpt = choicesOpt,
+      options = list(`icon-base` = ""),
+      width = "15em")
+  })
   output$measure_group <- shiny::renderUI({
     shinyWidgets::dropdown(
       input_id = "measure_group_dropdown",
@@ -387,6 +364,7 @@ qim_diabetes <- function(input, output, session, dMQIM, contact) {
       dMQIM$qim_diabetes_list_appointmentsR(),
       dMQIM$qim_diabetes_reportR(),
       dMQIM$qim_demographicGroupR()), {
+        shiny::req(input$list_view) # this might not be defined on first run!
         if (input$list_view == "List") {
           df <- dMQIM$qim_diabetes_listR() %>>%
             dplyr::select(Patient, RecordNo,
@@ -481,12 +459,33 @@ qim_diabetes <- function(input, output, session, dMQIM, contact) {
 qim_cst <- function(input, output, session, dMQIM, contact) {
   ns <- session$ns
 
+  output$list_group <- shiny::renderUI({
+    # chooses between Report, List and Appointment views
+    # only Report, List view available in 'contact' list mode
+    # only Appointment view available in 'appointment' list mode
+    if (contact) {
+      choices <- c("Report", "List")
+      choicesOpt <- list(icon = c("fa fa-book-reader",
+                                  "fa fa-clipboard-list"))
+    } else {
+      choices <- c("Appointments")
+      choicesOpt <- list(icon = c("fa fa-calendar-check"))
+    }
+    shinyWidgets::pickerInput(
+      inputId = ns("list_view"),
+      choices = choices,
+      choicesOpt = choicesOpt,
+      options = list(`icon-base` = ""),
+      width = "15em")
+  })
+
   qim_cst_datatable <- shiny::eventReactive(
     c(input$list_view,
       dMQIM$qim_cst_listR(),
       dMQIM$qim_cst_list_appointmentsR(),
       dMQIM$qim_cst_reportR(),
       dMQIM$qim_demographicGroupR()), {
+        shiny::req(input$list_view)
         if (input$list_view == "List") {
           df <- dMQIM$qim_cst_listR() %>>%
             dplyr::select(Patient, RecordNo,
@@ -561,6 +560,25 @@ qim_cst <- function(input, output, session, dMQIM, contact) {
 qim_15plus <- function(input, output, session, dMQIM, contact) {
   ns <- session$ns
 
+  output$list_group <- shiny::renderUI({
+    # chooses between Report, List and Appointment views
+    # only Report, List view available in 'contact' list mode
+    # only Appointment view available in 'appointment' list mode
+    if (contact) {
+      choices <- c("Report", "List")
+      choicesOpt <- list(icon = c("fa fa-book-reader",
+                                  "fa fa-clipboard-list"))
+    } else {
+      choices <- c("Appointments")
+      choicesOpt <- list(icon = c("fa fa-calendar-check"))
+    }
+    shinyWidgets::pickerInput(
+      inputId = ns("list_view"),
+      choices = choices,
+      choicesOpt = choicesOpt,
+      options = list(`icon-base` = ""),
+      width = "15em")
+  })
   output$measure_group <- shiny::renderUI({
     shinyWidgets::dropdown(
       input_id = "measure_group_dropdown",
@@ -585,6 +603,7 @@ qim_15plus <- function(input, output, session, dMQIM, contact) {
       dMQIM$qim_15plus_list_appointmentsR(),
       dMQIM$qim_15plus_reportR(),
       dMQIM$qim_demographicGroupR()), {
+        shiny::req(input$list_view)
         if (input$list_view == "List") {
           df <- dMQIM$qim_15plus_listR() %>>%
             {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
@@ -655,8 +674,8 @@ qim_15plus <- function(input, output, session, dMQIM, contact) {
                                         PastAlcoholLevel, YearStarted, YearStopped,
                                         AlcoholComment))}}
           return(datatable_styled(df,
-                           extensions = c('Buttons', 'Scroller'),
-                           scrollX = TRUE)) # this is a wide table
+                                  extensions = c('Buttons', 'Scroller'),
+                                  scrollX = TRUE)) # this is a wide table
         }
       }
   )
@@ -686,12 +705,33 @@ qim_15plus <- function(input, output, session, dMQIM, contact) {
 qim_65plus <- function(input, output, session, dMQIM, contact) {
   ns <- session$ns
 
+  output$list_group <- shiny::renderUI({
+    # chooses between Report, List and Appointment views
+    # only Report, List view available in 'contact' list mode
+    # only Appointment view available in 'appointment' list mode
+    if (contact) {
+      choices <- c("Report", "List")
+      choicesOpt <- list(icon = c("fa fa-book-reader",
+                                  "fa fa-clipboard-list"))
+    } else {
+      choices <- c("Appointments")
+      choicesOpt <- list(icon = c("fa fa-calendar-check"))
+    }
+    shinyWidgets::pickerInput(
+      inputId = ns("list_view"),
+      choices = choices,
+      choicesOpt = choicesOpt,
+      options = list(`icon-base` = ""),
+      width = "15em")
+  })
+
   qim_65plus_datatable <- shiny::eventReactive(
     c(input$list_view,
       dMQIM$qim_65plus_listR(),
       dMQIM$qim_65plus_list_appointmentsR(),
       dMQIM$qim_65plus_reportR(),
       dMQIM$qim_demographicGroupR()), {
+        shiny::req(input$list_view)
         if (input$list_view == "List") {
           df <- dMQIM$qim_65plus_listR() %>>%
             {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
@@ -760,12 +800,33 @@ qim_65plus <- function(input, output, session, dMQIM, contact) {
 qim_copd <- function(input, output, session, dMQIM, contact) {
   ns <- session$ns
 
+  output$list_group <- shiny::renderUI({
+    # chooses between Report, List and Appointment views
+    # only Report, List view available in 'contact' list mode
+    # only Appointment view available in 'appointment' list mode
+    if (contact) {
+      choices <- c("Report", "List")
+      choicesOpt <- list(icon = c("fa fa-book-reader",
+                                  "fa fa-clipboard-list"))
+    } else {
+      choices <- c("Appointments")
+      choicesOpt <- list(icon = c("fa fa-calendar-check"))
+    }
+    shinyWidgets::pickerInput(
+      inputId = ns("list_view"),
+      choices = choices,
+      choicesOpt = choicesOpt,
+      options = list(`icon-base` = ""),
+      width = "15em")
+  })
+
   qim_copd_datatable <- shiny::eventReactive(
     c(input$list_view,
       dMQIM$qim_copd_listR(),
       dMQIM$qim_copd_list_appointmentsR(),
       dMQIM$qim_copd_reportR(),
       dMQIM$qim_demographicGroupR()), {
+        shiny::req(input$list_view)
         if (input$list_view == "List") {
           df <- dMQIM$qim_copd_listR() %>>%
             {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
@@ -835,6 +896,25 @@ qim_copd <- function(input, output, session, dMQIM, contact) {
 qim_cvdRisk <- function(input, output, session, dMQIM, contact) {
   ns <- session$ns
 
+  output$list_group <- shiny::renderUI({
+    # chooses between Report, List and Appointment views
+    # only Report, List view available in 'contact' list mode
+    # only Appointment view available in 'appointment' list mode
+    if (contact) {
+      choices <- c("Report", "List")
+      choicesOpt <- list(icon = c("fa fa-book-reader",
+                                  "fa fa-clipboard-list"))
+    } else {
+      choices <- c("Appointments")
+      choicesOpt <- list(icon = c("fa fa-calendar-check"))
+    }
+    shinyWidgets::pickerInput(
+      inputId = ns("list_view"),
+      choices = choices,
+      choicesOpt = choicesOpt,
+      options = list(`icon-base` = ""),
+      width = "15em")
+  })
   output$groups <- shiny::renderUI({
     shinyWidgets::dropdown(
       input_id = "measure_group_dropdown",
@@ -862,6 +942,7 @@ qim_cvdRisk <- function(input, output, session, dMQIM, contact) {
       dMQIM$qim_cvdRisk_list_appointmentsR(),
       dMQIM$qim_cvdRisk_reportR(),
       dMQIM$qim_demographicGroupR()), {
+        shiny::req(input$list_view)
         if (input$list_view == "List") {
           df <- dMQIM$qim_cvdRisk_listR() %>>%
             {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,

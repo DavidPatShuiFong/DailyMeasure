@@ -215,7 +215,7 @@ DailyMeasureServer <- function(input, output, session) {
   admin_table_results <- callModule(administration, "admin_dt", dM)
 
   # Practice Incentive Program (PIP) Quality Improvement (QI) measures
-  qim_results <- callModule(qim, "qim", dMQIM)
+  qim_results <- callModule(qim, "qim", dMQIM, contact = TRUE)
 
   # Practice Incentive Program (PIP) Quality Improvement (QI) measures
   # appointment view

@@ -15,7 +15,7 @@ qim_UI <- function(id) {
       id = "tab_admin",
       title = shiny::tagList(
         shiny::div(style = "display:inline-block",
-                   shiny::uiOutput(ns("demographic_group"))),
+                   shiny::uiOutput(ns("settings_group"))),
         shiny::div(style = "display:inline-block",
                    "Quality Improvement Measures")),
       width = 12,
@@ -72,11 +72,12 @@ qim_active_UI <- function(id) {
   shiny::tagList(
     shiny::fluidRow(
       shiny::column(3,
-                    shinyWidgets::switchInput(
+                    shinyWidgets::pickerInput(
                       inputId = ns("list_view"),
-                      label = paste("<i class=\"fas fa-clipboard-list\"></i>",
-                                    " List View"),
-                      labelWidth = "10em",
+                      choices = c("Report", "List"),
+                      choicesOpt = list(icon = c("fa fa-book-reader",
+                                                 "fa fa-clipboard-list")),
+                      options = list(`icon-base` = ""),
                       width = "15em"))
     ),
     shinycssloaders::withSpinner(
@@ -101,16 +102,7 @@ qim_diabetes_UI <- function(id) {
                                                  "fa fa-calendar-check")),
                       options = list(`icon-base` = ""),
                       width = "15em")),
-      shiny::column(2, offset = 1, # note that total 'column' width = 12
-                    shinyWidgets::checkboxGroupButtons(
-                      inputId = ns("ignore_old"),
-                      checkIcon = list(yes = shiny::icon("calendar-times"),
-                                       no = shiny::icon("calendar-alt")),
-                      choices = c("Ignore old measurements"),
-                      selected = c("Ignore old measurements"),
-                      status = "primary",
-                      width = "30em")),
-      shiny::column(2, offset = 4, # note that total 'column' width = 12
+      shiny::column(2, offset = 7, # note that total 'column' width = 12
                     shiny::uiOutput(ns("measure_group")))
     ),
     shinycssloaders::withSpinner(
@@ -127,22 +119,14 @@ qim_cst_UI <- function(id) {
   shiny::tagList(
     shiny::fluidRow(
       shiny::column(3,
-                    shinyWidgets::switchInput(
+                    shinyWidgets::pickerInput(
                       inputId = ns("list_view"),
-                      label = paste("<i class=\"fas fa-clipboard-list\"></i>",
-                                    " List View"),
-                      labelWidth = "10em",
-                      width = "15em")),
-      shiny::column(2, offset = 1, # note that total 'column' width = 12
-                    shinyWidgets::checkboxGroupButtons(
-                      inputId = ns("ignore_old"),
-                      checkIcon = list(yes = shiny::icon("calendar-times"),
-                                       no = shiny::icon("calendar-alt")),
-                      choices = c("Ignore old measurements"),
-                      selected = c("Ignore old measurements"),
-                      status = "primary",
-                      width = "30em"))
-    ),
+                      choices = c("Report", "List", "Appointments"),
+                      choicesOpt = list(icon = c("fa fa-book-reader",
+                                                 "fa fa-clipboard-list",
+                                                 "fa fa-calendar-check")),
+                      options = list(`icon-base` = ""),
+                      width = "15em"))),
     shinycssloaders::withSpinner(
       DT::DTOutput(ns("cst_qim_table")),
       type = 8,
@@ -157,22 +141,15 @@ qim_15plus_UI <- function(id) {
   shiny::tagList(
     shiny::fluidRow(
       shiny::column(3,
-                    shinyWidgets::switchInput(
+                    shinyWidgets::pickerInput(
                       inputId = ns("list_view"),
-                      label = paste("<i class=\"fas fa-clipboard-list\"></i>",
-                                    " List View"),
-                      labelWidth = "10em",
+                      choices = c("Report", "List", "Appointments"),
+                      choicesOpt = list(icon = c("fa fa-book-reader",
+                                                 "fa fa-clipboard-list",
+                                                 "fa fa-calendar-check")),
+                      options = list(`icon-base` = ""),
                       width = "15em")),
-      shiny::column(2, offset = 1, # note that total 'column' width = 12
-                    shinyWidgets::checkboxGroupButtons(
-                      inputId = ns("ignore_old"),
-                      checkIcon = list(yes = shiny::icon("calendar-times"),
-                                       no = shiny::icon("calendar-alt")),
-                      choices = c("Ignore old measurements"),
-                      selected = c("Ignore old measurements"),
-                      status = "primary",
-                      width = "30em")),
-      shiny::column(2, offset = 4, # note that total 'column' width = 12
+      shiny::column(2, offset = 7, # note that total 'column' width = 12
                     shiny::uiOutput(ns("measure_group")))
     ),
     shinycssloaders::withSpinner(
@@ -189,22 +166,14 @@ qim_65plus_UI <- function(id) {
   shiny::tagList(
     shiny::fluidRow(
       shiny::column(3,
-                    shinyWidgets::switchInput(
+                    shinyWidgets::pickerInput(
                       inputId = ns("list_view"),
-                      label = paste("<i class=\"fas fa-clipboard-list\"></i>",
-                                    " List View"),
-                      labelWidth = "10em",
-                      width = "15em")),
-      shiny::column(2, offset = 1, # note that total 'column' width = 12
-                    shinyWidgets::checkboxGroupButtons(
-                      inputId = ns("ignore_old"),
-                      checkIcon = list(yes = shiny::icon("calendar-times"),
-                                       no = shiny::icon("calendar-alt")),
-                      choices = c("Ignore old measurements"),
-                      selected = c("Ignore old measurements"),
-                      status = "primary",
-                      width = "30em"))
-    ),
+                      choices = c("Report", "List", "Appointments"),
+                      choicesOpt = list(icon = c("fa fa-book-reader",
+                                                 "fa fa-clipboard-list",
+                                                 "fa fa-calendar-check")),
+                      options = list(`icon-base` = ""),
+                      width = "15em"))),
     shinycssloaders::withSpinner(
       DT::DTOutput(ns("sixtyfiveplus_qim_table")),
       type = 8,
@@ -219,22 +188,14 @@ qim_copd_UI <- function(id) {
   shiny::tagList(
     shiny::fluidRow(
       shiny::column(3,
-                    shinyWidgets::switchInput(
+                    shinyWidgets::pickerInput(
                       inputId = ns("list_view"),
-                      label = paste("<i class=\"fas fa-clipboard-list\"></i>",
-                                    " List View"),
-                      labelWidth = "10em",
-                      width = "15em")),
-      shiny::column(2, offset = 1, # note that total 'column' width = 12
-                    shinyWidgets::checkboxGroupButtons(
-                      inputId = ns("ignore_old"),
-                      checkIcon = list(yes = shiny::icon("calendar-times"),
-                                       no = shiny::icon("calendar-alt")),
-                      choices = c("Ignore old measurements"),
-                      selected = c("Ignore old measurements"),
-                      status = "primary",
-                      width = "30em"))
-    ),
+                      choices = c("Report", "List", "Appointments"),
+                      choicesOpt = list(icon = c("fa fa-book-reader",
+                                                 "fa fa-clipboard-list",
+                                                 "fa fa-calendar-check")),
+                      options = list(`icon-base` = ""),
+                      width = "15em"))),
     shinycssloaders::withSpinner(
       DT::DTOutput(ns("copd_qim_table")),
       type = 8,
@@ -249,22 +210,15 @@ qim_cvdRisk_UI <- function(id) {
   shiny::tagList(
     shiny::fluidRow(
       shiny::column(3,
-                    shinyWidgets::switchInput(
+                    shinyWidgets::pickerInput(
                       inputId = ns("list_view"),
-                      label = paste("<i class=\"fas fa-clipboard-list\"></i>",
-                                    " List View"),
-                      labelWidth = "10em",
+                      choices = c("Report", "List", "Appointments"),
+                      choicesOpt = list(icon = c("fa fa-book-reader",
+                                                 "fa fa-clipboard-list",
+                                                 "fa fa-calendar-check")),
+                      options = list(`icon-base` = ""),
                       width = "15em")),
-      shiny::column(2, offset = 1, # note that total 'column' width = 12
-                    shinyWidgets::checkboxGroupButtons(
-                      inputId = ns("ignore_old"),
-                      checkIcon = list(yes = shiny::icon("calendar-times"),
-                                       no = shiny::icon("calendar-alt")),
-                      choices = c("Ignore old measurements"),
-                      selected = c("Ignore old measurements"),
-                      status = "primary",
-                      width = "30em")),
-      shiny::column(2, offset = 4, # note that total 'column' width = 12
+      shiny::column(2, offset = 7, # note that total 'column' width = 12
                     shiny::uiOutput(ns("groups")))
     ),
     shinycssloaders::withSpinner(
@@ -283,38 +237,54 @@ qim_cvdRisk_UI <- function(id) {
 #' @param output as required by Shiny modules
 #' @param session as required by Shiny modules
 #' @param dMQIM dMeasure QIM R6 object
+#' @param contact (logical) TRUE if using 'contact' list
+#'     'contact' list uses active contact methods
+#'     FALSE if using 'appointment' list
 #'
 #' @return none
-qim <- function(input, output, session, dMQIM) {
+qim <- function(input, output, session, dMQIM, contact) {
   ns <- session$ns
 
   # result management
-  callModule(qim_active, "qim_active", dMQIM)
-  callModule(qim_diabetes, "qim_diabetes", dMQIM)
-  callModule(qim_cst, "qim_cst", dMQIM)
-  callModule(qim_15plus, "qim_15plus", dMQIM)
-  callModule(qim_65plus, "qim_65plus", dMQIM)
-  callModule(qim_copd, "qim_copd", dMQIM)
-  callModule(qim_cvdRisk, "qim_cvdRisk", dMQIM)
+  callModule(qim_active, "qim_active", dMQIM, contact)
+  callModule(qim_diabetes, "qim_diabetes", dMQIM, contact)
+  callModule(qim_cst, "qim_cst", dMQIM, contact)
+  callModule(qim_15plus, "qim_15plus", dMQIM, contact)
+  callModule(qim_65plus, "qim_65plus", dMQIM, contact)
+  callModule(qim_copd, "qim_copd", dMQIM, contact)
+  callModule(qim_cvdRisk, "qim_cvdRisk", dMQIM, contact)
 
-  output$demographic_group <- shiny::renderUI({
+  output$settings_group <- shiny::renderUI({
     shinyWidgets::dropdown(
-      input_id = "demographic_group_dropdown",
+      input_id = "qim_dropdown",
+      icon = icon("gear"),
+      label = "Settings", width = "20em",
+      shinyWidgets::checkboxGroupButtons(
+        inputId = ns("ignore_old"), label = "Measurements",
+        checkIcon = list(yes = shiny::icon("calendar-times"),
+                         no = shiny::icon("calendar-alt")),
+        choices = c("Ignore old measurements"),
+        selected = c("Ignore old measurements"),
+        status = "primary",
+        width = "30em"),
       shinyWidgets::checkboxGroupButtons(
         inputId = ns("demographic_chosen"), label = "Demographic grouping",
         choices = dMQIM$qim_demographicGroupings,
         selected = dMQIM$qim_demographicGroupings,
         # all choices initially selected
-        status = "primary",
-        checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
-      icon = icon("gear"),
-      label = "Demographic groups"
+        status = "primary", width = "15em",
+        checkIcon = list(yes = icon("ok", lib = "glyphicon")))
     )
   })
   shiny::observeEvent(input$demographic_chosen, ignoreNULL = FALSE, {
     # change the filter depending on the dropdown
     dMQIM$qim_demographicGroup <- input$demographic_chosen
   })
+  shiny::observeEvent(input$ignore_old, ignoreNULL = FALSE, {
+    # if selected, will filter out appointments older than current date
+    dMQIM$qim_ignoreOld <- ("Ignore old measurements" %in% input$ignore_old)
+  })
+
 
 }
 
@@ -325,21 +295,24 @@ qim <- function(input, output, session, dMQIM) {
 #' @param session as required by Shiny modules
 #' @param dMQIM dMeasure QIM R6 object
 #'  access to appointments lists, results, correspondence and EMR database
+#' @param contact (logical) TRUE if using 'contact' list
+#'     'contact' list uses active contact methods
+#'     FALSE if using 'appointment' list
 #'
 #' @include fomantic_definitions.R
 #'
 #' @return none
-qim_active <- function(input, output, session, dMQIM) {
+qim_active <- function(input, output, session, dMQIM, contact) {
   ns <- session$ns
 
   qim_active_datatable <- shiny::eventReactive(
     c(input$list_view,
       dMQIM$qim_active_listR(),
       dMQIM$qim_active_reportR(),
-      dMQIM$qim_demographicGroupR()), ignoreInit = TRUE, {
-        if (input$list_view) {
+      dMQIM$qim_demographicGroupR()), {
+        if (input$list_view == "List") {
           datatable_styled(
-            dMQIM$qim_active_list %>>%
+            dMQIM$qim_active_listR() %>>%
               dplyr::select(Patient, RecordNo,
                             Age5, Sex, Ethnicity,
                             MaritalStatus, Sexuality, Count) %>>%
@@ -352,8 +325,8 @@ qim_active <- function(input, output, session, dMQIM) {
             # Patient Name and RecordNo hidden by default
             # can be shown again with 'colVis' button
           )
-        } else {
-          df <- dMQIM$qim_active_report
+        } else if (input$list_view == "Report") {
+          df <- dMQIM$qim_active_reportR()
           dt <- datatable_styled(df)
           if (dim(df)[[2]] > 0) {
             # not an empty dataframe
@@ -380,11 +353,14 @@ qim_active <- function(input, output, session, dMQIM) {
 #' @param session as required by Shiny modules
 #' @param dMQIM dMeasure QIM R6 object
 #'  access to appointments lists, results, correspondence and EMR database
+#' @param contact (logical) TRUE if using 'contact' list
+#'     'contact' list uses active contact methods
+#'     FALSE if using 'appointment' list
 #'
 #' @include fomantic_definitions.R
 #'
 #' @return none
-qim_diabetes <- function(input, output, session, dMQIM) {
+qim_diabetes <- function(input, output, session, dMQIM, contact) {
   ns <- session$ns
 
   output$measure_group <- shiny::renderUI({
@@ -405,19 +381,14 @@ qim_diabetes <- function(input, output, session, dMQIM) {
     dMQIM$qim_diabetes_measure <- input$measure_chosen
   })
 
-  shiny::observeEvent(input$ignore_old, ignoreNULL = FALSE, {
-    # if selected, will filter out appointments older than current date
-    dMQIM$qim_ignoreOld <- ("Ignore old measurements" %in% input$ignore_old)
-  })
-
   qim_diabetes_datatable <- shiny::eventReactive(
     c(input$list_view,
       dMQIM$qim_diabetes_listR(),
       dMQIM$qim_diabetes_list_appointmentsR(),
       dMQIM$qim_diabetes_reportR(),
-      dMQIM$qim_demographicGroupR()), ignoreInit = TRUE, {
+      dMQIM$qim_demographicGroupR()), {
         if (input$list_view == "List") {
-          df <- dMQIM$qim_diabetes_list %>>%
+          df <- dMQIM$qim_diabetes_listR() %>>%
             dplyr::select(Patient, RecordNo,
                           Age5, Sex, Ethnicity,
                           MaritalStatus, Sexuality,
@@ -446,7 +417,7 @@ qim_diabetes <- function(input, output, session, dMQIM) {
                            # Patient Name and RecordNo hidden by default
                            scrollX = TRUE) # this is a wide table
         } else if (input$list_view == "Report") {
-          df <- dMQIM$qim_diabetes_report
+          df <- dMQIM$qim_diabetes_reportR()
           dt <- datatable_styled(df)
           if (dim(df)[[2]] > 0) {
             # not an empty dataframe
@@ -455,7 +426,7 @@ qim_diabetes <- function(input, output, session, dMQIM) {
           }
           return(dt)
         } else if (input$list_view == "Appointments") {
-          df <- dMQIM$qim_diabetes_list_appointments %>>%
+          df <- dMQIM$qim_diabetes_list_appointmentsR() %>>%
             dplyr::select(Patient, RecordNo,
                           AppointmentDate, AppointmentTime, Provider, Status,
                           Age5, Sex, Ethnicity,
@@ -475,21 +446,13 @@ qim_diabetes <- function(input, output, session, dMQIM) {
             {if ("BP" %in% input$measure_chosen) {.}
               else {dplyr::select(., -c(BPDate, BP))}}
           datatable_styled(df,
-                           extensions = c('Buttons', 'Scroller'),
-                           columnDefs = list(list(targets =
-                                                    which(names(df) %in%
-                                                            c("Patient", "RecordNo")),
-                                                  # needs name by index as columns might be removed
-                                                  # by demographic filters above
-                                                  visible = FALSE)),
-                           scrollX = TRUE) %>>% # this is a wide table
+                           extensions = c('Buttons', 'Scroller')) %>>%
             {if ("HbA1C" %in% input$measure_chosen) {
               DT::formatStyle(., 'HbA1CDate',
                               backgroundcolor = DT::styleInterval(as.Date(Sys.Date()-365), c("ffeeee", "eeffee"))
               )
             } else {.}}
         }
-
       }
   )
 
@@ -508,25 +471,24 @@ qim_diabetes <- function(input, output, session, dMQIM) {
 #' @param session as required by Shiny modules
 #' @param dMQIM dMeasure QIM R6 object
 #'  access to appointments lists, results, correspondence and EMR database
+#' @param contact (logical) TRUE if using 'contact' list
+#'     'contact' list uses active contact methods
+#'     FALSE if using 'appointment' list
 #'
 #' @include fomantic_definitions.R
 #'
 #' @return none
-qim_cst <- function(input, output, session, dMQIM) {
+qim_cst <- function(input, output, session, dMQIM, contact) {
   ns <- session$ns
-
-  shiny::observeEvent(input$ignore_old, ignoreNULL = FALSE, {
-    # if selected, will filter out appointments older than current date
-    dMQIM$qim_ignoreOld <- ("Ignore old measurements" %in% input$ignore_old)
-  })
 
   qim_cst_datatable <- shiny::eventReactive(
     c(input$list_view,
       dMQIM$qim_cst_listR(),
+      dMQIM$qim_cst_list_appointmentsR(),
       dMQIM$qim_cst_reportR(),
-      dMQIM$qim_demographicGroupR()), ignoreInit = TRUE, {
-        if (input$list_view) {
-          df <- dMQIM$qim_cst_list %>>%
+      dMQIM$qim_demographicGroupR()), {
+        if (input$list_view == "List") {
+          df <- dMQIM$qim_cst_listR() %>>%
             dplyr::select(Patient, RecordNo,
                           Age5, Sex, Ethnicity,
                           MaritalStatus, Sexuality,
@@ -546,8 +508,8 @@ qim_cst <- function(input, output, session, dMQIM) {
                                    # by demographic filters above
                                    visible = FALSE)),
           )
-        } else {
-          df <- dMQIM$qim_cst_report
+        } else if (input$list_view == "Report") {
+          df <- dMQIM$qim_cst_reportR()
           dt <- datatable_styled(df)
           if (dim(df)[[2]] > 0) {
             # not an empty dataframe
@@ -555,8 +517,22 @@ qim_cst <- function(input, output, session, dMQIM) {
               DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
           }
           return(dt)
+        } else if (input$list_view == "Appointments") {
+          df <- dMQIM$qim_cst_list_appointmentsR() %>>%
+            dplyr::select(Patient, RecordNo,
+                          AppointmentDate, AppointmentTime, Provider, Status,
+                          Age5, Sex, Ethnicity,
+                          MaritalStatus, Sexuality,
+                          CSTDate, CSTName) %>>%
+            # re-orders the fields
+            {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
+                                           dMQIM$qim_demographicGroup)
+            # finds the demographics that were NOT chosen
+            dplyr::select(., -remove_demographic)}
+          datatable_styled(df,
+                           extensions = c('Buttons', 'Scroller'),
+                           scrollX = TRUE) # this is a wide table
         }
-
       }
   )
 
@@ -575,11 +551,14 @@ qim_cst <- function(input, output, session, dMQIM) {
 #' @param session as required by Shiny modules
 #' @param dMQIM dMeasure QIM R6 object
 #'  access to appointments lists, results, correspondence and EMR database
+#' @param contact (logical) TRUE if using 'contact' list
+#'     'contact' list uses active contact methods
+#'     FALSE if using 'appointment' list
 #'
 #' @include fomantic_definitions.R
 #'
 #' @return none
-qim_15plus <- function(input, output, session, dMQIM) {
+qim_15plus <- function(input, output, session, dMQIM, contact) {
   ns <- session$ns
 
   output$measure_group <- shiny::renderUI({
@@ -600,18 +579,14 @@ qim_15plus <- function(input, output, session, dMQIM) {
     dMQIM$qim_15plus_measure <- input$measure_chosen
   })
 
-  shiny::observeEvent(input$ignore_old, ignoreNULL = FALSE, {
-    # if selected, will filter out appointments older than current date
-    dMQIM$qim_ignoreOld <- ("Ignore old measurements" %in% input$ignore_old)
-  })
-
   qim_15plus_datatable <- shiny::eventReactive(
     c(input$list_view,
       dMQIM$qim_15plus_listR(),
+      dMQIM$qim_15plus_list_appointmentsR(),
       dMQIM$qim_15plus_reportR(),
-      dMQIM$qim_demographicGroupR()), ignoreInit = TRUE, {
-        if (input$list_view) {
-          df <- dMQIM$qim_15plus_list %>>%
+      dMQIM$qim_demographicGroupR()), {
+        if (input$list_view == "List") {
+          df <- dMQIM$qim_15plus_listR() %>>%
             {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
                                            dMQIM$qim_demographicGroup)
             # finds the demographics that were NOT chosen
@@ -640,8 +615,8 @@ qim_15plus <- function(input, output, session, dMQIM) {
                                    visible = FALSE)),
             # Patient Name and RecordNo hidden by default, as well as various alcohol details etc.
             scrollX = TRUE))
-        } else {
-          df <- dMQIM$qim_15plus_report
+        } else if (input$list_view == "Report") {
+          df <- dMQIM$qim_15plus_reportR()
           dt <- datatable_styled(df)
           if (dim(df)[[2]] > 0) {
             # not an empty dataframe
@@ -649,8 +624,40 @@ qim_15plus <- function(input, output, session, dMQIM) {
               DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
           }
           return(dt)
+        } else if (input$list_view == "Appointments") {
+          df <- dMQIM$qim_15plus_list_appointmentsR() %>>%
+            dplyr::select(Patient, RecordNo,
+                          AppointmentDate, AppointmentTime, Provider, Status,
+                          Age5, Sex, Ethnicity,
+                          MaritalStatus, Sexuality,
+                          SmokingDate, SmokingStatus,
+                          HeightDate, HeightValue, WeightDate, WeightValue,
+                          BMIDate, BMIValue, BMIClass,
+                          WaistDate, WaistValue,
+                          AlcoholDate, NonDrinker, DaysPerWeek,
+                          DrinksPerDay, AlcoholDescription,
+                          PastAlcoholLevel, YearStarted, YearStopped,
+                          AlcoholComment) %>>%
+            # re-orders the fields
+            {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
+                                           dMQIM$qim_demographicGroup)
+            # finds the demographics that were NOT chosen
+            dplyr::select(., -remove_demographic)} %>>%
+            {if ("Smoking" %in% input$measure_chosen) {.}
+              else {dplyr::select(., -c(SmokingDate, SmokingStatus))}} %>>%
+            {if ("Weight" %in% input$measure_chosen) {.}
+              else {dplyr::select(., -c(HeightDate, HeightValue, WeightDate, WeightValue,
+                                        BMIDate, BMIValue, BMIClass,
+                                        WaistDate, WaistValue))}} %>>%
+            {if ("Alcohol" %in% input$measure_chosen) {.}
+              else {dplyr::select(., -c(AlcoholDate, NonDrinker, DaysPerWeek,
+                                        DrinksPerDay, AlcoholDescription,
+                                        PastAlcoholLevel, YearStarted, YearStopped,
+                                        AlcoholComment))}}
+          return(datatable_styled(df,
+                           extensions = c('Buttons', 'Scroller'),
+                           scrollX = TRUE)) # this is a wide table
         }
-
       }
   )
 
@@ -669,25 +676,24 @@ qim_15plus <- function(input, output, session, dMQIM) {
 #' @param session as required by Shiny modules
 #' @param dMQIM dMeasure QIM R6 object
 #'  access to appointments lists, results, correspondence and EMR database
+#' @param contact (logical) TRUE if using 'contact' list
+#'     'contact' list uses active contact methods
+#'     FALSE if using 'appointment' list
 #'
 #' @include fomantic_definitions.R
 #'
 #' @return none
-qim_65plus <- function(input, output, session, dMQIM) {
+qim_65plus <- function(input, output, session, dMQIM, contact) {
   ns <- session$ns
-
-  shiny::observeEvent(input$ignore_old, ignoreNULL = FALSE, {
-    # if selected, will filter out appointments older than current date
-    dMQIM$qim_ignoreOld <- ("Ignore old measurements" %in% input$ignore_old)
-  })
 
   qim_65plus_datatable <- shiny::eventReactive(
     c(input$list_view,
       dMQIM$qim_65plus_listR(),
+      dMQIM$qim_65plus_list_appointmentsR(),
       dMQIM$qim_65plus_reportR(),
-      dMQIM$qim_demographicGroupR()), ignoreInit = TRUE, {
-        if (input$list_view) {
-          df <- dMQIM$qim_65plus_list %>>%
+      dMQIM$qim_demographicGroupR()), {
+        if (input$list_view == "List") {
+          df <- dMQIM$qim_65plus_listR() %>>%
             {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
                                            dMQIM$qim_demographicGroup)
             # finds the demographics that were NOT chosen
@@ -702,8 +708,8 @@ qim_65plus <- function(input, output, session, dMQIM) {
                                    visible = FALSE)),
             # Patient Name and RecordNo hidden by default
             scrollX = TRUE))
-        } else {
-          df <- dMQIM$qim_65plus_report
+        } else if (input$list_view == "Report") {
+          df <- dMQIM$qim_65plus_reportR()
           dt <- datatable_styled(df)
           if (dim(df)[[2]] > 0) {
             # not an empty dataframe
@@ -711,6 +717,21 @@ qim_65plus <- function(input, output, session, dMQIM) {
               DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
           }
           return(dt)
+        } else if (input$list_view == "Appointments") {
+          df <- dMQIM$qim_65plus_list_appointmentsR() %>>%
+            dplyr::select(Patient, RecordNo,
+                          AppointmentDate, AppointmentTime, Provider, Status,
+                          Age5, Sex, Ethnicity,
+                          MaritalStatus, Sexuality,
+                          FluvaxDate, FluvaxName) %>>%
+            # re-orders the fields
+            {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
+                                           dMQIM$qim_demographicGroup)
+            # finds the demographics that were NOT chosen
+            dplyr::select(., -remove_demographic)}
+          datatable_styled(df,
+                           extensions = c('Buttons', 'Scroller'),
+                           scrollX = TRUE) # this is a wide table
         }
       }
   )
@@ -719,7 +740,6 @@ qim_65plus <- function(input, output, session, dMQIM) {
     qim_65plus_datatable()
   },
   server = TRUE)
-
 }
 
 ##### Quality Improvement Measures COPD ###############################################
@@ -730,25 +750,24 @@ qim_65plus <- function(input, output, session, dMQIM) {
 #' @param session as required by Shiny modules
 #' @param dMQIM dMeasure QIM R6 object
 #'  access to appointments lists, results, correspondence and EMR database
+#' @param contact (logical) TRUE if using 'contact' list
+#'     'contact' list uses active contact methods
+#'     FALSE if using 'appointment' list
 #'
 #' @include fomantic_definitions.R
 #'
 #' @return none
-qim_copd <- function(input, output, session, dMQIM) {
+qim_copd <- function(input, output, session, dMQIM, contact) {
   ns <- session$ns
-
-  shiny::observeEvent(input$ignore_old, ignoreNULL = FALSE, {
-    # if selected, will filter out appointments older than current date
-    dMQIM$qim_ignoreOld <- ("Ignore old measurements" %in% input$ignore_old)
-  })
 
   qim_copd_datatable <- shiny::eventReactive(
     c(input$list_view,
       dMQIM$qim_copd_listR(),
+      dMQIM$qim_copd_list_appointmentsR(),
       dMQIM$qim_copd_reportR(),
-      dMQIM$qim_demographicGroupR()), ignoreInit = TRUE, {
-        if (input$list_view) {
-          df <- dMQIM$qim_copd_list %>>%
+      dMQIM$qim_demographicGroupR()), {
+        if (input$list_view == "List") {
+          df <- dMQIM$qim_copd_listR() %>>%
             {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
                                            dMQIM$qim_demographicGroup)
             # finds the demographics that were NOT chosen
@@ -763,8 +782,8 @@ qim_copd <- function(input, output, session, dMQIM) {
                                    visible = FALSE)),
             # Patient Name and RecordNo hidden by default
             scrollX = TRUE))
-        } else {
-          df <- dMQIM$qim_copd_report
+        } else if (input$list_view == "Report") {
+          df <- dMQIM$qim_copd_reportR()
           dt <- datatable_styled(df)
           if (dim(df)[[2]] > 0) {
             # not an empty dataframe
@@ -772,8 +791,22 @@ qim_copd <- function(input, output, session, dMQIM) {
               DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
           }
           return(dt)
+        } else if (input$list_view == "Appointments") {
+          df <- dMQIM$qim_diabetes_list_appointmentsR() %>>%
+            dplyr::select(Patient, RecordNo,
+                          AppointmentDate, AppointmentTime, Provider, Status,
+                          Age5, Sex, Ethnicity,
+                          MaritalStatus, Sexuality,
+                          FluvaxDate, FluvaxName) %>>%
+            # re-orders the fields
+            {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
+                                           dMQIM$qim_demographicGroup)
+            # finds the demographics that were NOT chosen
+            dplyr::select(., -remove_demographic)}
+          datatable_styled(df,
+                           extensions = c('Buttons', 'Scroller'),
+                           scrollX = TRUE) # this is a wide table
         }
-
       }
   )
 
@@ -792,11 +825,14 @@ qim_copd <- function(input, output, session, dMQIM) {
 #' @param session as required by Shiny modules
 #' @param dMQIM dMeasure QIM R6 object
 #'  access to appointments lists, results, correspondence and EMR database
+#' @param contact (logical) TRUE if using 'contact' list
+#'     'contact' list uses active contact methods
+#'     FALSE if using 'appointment' list
 #'
 #' @include fomantic_definitions.R
 #'
 #' @return none
-qim_cvdRisk <- function(input, output, session, dMQIM) {
+qim_cvdRisk <- function(input, output, session, dMQIM, contact) {
   ns <- session$ns
 
   output$groups <- shiny::renderUI({
@@ -820,18 +856,14 @@ qim_cvdRisk <- function(input, output, session, dMQIM) {
     dMQIM$qim_cvdRisk_measure <- input$groups_chosen
   })
 
-  shiny::observeEvent(input$ignore_old, ignoreNULL = FALSE, {
-    # if selected, will filter out appointments older than current date
-    dMQIM$qim_ignoreOld <- ("Ignore old measurements" %in% input$ignore_old)
-  })
-
   qim_cvdRisk_datatable <- shiny::eventReactive(
     c(input$list_view,
       dMQIM$qim_cvdRisk_listR(),
+      dMQIM$qim_cvdRisk_list_appointmentsR(),
       dMQIM$qim_cvdRisk_reportR(),
-      dMQIM$qim_demographicGroupR()), ignoreInit = TRUE, {
-        if (input$list_view) {
-          df <- dMQIM$qim_cvdRisk_list %>>%
+      dMQIM$qim_demographicGroupR()), {
+        if (input$list_view == "List") {
+          df <- dMQIM$qim_cvdRisk_listR() %>>%
             {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
                                            dMQIM$qim_demographicGroup)
             # finds the demographics that were NOT chosen
@@ -847,8 +879,8 @@ qim_cvdRisk <- function(input, output, session, dMQIM) {
             # Patient Name and RecordNo hidden by default
             scrollX = TRUE) %>>%
               DT::formatRound(which(names(df) %in% c("CholHDLRatio", "frisk")), digits = 3))
-        } else {
-          df <- dMQIM$qim_cvdRisk_report
+        } else if (input$list_view == "Report") {
+          df <- dMQIM$qim_cvdRisk_reportR()
           dt <- datatable_styled(df)
           if (dim(df)[[2]] > 0) {
             # not an empty dataframe
@@ -856,6 +888,30 @@ qim_cvdRisk <- function(input, output, session, dMQIM) {
               DT::formatRound(which(names(df) %in% c("Proportion")), digits = 3)
           }
           return(dt)
+        } else if (input$list_view == "Appointments") {
+          df <- dMQIM$qim_cvdRisk_list_appointmentsR() %>>%
+            dplyr::select(Patient, RecordNo,
+                          AppointmentDate, AppointmentTime, Provider, Status,
+                          Age5, Sex, Ethnicity,
+                          MaritalStatus, Sexuality,
+                          CardiovascularDisease, Diabetes,
+                          SmokingDate, SmokingStatus,
+                          UrineAlbuminDate, UrineAlbuminValue, UrineAlbuminUnits,
+                          PersistentProteinuria,
+                          eGFRDate, eGFRValue, eGFRUnits,
+                          FamilialHypercholesterolaemia, LVH,
+                          CholesterolDate, Cholesterol, HDL, LDL,
+                          Triglycerides, CholHDLRatio,
+                          BPDate, BP,
+                          frisk, friskHI) %>>%
+            # re-orders the fields
+            {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
+                                           dMQIM$qim_demographicGroup)
+            # finds the demographics that were NOT chosen
+            dplyr::select(., -remove_demographic)}
+          datatable_styled(df,
+                           extensions = c('Buttons', 'Scroller'),
+                           scrollX = TRUE) # this is a wide table
         }
       }
   )

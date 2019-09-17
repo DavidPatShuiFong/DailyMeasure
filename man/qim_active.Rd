@@ -4,7 +4,7 @@
 \alias{qim_active}
 \title{Quality Improvement 'active' list - server}
 \usage{
-qim_active(input, output, session, dM)
+qim_active(input, output, session, dMQIM, contact)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -13,8 +13,12 @@ qim_active(input, output, session, dM)
 
 \item{session}{as required by Shiny modules}
 
-\item{dM}{dMeasure R6 object
+\item{dMQIM}{dMeasure QIM R6 object
 access to appointments lists, results, correspondence and EMR database}
+
+\item{contact}{(logical) TRUE if using 'contact' list
+'contact' list uses active contact methods
+FALSE if using 'appointment' list}
 }
 \value{
 none

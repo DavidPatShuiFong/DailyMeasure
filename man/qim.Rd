@@ -4,7 +4,7 @@
 \alias{qim}
 \title{Quality Improvement user interface}
 \usage{
-qim(input, output, session, dM)
+qim(input, output, session, dMQIM, contact)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -13,7 +13,11 @@ qim(input, output, session, dM)
 
 \item{session}{as required by Shiny modules}
 
-\item{dM}{dMeasure R6 object}
+\item{dMQIM}{dMeasure QIM R6 object}
+
+\item{contact}{(logical) TRUE if using 'contact' list
+'contact' list uses active contact methods
+FALSE if using 'appointment' list}
 }
 \value{
 none

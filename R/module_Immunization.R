@@ -63,8 +63,6 @@ influenza_list <- function(appointments_list, dM) {
 #' @param session as required by Shiny modules
 #' @param dM dMeasure R6 objection
 #'
-#' @include fomantic_definitions.R calculation_definitions.R
-#'
 #' @return none
 #'
 vax_datatable <- function(input, output, session, dM) {

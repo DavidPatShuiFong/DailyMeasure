@@ -46,9 +46,6 @@ cancerscreen_datatableUI <- function(id) {
 #' @param dM dMeasure R6 object
 #'
 #' @return None
-#'
-#' @include fomantic_definitions.R
-#' requires fomantic/semantic definitions
 cancerscreen_datatable <- function(input, output, session, dM) {
 
   ns <- session$ns

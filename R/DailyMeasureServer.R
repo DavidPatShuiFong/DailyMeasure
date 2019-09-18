@@ -9,6 +9,7 @@
 #' @return None
 #'
 #' @include calculation_definitions.R
+#' @include datatables_definitions.R
 #' @include utils-pipe.R
 #'
 #' needed for simple encode/decode
@@ -27,6 +28,11 @@ DailyMeasureServer <- function(input, output, session) {
 
   # create the dMeasure object
   dM <- dMeasure::dMeasure$new()
+
+  # create dMeasureQIM objects
+  dMQIM <- dMeasureQIM::dMeasureQIM$new(dM)
+  dMQIMappt <- dMeasureQIM::dMeasureQIM$new(dM)
+  dMQIMappt$qim_contact <- FALSE # use appointment list, not contact list
 
   # read config files
 
@@ -175,18 +181,10 @@ DailyMeasureServer <- function(input, output, session) {
     dM$contact_type <- input$contact_type
     # alter dMeasure object according to user input
   })
-  shiny::observeEvent(dM$contact_typeR(), {
-    shinyWidgets::updatePickerInput(session, inputId = "contact_type",
-                                    selected = dM$contact_type)
-  })
 
   shiny::observeEvent(input$min_contact, ignoreInit = TRUE, {
     dM$contact_min <- input$min_contact
     # alter dMeasure object according to user input
-  })
-  shiny::observeEvent(dM$contact_minR(), {
-    shinyWidgets::updateSliderTextInput(session, inputId = "min_contact",
-                                        selected = dM$contact_min)
   })
 
   shiny::observeEvent(input$appointment_status, ignoreInit = TRUE, ignoreNULL = FALSE, {
@@ -194,19 +192,11 @@ DailyMeasureServer <- function(input, output, session) {
     dM$appointment_status <- input$appointment_status
     # alter dMeasure object according to user input
   })
-  shiny::observeEvent(dM$appointment_statusR(), {
-    shinyWidgets::updatePickerInput(session, inputId = "appointment_status",
-                                    selected = dM$appointment_status)
-  })
 
   shiny::observeEvent(input$visit_type, ignoreInit = TRUE, ignoreNULL = FALSE, {
     # cannot ignoreNULL because sometimes an empty list will be chosen
     dM$visit_type <- input$visit_type
     # alter dMeasure object according to user input
-  })
-  shiny::observeEvent(dM$visit_typeR(), {
-    shinyWidgets::updatePickerInput(session, inputId = "visit_type",
-                                    selected = dM$visit_type)
   })
 
   # Immunization functions
@@ -227,7 +217,11 @@ DailyMeasureServer <- function(input, output, session) {
   admin_table_results <- callModule(administration, "admin_dt", dM)
 
   # Practice Incentive Program (PIP) Quality Improvement (QI) measures
-  qim_results <- callModule(qim, "qim", dM)
+  qim_results <- callModule(qim, "qim", dMQIM, contact = TRUE)
+
+  # Practice Incentive Program (PIP) Quality Improvement (QI) measures
+  # appointment view
+  qim_results_appt <- callModule(qim, "qimAppt", dMQIMappt, contact = FALSE)
 
   # appointment list
 

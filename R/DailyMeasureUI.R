@@ -37,6 +37,8 @@ DailyMeasureUI <- function() {
                                  tabName = "cdm", icon = shiny::icon("file-medical-alt")),
         shinydashboard::menuItem("PIP Quality Improvement",
                                  tabName = "qim", icon = shiny::icon("chart-line")),
+        shinydashboard::menuItem("QIM Appointment",
+                                 tabName = "qimAppt", icon = shiny::icon("chart-line")),
         shinydashboard::menuItem("Administration",
                                  tabName = "administration", icon = shiny::icon("microscope")),
         shinydashboard::menuItem("Configuration",
@@ -205,6 +207,13 @@ DailyMeasureUI <- function() {
           #                       h2("Administration"))),
           shiny::fluidRow(column(width = 12,
                                  qim_UI("qim")))
+        ),
+        shinydashboard::tabItem(
+          tabName = "qimAppt",
+          #shiny::fluidRow(column(width = 12, align = "center",
+          #                       h2("Administration"))),
+          shiny::fluidRow(column(width = 12,
+                                 qim_UI("qimAppt")))
         ),
         shinydashboard::tabItem(
           tabName = "administration",

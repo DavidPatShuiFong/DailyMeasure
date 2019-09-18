@@ -49,8 +49,6 @@ billings_datatableUI <- function(id) {
 #' @param session as required by Shiny modules
 #' @param dM dMeasure R6 object
 #'
-#' @include fomantic_definitions.R
-#'
 #' @return none
 #'
 billings_datatable <- function(input, output, session, dM) {

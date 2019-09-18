@@ -12,7 +12,7 @@ qim_UI <- function(id) {
 
   shiny::tagList(
     shinydashboard::tabBox(
-      id = "tab_admin",
+      id = ns("tab_qim"),
       title = shiny::tagList(
         shiny::div(style = "display:inline-block",
                    shiny::uiOutput(ns("settings_group"))),
@@ -212,6 +212,24 @@ qim <- function(input, output, session, dMQIM, contact) {
   callModule(qim_copd, "qim_copd", dMQIM, contact)
   callModule(qim_cvdRisk, "qim_cvdRisk", dMQIM, contact)
 
+  if (!contact) {
+    # only show the 'Active' panel if contact list
+    #
+    #  'Active' is whether the patient qualifies as 'active' depending
+    #  on criteria such as appointments, visits (recordings in the file)
+    #  or billings over a defined time period, and a certain number of
+    #  times
+    #
+    # e.g. one definition of 'active' is 3 'visits' over 2 years
+    # though an alternative definition could be three 'billings' over
+    # three years
+
+    # if an 'appointment' list is being used
+    # then don't show the 'Active' panel
+    shiny::removeTab(inputId = "tab_qim", target = "Active")
+    shiny::updateTabsetPanel(session = session, inputId = "tab_qim", selected = "Diabetes")
+  }
+
   output$settings_group <- shiny::renderUI({
     shinyWidgets::dropdown(
       input_id = "qim_dropdown",
@@ -257,8 +275,6 @@ qim <- function(input, output, session, dMQIM, contact) {
 #'     'contact' list uses active contact methods
 #'     FALSE if using 'appointment' list
 #'
-#' @include fomantic_definitions.R
-#'
 #' @return none
 qim_active <- function(input, output, session, dMQIM, contact) {
   ns <- session$ns
@@ -275,10 +291,10 @@ qim_active <- function(input, output, session, dMQIM, contact) {
                             Age5, Sex, Ethnicity,
                             MaritalStatus, Sexuality, Count) %>>%
               # re-orders the fields
-              {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
-                                             dMQIM$qim_demographicGroup)
-              # finds the demographics that were NOT chosen
-              dplyr::select(., -remove_demographic)},
+                            {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
+                                                           dMQIM$qim_demographicGroup)
+                            # finds the demographics that were NOT chosen
+                            dplyr::select(., -remove_demographic)},
             columnDefs = list(list(targets = 1:2, visible = FALSE))
             # Patient Name and RecordNo hidden by default
             # can be shown again with 'colVis' button
@@ -314,8 +330,6 @@ qim_active <- function(input, output, session, dMQIM, contact) {
 #' @param contact (logical) TRUE if using 'contact' list
 #'     'contact' list uses active contact methods
 #'     FALSE if using 'appointment' list
-#'
-#' @include fomantic_definitions.R
 #'
 #' @return none
 qim_diabetes <- function(input, output, session, dMQIM, contact) {
@@ -374,16 +388,16 @@ qim_diabetes <- function(input, output, session, dMQIM, contact) {
                           FluvaxDate, FluvaxName,
                           BPDate, BP) %>>%
             # re-orders the fields
-            {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
-                                           dMQIM$qim_demographicGroup)
-            # finds the demographics that were NOT chosen
-            dplyr::select(., -remove_demographic)} %>>%
-            {if ("HbA1C" %in% input$measure_chosen) {.}
-              else {dplyr::select(., -c(HbA1CDate, HbA1CValue, HbA1CUnits))}} %>>%
-            {if ("Influenza" %in% input$measure_chosen) {.}
-              else {dplyr::select(., -c(FluvaxDate, FluvaxName))}} %>>%
-            {if ("BP" %in% input$measure_chosen) {.}
-              else {dplyr::select(., -c(BPDate, BP))}}
+                          {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
+                                                         dMQIM$qim_demographicGroup)
+                          # finds the demographics that were NOT chosen
+                          dplyr::select(., -remove_demographic)} %>>%
+                          {if ("HbA1C" %in% input$measure_chosen) {.}
+                            else {dplyr::select(., -c(HbA1CDate, HbA1CValue, HbA1CUnits))}} %>>%
+                            {if ("Influenza" %in% input$measure_chosen) {.}
+                              else {dplyr::select(., -c(FluvaxDate, FluvaxName))}} %>>%
+                              {if ("BP" %in% input$measure_chosen) {.}
+                                else {dplyr::select(., -c(BPDate, BP))}}
           datatable_styled(df,
                            extensions = c('Buttons', 'Scroller'),
                            columnDefs = list(list(targets =
@@ -413,23 +427,24 @@ qim_diabetes <- function(input, output, session, dMQIM, contact) {
                           FluvaxDate, FluvaxName,
                           BPDate, BP) %>>%
             # re-orders the fields
-            {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
-                                           dMQIM$qim_demographicGroup)
-            # finds the demographics that were NOT chosen
-            dplyr::select(., -remove_demographic)} %>>%
-            {if ("HbA1C" %in% input$measure_chosen) {.}
-              else {dplyr::select(., -c(HbA1CDate, HbA1CValue, HbA1CUnits))}} %>>%
-            {if ("Influenza" %in% input$measure_chosen) {.}
-              else {dplyr::select(., -c(FluvaxDate, FluvaxName))}} %>>%
-            {if ("BP" %in% input$measure_chosen) {.}
-              else {dplyr::select(., -c(BPDate, BP))}}
+                          {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
+                                                         dMQIM$qim_demographicGroup)
+                          # finds the demographics that were NOT chosen
+                          dplyr::select(., -remove_demographic)} %>>%
+                          {if ("HbA1C" %in% input$measure_chosen) {.}
+                            else {dplyr::select(., -c(HbA1CDate, HbA1CValue, HbA1CUnits))}} %>>%
+                            {if ("Influenza" %in% input$measure_chosen) {.}
+                              else {dplyr::select(., -c(FluvaxDate, FluvaxName))}} %>>%
+                              {if ("BP" %in% input$measure_chosen) {.}
+                                else {dplyr::select(., -c(BPDate, BP))}}
           datatable_styled(df,
-                           extensions = c('Buttons', 'Scroller')) %>>%
-            {if ("HbA1C" %in% input$measure_chosen) {
-              DT::formatStyle(., 'HbA1CDate',
-                              backgroundcolor = DT::styleInterval(as.Date(Sys.Date()-365), c("ffeeee", "eeffee"))
-              )
-            } else {.}}
+                           extensions = c('Buttons', 'Scroller'),
+                           colvis = NULL) %>>%
+                           {if ("HbA1C" %in% input$measure_chosen) {
+                             DT::formatStyle(., 'HbA1CDate',
+                                             backgroundcolor = DT::styleInterval(as.Date(Sys.Date()-365), c("ffeeee", "eeffee"))
+                             )
+                           } else {.}}
         }
       }
   )
@@ -452,8 +467,6 @@ qim_diabetes <- function(input, output, session, dMQIM, contact) {
 #' @param contact (logical) TRUE if using 'contact' list
 #'     'contact' list uses active contact methods
 #'     FALSE if using 'appointment' list
-#'
-#' @include fomantic_definitions.R
 #'
 #' @return none
 qim_cst <- function(input, output, session, dMQIM, contact) {
@@ -493,10 +506,10 @@ qim_cst <- function(input, output, session, dMQIM, contact) {
                           MaritalStatus, Sexuality,
                           CSTDate, CSTName) %>>%
             # re-orders the fields
-            {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
-                                           dMQIM$qim_demographicGroup)
-            # finds the demographics that were NOT chosen
-            dplyr::select(., -remove_demographic)}
+                          {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
+                                                         dMQIM$qim_demographicGroup)
+                          # finds the demographics that were NOT chosen
+                          dplyr::select(., -remove_demographic)}
           datatable_styled(
             df,
             columnDefs = list(list(targets =
@@ -524,12 +537,12 @@ qim_cst <- function(input, output, session, dMQIM, contact) {
                           MaritalStatus, Sexuality,
                           CSTDate, CSTName) %>>%
             # re-orders the fields
-            {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
-                                           dMQIM$qim_demographicGroup)
-            # finds the demographics that were NOT chosen
-            dplyr::select(., -remove_demographic)}
+                          {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
+                                                         dMQIM$qim_demographicGroup)
+                          # finds the demographics that were NOT chosen
+                          dplyr::select(., -remove_demographic)}
           datatable_styled(df,
-                           extensions = c('Buttons', 'Scroller'),
+                           extensions = c('Buttons', 'Scroller'), colvis = NULL,
                            scrollX = TRUE) # this is a wide table
         }
       }
@@ -553,8 +566,6 @@ qim_cst <- function(input, output, session, dMQIM, contact) {
 #' @param contact (logical) TRUE if using 'contact' list
 #'     'contact' list uses active contact methods
 #'     FALSE if using 'appointment' list
-#'
-#' @include fomantic_definitions.R
 #'
 #' @return none
 qim_15plus <- function(input, output, session, dMQIM, contact) {
@@ -606,21 +617,21 @@ qim_15plus <- function(input, output, session, dMQIM, contact) {
         shiny::req(input$list_view)
         if (input$list_view == "List") {
           df <- dMQIM$qim_15plus_listR() %>>%
-            {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
-                                           dMQIM$qim_demographicGroup)
-            # finds the demographics that were NOT chosen
-            dplyr::select(., -c(remove_demographic, InternalID))} %>>%
-            {if ("Smoking" %in% input$measure_chosen) {.}
-              else {dplyr::select(., -c(SmokingDate, SmokingStatus))}} %>>%
+          {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
+                                         dMQIM$qim_demographicGroup)
+          # finds the demographics that were NOT chosen
+          dplyr::select(., -c(remove_demographic, InternalID))} %>>%
+          {if ("Smoking" %in% input$measure_chosen) {.}
+            else {dplyr::select(., -c(SmokingDate, SmokingStatus))}} %>>%
             {if ("Weight" %in% input$measure_chosen) {.}
               else {dplyr::select(., -c(HeightDate, HeightValue, WeightDate, WeightValue,
                                         BMIDate, BMIValue, BMIClass,
                                         WaistDate, WaistValue))}} %>>%
-            {if ("Alcohol" %in% input$measure_chosen) {.}
-              else {dplyr::select(., -c(AlcoholDate, NonDrinker, DaysPerWeek,
-                                        DrinksPerDay, AlcoholDescription,
-                                        PastAlcoholLevel, YearStarted, YearStopped,
-                                        AlcoholComment))}}
+                                        {if ("Alcohol" %in% input$measure_chosen) {.}
+                                          else {dplyr::select(., -c(AlcoholDate, NonDrinker, DaysPerWeek,
+                                                                    DrinksPerDay, AlcoholDescription,
+                                                                    PastAlcoholLevel, YearStarted, YearStopped,
+                                                                    AlcoholComment))}}
           return(datatable_styled(
             df, extensions = c('Buttons', 'Scroller'),
             columnDefs = list(list(targets =
@@ -658,23 +669,23 @@ qim_15plus <- function(input, output, session, dMQIM, contact) {
                           PastAlcoholLevel, YearStarted, YearStopped,
                           AlcoholComment) %>>%
             # re-orders the fields
-            {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
-                                           dMQIM$qim_demographicGroup)
-            # finds the demographics that were NOT chosen
-            dplyr::select(., -remove_demographic)} %>>%
-            {if ("Smoking" %in% input$measure_chosen) {.}
-              else {dplyr::select(., -c(SmokingDate, SmokingStatus))}} %>>%
-            {if ("Weight" %in% input$measure_chosen) {.}
-              else {dplyr::select(., -c(HeightDate, HeightValue, WeightDate, WeightValue,
-                                        BMIDate, BMIValue, BMIClass,
-                                        WaistDate, WaistValue))}} %>>%
-            {if ("Alcohol" %in% input$measure_chosen) {.}
-              else {dplyr::select(., -c(AlcoholDate, NonDrinker, DaysPerWeek,
-                                        DrinksPerDay, AlcoholDescription,
-                                        PastAlcoholLevel, YearStarted, YearStopped,
-                                        AlcoholComment))}}
+                          {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
+                                                         dMQIM$qim_demographicGroup)
+                          # finds the demographics that were NOT chosen
+                          dplyr::select(., -remove_demographic)} %>>%
+                          {if ("Smoking" %in% input$measure_chosen) {.}
+                            else {dplyr::select(., -c(SmokingDate, SmokingStatus))}} %>>%
+                            {if ("Weight" %in% input$measure_chosen) {.}
+                              else {dplyr::select(., -c(HeightDate, HeightValue, WeightDate, WeightValue,
+                                                        BMIDate, BMIValue, BMIClass,
+                                                        WaistDate, WaistValue))}} %>>%
+                                                        {if ("Alcohol" %in% input$measure_chosen) {.}
+                                                          else {dplyr::select(., -c(AlcoholDate, NonDrinker, DaysPerWeek,
+                                                                                    DrinksPerDay, AlcoholDescription,
+                                                                                    PastAlcoholLevel, YearStarted, YearStopped,
+                                                                                    AlcoholComment))}}
           return(datatable_styled(df,
-                                  extensions = c('Buttons', 'Scroller'),
+                                  extensions = c('Buttons', 'Scroller'), colvis = NULL,
                                   scrollX = TRUE)) # this is a wide table
         }
       }
@@ -698,8 +709,6 @@ qim_15plus <- function(input, output, session, dMQIM, contact) {
 #' @param contact (logical) TRUE if using 'contact' list
 #'     'contact' list uses active contact methods
 #'     FALSE if using 'appointment' list
-#'
-#' @include fomantic_definitions.R
 #'
 #' @return none
 qim_65plus <- function(input, output, session, dMQIM, contact) {
@@ -734,10 +743,10 @@ qim_65plus <- function(input, output, session, dMQIM, contact) {
         shiny::req(input$list_view)
         if (input$list_view == "List") {
           df <- dMQIM$qim_65plus_listR() %>>%
-            {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
-                                           dMQIM$qim_demographicGroup)
-            # finds the demographics that were NOT chosen
-            dplyr::select(., -c(remove_demographic, InternalID))}
+          {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
+                                         dMQIM$qim_demographicGroup)
+          # finds the demographics that were NOT chosen
+          dplyr::select(., -c(remove_demographic, InternalID))}
           return(datatable_styled(
             df, extensions = c('Buttons', 'Scroller'),
             columnDefs = list(list(targets =
@@ -765,12 +774,12 @@ qim_65plus <- function(input, output, session, dMQIM, contact) {
                           MaritalStatus, Sexuality,
                           FluvaxDate, FluvaxName) %>>%
             # re-orders the fields
-            {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
-                                           dMQIM$qim_demographicGroup)
-            # finds the demographics that were NOT chosen
-            dplyr::select(., -remove_demographic)}
+                          {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
+                                                         dMQIM$qim_demographicGroup)
+                          # finds the demographics that were NOT chosen
+                          dplyr::select(., -remove_demographic)}
           datatable_styled(df,
-                           extensions = c('Buttons', 'Scroller'),
+                           extensions = c('Buttons', 'Scroller'), colvis = NULL,
                            scrollX = TRUE) # this is a wide table
         }
       }
@@ -793,8 +802,6 @@ qim_65plus <- function(input, output, session, dMQIM, contact) {
 #' @param contact (logical) TRUE if using 'contact' list
 #'     'contact' list uses active contact methods
 #'     FALSE if using 'appointment' list
-#'
-#' @include fomantic_definitions.R
 #'
 #' @return none
 qim_copd <- function(input, output, session, dMQIM, contact) {
@@ -829,10 +836,10 @@ qim_copd <- function(input, output, session, dMQIM, contact) {
         shiny::req(input$list_view)
         if (input$list_view == "List") {
           df <- dMQIM$qim_copd_listR() %>>%
-            {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
-                                           dMQIM$qim_demographicGroup)
-            # finds the demographics that were NOT chosen
-            dplyr::select(., -c(remove_demographic, InternalID))}
+          {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
+                                         dMQIM$qim_demographicGroup)
+          # finds the demographics that were NOT chosen
+          dplyr::select(., -c(remove_demographic, InternalID))}
           return(datatable_styled(
             df, extensions = c('Buttons', 'Scroller'),
             columnDefs = list(list(targets =
@@ -860,12 +867,12 @@ qim_copd <- function(input, output, session, dMQIM, contact) {
                           MaritalStatus, Sexuality,
                           FluvaxDate, FluvaxName) %>>%
             # re-orders the fields
-            {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
-                                           dMQIM$qim_demographicGroup)
-            # finds the demographics that were NOT chosen
-            dplyr::select(., -remove_demographic)}
+                          {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
+                                                         dMQIM$qim_demographicGroup)
+                          # finds the demographics that were NOT chosen
+                          dplyr::select(., -remove_demographic)}
           datatable_styled(df,
-                           extensions = c('Buttons', 'Scroller'),
+                           extensions = c('Buttons', 'Scroller'), colvis = NULL,
                            scrollX = TRUE) # this is a wide table
         }
       }
@@ -889,8 +896,6 @@ qim_copd <- function(input, output, session, dMQIM, contact) {
 #' @param contact (logical) TRUE if using 'contact' list
 #'     'contact' list uses active contact methods
 #'     FALSE if using 'appointment' list
-#'
-#' @include fomantic_definitions.R
 #'
 #' @return none
 qim_cvdRisk <- function(input, output, session, dMQIM, contact) {
@@ -945,10 +950,10 @@ qim_cvdRisk <- function(input, output, session, dMQIM, contact) {
         shiny::req(input$list_view)
         if (input$list_view == "List") {
           df <- dMQIM$qim_cvdRisk_listR() %>>%
-            {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
-                                           dMQIM$qim_demographicGroup)
-            # finds the demographics that were NOT chosen
-            dplyr::select(., -c(remove_demographic, InternalID))}
+          {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
+                                         dMQIM$qim_demographicGroup)
+          # finds the demographics that were NOT chosen
+          dplyr::select(., -c(remove_demographic, InternalID))}
           return(datatable_styled(
             df, extensions = c('Buttons', 'Scroller'),
             columnDefs = list(list(targets =
@@ -986,12 +991,12 @@ qim_cvdRisk <- function(input, output, session, dMQIM, contact) {
                           BPDate, BP,
                           frisk, friskHI) %>>%
             # re-orders the fields
-            {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
-                                           dMQIM$qim_demographicGroup)
-            # finds the demographics that were NOT chosen
-            dplyr::select(., -remove_demographic)}
+                          {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
+                                                         dMQIM$qim_demographicGroup)
+                          # finds the demographics that were NOT chosen
+                          dplyr::select(., -remove_demographic)}
           datatable_styled(df,
-                           extensions = c('Buttons', 'Scroller'),
+                           extensions = c('Buttons', 'Scroller'), colvis = NULL,
                            scrollX = TRUE) # this is a wide table
         }
       }

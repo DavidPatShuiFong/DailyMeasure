@@ -43,8 +43,6 @@ cdm_datatableUI <- function(id) {
 #' @param dM dMeasure R6 object
 #'  access to appointments lists, condition lists, history and EMR database
 #'
-#' @include fomantic_definitions.R
-#'
 #' @return none
 cdm_datatable <- function(input, output, session, dM) {
   ns <- session$ns

@@ -2,8 +2,16 @@ GP stat! (c) David Fong, 2019
 
 front-end to DailyMeasure package
 
+Version 1.3.2, 18th September 2019
+==================================
 
 Improvements
+
+* Quality Improvement Measures appointments view
+  Uses separate package version of dMeasureQIM
+
+* datatable_styled accepts arguments which allow
+  selectable button extensions
 
 * Remove DiabetesSIP and AsthmaSIP from default CDM list
 
@@ -11,7 +19,8 @@ Improvements
 
 Bug-fix
 
-* Move demographic_group in QIM Measures to 'common' titlebar area
+* Move demographic_group and ignoreOld in QIM Measures
+  to 'common' titlebar area
 
   Having separate demographic_group buttons could cause
   a race-condition

@@ -87,8 +87,6 @@ administration <- function(input, output, session, dM) {
 #' @param dM dMeasure R6 object
 #'  access to appointments lists, results, correspondence and EMR database
 #'
-#' @include fomantic_definitions.R
-#'
 #' @return none
 admin_result_datatable <- function(input, output, session, dM) {
   ns <- session$ns

@@ -9,6 +9,7 @@
 #' @return None
 #'
 #' @include calculation_definitions.R
+#' @include datatables_definitions.R
 #' @include utils-pipe.R
 #'
 #' needed for simple encode/decode

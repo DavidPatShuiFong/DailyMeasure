@@ -52,8 +52,8 @@ ImportComments:
 Collate: 
     'DailyMeasure.R'
     'utils-pipe.R'
-    'calculation_definitions.R'
     'datatables_definitions.R'
+    'calculation_definitions.R'
     'DailyMeasureServer.R'
     'module_Configuration_server.R'
     'module_Configuration_password.R'

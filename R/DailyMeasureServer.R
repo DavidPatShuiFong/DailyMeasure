@@ -30,9 +30,13 @@ DailyMeasureServer <- function(input, output, session) {
   dM <- dMeasure::dMeasure$new()
 
   # create dMeasureQIM objects
-  dMQIM <- dMeasureQIM::dMeasureQIM$new(dM)
-  dMQIMappt <- dMeasureQIM::dMeasureQIM$new(dM)
-  dMQIMappt$qim_contact <- FALSE # use appointment list, not contact list
+  QIMmodule <- requireNamespace('dMeasureQIM', quietly = TRUE)
+  # is module (package) available?
+  if (QIMmodule) {
+    dMQIM <- dMeasureQIM::dMeasureQIM$new(dM)
+    dMQIMappt <- dMeasureQIM::dMeasureQIM$new(dM)
+    dMQIMappt$qim_contact <- FALSE # use appointment list, not contact list
+  }
 
   # read config files
 
@@ -199,6 +203,43 @@ DailyMeasureServer <- function(input, output, session) {
     # alter dMeasure object according to user input
   })
 
+  ##### main body panel ###############################################################
+
+
+  shinytabItems <-
+    c(list(shinydashboard::tabItem(
+      tabName = "appointments",
+      fluidRow(column(width = 12, align = "center", h2("Appointments"))),
+      fluidRow(column(width = 12, appointments_datatableUI("appointments_dt")))
+    )),
+    list(shinydashboard::tabItem(
+      tabName = "immunization",
+      fluidRow(column(width = 12, align = "center", h2("Immunization"))),
+      fluidRow(column(width = 12, vax_datatableUI("vax_dt")))
+    )),
+    list(shinydashboard::tabItem(
+      tabName = "cancerscreen",
+      fluidRow(column(width = 12, align = "center", h2("Cancer screening"))),
+      fluidRow(column(width = 12, cancerscreen_datatableUI("cancerscreen_dt")))
+    )),
+    list(shinydashboard::tabItem(
+      tabName = "billings",
+      fluidRow(column(width = 12, align = "center", h2("Billings"))),
+      fluidRow(column(width = 12, billings_datatableUI("billings_dt")))
+    )),
+    list(shinydashboard::tabItem(
+      tabName = "cdm",
+      shiny::fluidRow(column(width = 12, align = "center",
+                             h2("Chronic Disease Management items"))),
+      shiny::fluidRow(column(width = 12,
+                             cdm_datatableUI("cdm_dt")))
+    )))
+
+  # no PIP Quality Improvement Measure tabs, these are inserted dynamically
+  # in the server section if the dMeasureQIM module/package is available
+
+  #####################################################################################
+
   # Immunization functions
 
   vax_table_results <- callModule(vax_datatable, "vax_dt", dM)
@@ -216,12 +257,39 @@ DailyMeasureServer <- function(input, output, session) {
   # administration and result management tab
   admin_table_results <- callModule(administration, "admin_dt", dM)
 
-  # Practice Incentive Program (PIP) Quality Improvement (QI) measures
-  qim_results <- callModule(qim, "qim", dMQIM, contact = TRUE)
-
-  # Practice Incentive Program (PIP) Quality Improvement (QI) measures
-  # appointment view
-  qim_results_appt <- callModule(qim, "qimAppt", dMQIMappt, contact = FALSE)
+  if (QIMmodule == TRUE) {
+    # only if QIM module/package is available
+    output$PIPqimMenu <- shinydashboard::renderMenu({
+      shinydashboard::sidebarMenu(.list = list(
+        shinydashboard::menuItem("PIP Quality Improvement",
+                                 tabName = "qim", icon = shiny::icon("chart-line")),
+        shinydashboard::menuItem("QIM Appointment",
+                                 tabName = "qimAppt", icon = shiny::icon("chart-line"))
+      ))
+    }) # if QIMmodule is FALSE, then output$PIPqimMenu will be left undefined
+    # Practice Incentive Program (PIP) Quality Improvement (QI) measures
+    # add PIP QIM tab items to the tabItem vector
+    shinytabItems <- c(shinytabItems,
+                       list(shinydashboard::tabItem(
+                         tabName = "qim",
+                         shiny::fluidRow(column(width = 12, align = "center",
+                                                h2("Quality Improvement Measure Reporting"))),
+                         shiny::fluidRow(column(width = 12,
+                                                qim_UI("qim")))
+                       )),
+                       list(shinydashboard::tabItem(
+                         tabName = "qimAppt",
+                         shiny::fluidRow(column(width = 12, align = "center",
+                                                h2("Quality Improvement Measure Appointment View"))),
+                         shiny::fluidRow(column(width = 12,
+                                                qim_UI("qimAppt")))
+                       ))
+    )
+    qim_results <- callModule(qim, "qim", dMQIM, contact = TRUE)
+    # Practice Incentive Program (PIP) Quality Improvement (QI) measures
+    # appointment view
+    qim_results_appt <- callModule(qim, "qimAppt", dMQIMappt, contact = FALSE)
+  }
 
   # appointment list
 
@@ -246,7 +314,105 @@ DailyMeasureServer <- function(input, output, session) {
         fillContainer = FALSE)})
 
 
-  # configuration file location tab
+
+  ##### final definition of tabItems #################################################
+
+  shinytabItems <- c(shinytabItems,
+                     list(shinydashboard::tabItem(
+                       tabName = "administration",
+                       #shiny::fluidRow(column(width = 12, align = "center",
+                       #                       h2("Administration"))),
+                       shiny::fluidRow(column(width = 12,
+                                              administration_UI("admin_dt")))
+                     )),
+                     list(shinydashboard::tabItem(
+                       tabName = "configuration",
+                       shiny::fluidRow(
+                         shinydashboard::tabBox(
+                           id = "tab_config",
+                           title = "Configuration",
+                           width = 12,
+                           height = "85vh",
+                           shiny::tabPanel(
+                             # sqlite configuration file location
+                             # this is stored in a YAML file
+                             # allows a 'local' user to use a remote configuration file
+                             title = "Configuration file",
+                             value = "ConfigLocation",
+                             shiny::column(
+                               width=12,
+                               shiny::wellPanel(
+                                 textOutput('configuration_file_details')
+                                 # location of sqlite configuration file
+                               ),
+                               shiny::wellPanel(
+                                 shinyFiles::shinyFilesButton(
+                                   "choose_configuration_file",
+                                   label = "Choose configuration file",
+                                   title = "Choose configuration file (must end in '.sqlite')",
+                                   multiple = FALSE),
+                                 shinyFiles::shinySaveButton(
+                                   "create_configuration_file",
+                                   label = "Create configuration file",
+                                   title = "Create configuration file (must end in '.sqlite')",
+                                   filetype = list(sqlite = c('sqlite'))),
+                                 shiny::helpText(paste("Choose location of an existing configuration file,",
+                                                       "or create a new configuration file"))
+                               ))
+                           ),
+                           shiny::tabPanel(
+                             # Microsoft SQL server details
+                             title = "Microsoft SQL Server details",
+                             value = "ServerPanel",
+                             shiny::column(width = 12,
+                                           servers_datatableUI("servers_dt"))
+                           ),
+                           shiny::tabPanel(
+                             # Microsoft SQL server details
+                             title = "Logging details",
+                             value = "LoggingPanel",
+                             shiny::column(width = 12,
+                                           logging_datatableUI("logging_dt"))
+                           ),
+                           shiny::tabPanel(
+                             # Practice locations or groups
+                             title = "Practice locations/groups",
+                             value = "LocationsPanel",
+                             shiny::column(width = 12,
+                                           locations_datatableUI("locations_dt"))
+                           ),
+                           shiny::tabPanel(
+                             # User settings and permissions
+                             title = "User settings and permissions",
+                             value = "UsersPanel",
+                             shiny::column(width = 12,
+                                           userconfig_datatableUI("userconfig_dt"))
+                           ),
+                           shiny::tabPanel(
+                             # User password
+                             title = "User Password Setting",
+                             value = "PasswordPanel",
+                             shiny::column(width = 12,
+                                           passwordConfig_UI("password_config"))
+                           )
+                         )
+                       ))),
+                     list(shinydashboard::tabItem(
+                       tabName = "test",
+                       shiny::fluidRow(shiny::column(width = 12, align = "center",
+                                                     h2("Test frame"))),
+                       shiny::fluidRow(shiny::column(width = 12,
+                                                     DT::DTOutput("test_dt")))
+                     )))
+
+  output$tabItems <- renderUI({
+    do.call(tabItems, shinytabItems)
+  })
+  # initially the appointments tabitem is not defined!
+  shinydashboard::updateTabItems(session, "sidebartabs", "appointments")
+  # so need to re-render
+
+  ##### configuration file location tab ##############################################
 
   output$configuration_file_details <- renderText({
     paste('Configuration file location: "', dM$configuration_file_pathR(), '"')

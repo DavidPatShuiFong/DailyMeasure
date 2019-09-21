@@ -677,9 +677,47 @@ DailyMeasureServer <- function(input, output, session) {
               collapse = ", "),
             right_border = FALSE,
             margin_bottom = TRUE)
+        )),
+      shiny::fluidRow(
+        shinydashboardPlus::dashboardUserItem(
+          width = 6,
+          shinydashboardPlus::descriptionBlock(
+            header = "GPstat!",
+            text = paste("v",packageVersion("DailyMeasure")),
+            right_border = TRUE,
+            margin_bottom = TRUE)
+        ),
+        shinydashboardPlus::dashboardUserItem(
+          width = 6,
+          shinydashboardPlus::descriptionBlock(
+            header = "dMeasure",
+            text = paste("v", packageVersion("dMeasure")),
+            right_border = FALSE,
+            margin_bottom = TRUE)
+        )
+      ),
+      shiny::fluidRow(
+        shinydashboardPlus::dashboardUserItem(
+          width = 6,
+          shinydashboardPlus::descriptionBlock(
+            header = "Billings module",
+            text = paste("v", ifelse(Billingsmodule,
+                                     as.character(packageVersion("dMeasureBillings")),
+                                     "None")),
+            right_border = TRUE,
+            margin_bottom = TRUE)
+        ),
+        shinydashboardPlus::dashboardUserItem(
+          width = 6,
+          shinydashboardPlus::descriptionBlock(
+            header = "CDM module",
+            text = paste("v", ifelse(CDMmodule,
+                                     as.character(packageVersion("dMeasureCDM")),
+                                     "None")),
+            right_border = FALSE,
+            margin_bottom = TRUE)
         )
       )
     )
   })
-
 }

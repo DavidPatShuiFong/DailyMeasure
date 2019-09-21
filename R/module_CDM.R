@@ -40,11 +40,11 @@ cdm_datatableUI <- function(id) {
 #' @param input as required by Shiny modules
 #' @param output as required by Shiny modules
 #' @param session as required by Shiny modules
-#' @param dM dMeasure R6 object
+#' @param dMCDM dMeasureCDM R6 object
 #'  access to appointments lists, condition lists, history and EMR database
 #'
 #' @return none
-cdm_datatable <- function(input, output, session, dM) {
+cdm_datatable <- function(input, output, session, dMCDM) {
   ns <- session$ns
 
   # MBS (medicare benefits schedule) item numbers for CDM
@@ -76,19 +76,19 @@ cdm_datatable <- function(input, output, session, dM) {
 
   appointments_billings_cdm <-
     shiny::eventReactive(
-      c(dM$appointments_filteredR(),
+      c(dMCDM$dM$appointments_filteredR(),
         input$cdm_chosen,
         input$printcopy_view), {
           shiny::validate(
-            shiny::need(dM$appointments_billingsR(),
+            shiny::need(dMCDM$dMBillings$appointments_billingsR(),
                         "No appointments defined"),
-            shiny::need(nrow(dM$appointments_billingsR()) > 0,
+            shiny::need(nrow(dMCDM$dMBillings$appointments_billingsR()) > 0,
                         "No appointments in chosen range")
           )
           # respond to appointments_filteredR, since that is what is changed
           # when clinician or dates is changed
 
-          appointments <- dM$appointments_billings_cdm(
+          appointments <- dMCDM$appointments_billings_cdm(
             cdm_chosen = input$cdm_chosen,
             lazy = TRUE, # no need to re-calculate $appointments_billings
             screentag = !input$printcopy_view,
@@ -101,10 +101,10 @@ cdm_datatable <- function(input, output, session, dM) {
 
   cdm_styled_datatable <- shiny::reactive({
     if (!is.null(appointments_billings_cdm()) &
-        !is.null(dM$appointments_filtered_timeR())) {
+        !is.null(dMCDM$dM$appointments_filtered_timeR())) {
       if (input$printcopy_view == TRUE) {
         # printable/copyable view
-        datatable_styled(dM$appointments_filtered_timeR() %>>%
+        datatable_styled(dMCDM$dM$appointments_filtered_timeR() %>>%
                            dplyr::inner_join(appointments_billings_cdm(),
                                              by = c('InternalID', 'AppointmentDate',
                                                     'AppointmentTime', 'Provider')) %>>%
@@ -114,7 +114,7 @@ cdm_datatable <- function(input, output, session, dM) {
                                       'Provider', 'CDM items'))
       } else {
         # fomantic/semantic tag view
-        datatable_styled(dM$appointments_filtered_timeR() %>>%
+        datatable_styled(dMCDM$dM$appointments_filtered_timeR() %>>%
                            dplyr::inner_join(appointments_billings_cdm(),
                                              by = c('InternalID', 'AppointmentDate',
                                                     'AppointmentTime', 'Provider')) %>>%
@@ -122,7 +122,7 @@ cdm_datatable <- function(input, output, session, dM) {
                                          AppointmentTime, Provider, cdm),
                          colnames = c('Patient', 'Appointment Date', 'Appointment Time',
                                       'Provider', 'CDM items'),
-                         buttons = list('colvis'), # no copy/print buttons
+                         printButton = NULL, copyHtml5 = NULL, # no copy/print buttons
                          escape = c(5)) # only interpret HTML for last column
       }
     }

@@ -134,7 +134,7 @@ vax_datatable <- function(input, output, session, dM) {
                          dplyr::select(Patient, AppointmentDate, AppointmentTime,
                                        Provider, DOB, Age, vaxtag),
                        escape = c(7),
-                       buttons = list('colvis'), # no copy/print buttons
+                       copyHtml5 = NULL, printButton = NULL, # no copy/print buttons
                        colnames = c('Vaccination' = 'vaxtag'))
     }
   })

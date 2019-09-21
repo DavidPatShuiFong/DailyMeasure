@@ -226,7 +226,8 @@ qim <- function(input, output, session, dMQIM, contact) {
 
     # if an 'appointment' list is being used
     # then don't show the 'Active' panel
-    shiny::removeTab(inputId = "tab_qim", target = "Active")
+    shiny::removeTab(inputId = "tab_qim", target = "Active", session = session)
+    # for some reason the above line doesn't remove the tab...
     shiny::updateTabsetPanel(session = session, inputId = "tab_qim", selected = "Diabetes")
   }
 
@@ -518,7 +519,7 @@ qim_cst <- function(input, output, session, dMQIM, contact) {
                                    # Patient Name and RecordNo hidden by default
                                    # needs name by index as columns might be removed
                                    # by demographic filters above
-                                   visible = FALSE)),
+                                   visible = FALSE))
           )
         } else if (input$list_view == "Report") {
           df <- dMQIM$qim_cst_reportR()

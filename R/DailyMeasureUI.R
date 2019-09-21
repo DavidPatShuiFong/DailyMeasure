@@ -31,12 +31,10 @@ DailyMeasureUI <- function() {
                                  tabName = "immunization", icon = shiny::icon("syringe")),
         shinydashboard::menuItem("Cancer Screening",
                                  tabName = "cancerscreen", icon = icon("x-ray")),
-        shinydashboard::menuItem("Billings",
-                                 tabName = "billings", icon = shiny::icon("receipt")),
-        shinydashboard::menuItem("CDM items",
-                                 tabName = "cdm", icon = shiny::icon("file-medical-alt")),
+        shinydashboard::menuItemOutput("BillingsMenu"),
+        shinydashboard::menuItemOutput("CDMMenu"),
         shinydashboard::menuItemOutput("PIPqimMenu"),
-        # dynamically created PIP quality improvement menu items. could be blank!
+        # dynamically created Billigs, CDM, PIP quality improvement menu items. could be blank!
         # will be blank unless dMeasureQIM module/package is available
         shinydashboard::menuItem("Administration",
                                  tabName = "administration", icon = shiny::icon("microscope")),

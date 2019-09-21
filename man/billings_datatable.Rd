@@ -4,7 +4,7 @@
 \alias{billings_datatable}
 \title{appointment list module - server}
 \usage{
-billings_datatable(input, output, session, dM)
+billings_datatable(input, output, session, dMBillings)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -13,7 +13,7 @@ billings_datatable(input, output, session, dM)
 
 \item{session}{as required by Shiny modules}
 
-\item{dM}{dMeasure R6 object}
+\item{dMBillings}{dMeasureBillings R6 object}
 }
 \value{
 none

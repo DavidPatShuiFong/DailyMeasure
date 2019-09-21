@@ -38,7 +38,9 @@ Imports:
     dMeasure
 Suggests:
     pool,
-    dMeasureQIM
+    dMeasureQIM,
+    dMeasureBillings,
+    dMeasureCDM
 ImportComments:
  shinycssloaders - loading animations
   custom version based on Gao Zheng's 'transparent' background version

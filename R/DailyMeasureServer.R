@@ -34,8 +34,19 @@ DailyMeasureServer <- function(input, output, session) {
   # is module (package) available?
   if (QIMmodule) {
     dMQIM <- dMeasureQIM::dMeasureQIM$new(dM)
-    dMQIMappt <- dMeasureQIM::dMeasureQIM$new(dM)
-    dMQIMappt$qim_contact <- FALSE # use appointment list, not contact list
+    dMQIMappt <- dMeasureQIM::dMeasureQIM$new(dM) # a second QIM module
+    dMQIMappt$qim_contact <- FALSE # second module uses appointment list, not contact list
+  }
+  Billingsmodule <- requireNamespace('dMeasureBillings', quietly = TRUE)
+  # is module (package) available?
+  if (Billingsmodule) {
+    dMBillings <- dMeasureBillings::dMeasureBillings$new(dM)
+  }
+  CDMmodule <- requireNamespace('dMeasureCDM', quietly = TRUE)
+  # is module (package) available?
+  if (Billingsmodule & CDMmodule) {
+    # needs both modules!
+    dMCDM <- dMeasureCDM::dMeasureCDM$new(dM, dMBillings)
   }
 
   # read config files
@@ -221,21 +232,9 @@ DailyMeasureServer <- function(input, output, session) {
       tabName = "cancerscreen",
       fluidRow(column(width = 12, align = "center", h2("Cancer screening"))),
       fluidRow(column(width = 12, cancerscreen_datatableUI("cancerscreen_dt")))
-    )),
-    list(shinydashboard::tabItem(
-      tabName = "billings",
-      fluidRow(column(width = 12, align = "center", h2("Billings"))),
-      fluidRow(column(width = 12, billings_datatableUI("billings_dt")))
-    )),
-    list(shinydashboard::tabItem(
-      tabName = "cdm",
-      shiny::fluidRow(column(width = 12, align = "center",
-                             h2("Chronic Disease Management items"))),
-      shiny::fluidRow(column(width = 12,
-                             cdm_datatableUI("cdm_dt")))
     )))
 
-  # no PIP Quality Improvement Measure tabs, these are inserted dynamically
+  # no PIP Quality Improvement Measure, billings, or CDM tabs, these are inserted dynamically
   # in the server section if the dMeasureQIM module/package is available
 
   #####################################################################################
@@ -248,11 +247,39 @@ DailyMeasureServer <- function(input, output, session) {
 
   callModule(cancerscreen_datatable, "cancerscreen_dt", dM)
 
-  # call the module to generate the table
-  callModule(billings_datatable, "billings_dt", dM)
+  if (Billingsmodule == TRUE) {
+    output$BillingsMenu <- shinydashboard::renderMenu({
+      shinydashboard::sidebarMenu(.list = list(
+        shinydashboard::menuItem("Billings",
+                                 tabName = "billings", icon = shiny::icon("receipt"))
+      ))
+    }) # if QIMmodule is FALSE, then output$PIPqimMenu will be left undefined
+    shinytabItems <- c(shinytabItems,
+                       list(shinydashboard::tabItem(
+                         tabName = "billings",
+                         fluidRow(column(width = 12, align = "center", h2("Billings"))),
+                         fluidRow(column(width = 12, billings_datatableUI("billings_dt")))
+                       )))
+    # call the module to generate the table
+    callModule(billings_datatable, "billings_dt", dMBillings)
+  }
 
-  # chronic disease management table
-  cdm_table_results <- callModule(cdm_datatable, "cdm_dt", dM)
+  if (CDMmodule == TRUE) {
+    output$CDMMenu <- shinydashboard::renderMenu({
+      shinydashboard::menuItem("CDM items",
+                               tabName = "cdm", icon = shiny::icon("file-medical-alt"))
+    }) # if QIMmodule is FALSE, then output$PIPqimMenu will be left undefined
+    shinytabItems <- c(shinytabItems,
+                       list(shinydashboard::tabItem(
+                         tabName = "cdm",
+                         shiny::fluidRow(column(width = 12, align = "center",
+                                                h2("Chronic Disease Management items"))),
+                         shiny::fluidRow(column(width = 12,
+                                                cdm_datatableUI("cdm_dt")))
+                       )))
+    # chronic disease management table
+    cdm_table_results <- callModule(cdm_datatable, "cdm_dt", dMCDM)
+  }
 
   # administration and result management tab
   admin_table_results <- callModule(administration, "admin_dt", dM)

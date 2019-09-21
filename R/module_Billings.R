@@ -47,32 +47,32 @@ billings_datatableUI <- function(id) {
 #' @param input as required by Shiny modules
 #' @param output as required by Shiny modules
 #' @param session as required by Shiny modules
-#' @param dM dMeasure R6 object
+#' @param dMBillings dMeasureBillings R6 object
 #'
 #' @return none
 #'
-billings_datatable <- function(input, output, session, dM) {
+billings_datatable <- function(input, output, session, dMBillings) {
   ns <- session$ns
 
   billings_list <- shiny::eventReactive(
-    c(dM$billings_listR(),
+    c(dMBillings$billings_listR(),
       input$printcopy_view), {
-      shiny::validate(
-        shiny::need(dM$billings_listR(),
-                    "No appointments in chosen range"),
-        shiny::need(nrow(dM$billings_listR()) > 0,
-                    "No appointments in chosen range")
-      )
+        shiny::validate(
+          shiny::need(dMBillings$billings_listR(),
+                      "No appointments in chosen range"),
+          shiny::need(nrow(dMBillings$billings_listR()) > 0,
+                      "No appointments in chosen range")
+        )
 
-      billingslist <- dM$list_billings(lazy = TRUE,
-                                       screentag = !input$printcopy_view,
-                                       screentag_print = input$printcopy_view)
+        billingslist <- dMBillings$list_billings(lazy = TRUE,
+                                                 screentag = !input$printcopy_view,
+                                                 screentag_print = input$printcopy_view)
 
-      return(billingslist)
-    })
+        return(billingslist)
+      })
 
   shiny::observeEvent(input$allbillings_view, ignoreNULL = TRUE, {
-    dM$own_billings <- !input$allbillings_view
+    dMBillings$own_billings <- !input$allbillings_view
   })
 
   styled_billings_list <- shiny::reactive({
@@ -92,7 +92,7 @@ billings_datatable <- function(input, output, session, dM) {
                          dplyr::select(Patient, Date, AppointmentTime, Status, VisitType,
                                        Provider, billingtag),
                        escape = c(5),
-                       buttons = list('colvis'), # no copy/print buttons
+                       copyHtml5 = NULL, printButton = NULL, # no copy/print buttons
                        colnames = c('Billings' = 'billingtag'))
     }
   })

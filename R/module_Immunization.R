@@ -63,8 +63,6 @@ influenza_list <- function(appointments_list, dM) {
 #' @param session as required by Shiny modules
 #' @param dM dMeasure R6 objection
 #'
-#' @include fomantic_definitions.R calculation_definitions.R
-#'
 #' @return none
 #'
 vax_datatable <- function(input, output, session, dM) {
@@ -136,7 +134,7 @@ vax_datatable <- function(input, output, session, dM) {
                          dplyr::select(Patient, AppointmentDate, AppointmentTime,
                                        Provider, DOB, Age, vaxtag),
                        escape = c(7),
-                       buttons = list('colvis'), # no copy/print buttons
+                       copyHtml5 = NULL, printButton = NULL, # no copy/print buttons
                        colnames = c('Vaccination' = 'vaxtag'))
     }
   })

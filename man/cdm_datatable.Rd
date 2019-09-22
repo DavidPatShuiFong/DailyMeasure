@@ -4,7 +4,7 @@
 \alias{cdm_datatable}
 \title{Chronic disease management list module - server}
 \usage{
-cdm_datatable(input, output, session, dM)
+cdm_datatable(input, output, session, dMCDM)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -13,7 +13,7 @@ cdm_datatable(input, output, session, dM)
 
 \item{session}{as required by Shiny modules}
 
-\item{dM}{dMeasure R6 object
+\item{dMCDM}{dMeasureCDM R6 object
 access to appointments lists, condition lists, history and EMR database}
 }
 \value{

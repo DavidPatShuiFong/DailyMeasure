@@ -46,9 +46,6 @@ cancerscreen_datatableUI <- function(id) {
 #' @param dM dMeasure R6 object
 #'
 #' @return None
-#'
-#' @include fomantic_definitions.R
-#' requires fomantic/semantic definitions
 cancerscreen_datatable <- function(input, output, session, dM) {
 
   ns <- session$ns
@@ -140,7 +137,7 @@ cancerscreen_datatable <- function(input, output, session, dM) {
                          dplyr::select(c('Patient', 'AppointmentDate', 'AppointmentTime',
                                          'Provider', 'DOB', 'Age', 'screentag')),
                        escape = c(7),
-                       buttons = list('colvis'), # no copy/print buttons
+                       copyHtml5 = NULL, printButton = NULL, # no copy/print buttons
                        colnames = c('Screening' = 'screentag'))
     }
   })

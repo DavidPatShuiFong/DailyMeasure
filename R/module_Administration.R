@@ -87,8 +87,6 @@ administration <- function(input, output, session, dM) {
 #' @param dM dMeasure R6 object
 #'  access to appointments lists, results, correspondence and EMR database
 #'
-#' @include fomantic_definitions.R
-#'
 #' @return none
 admin_result_datatable <- function(input, output, session, dM) {
   ns <- session$ns
@@ -187,7 +185,9 @@ admin_result_datatable <- function(input, output, session, dM) {
                                       'Report',
                                       'Reported', 'Checked', 'Checked By',
                                       'Notation', 'Action', 'Actioned', 'Comment',
-                                      'Appointments'))
+                                      'Appointments'),
+                         extensions = c("Buttons", "Scroller"),
+                         scrollX = TRUE) # don't collapse columns
       } else {
         # fomantic/semantic tag view
         datatable_styled(results() %>>%
@@ -198,7 +198,8 @@ admin_result_datatable <- function(input, output, session, dM) {
                                       'Report', 'Checked', 'Checked By',
                                       'Notation', 'Action', 'Actioned', 'Comment',
                                       'Appointments'),
-                         buttons = list('colvis'), # no copy/print buttons
+                         printButton = NULL, # no copy/print buttons
+                         copyHtml5 = NULL,
                          scrollX = '100%', # allow horizontal scroll-bar
                          extensions = c('Buttons', 'Scroller'),
                          # no 'Responsive' column collapsing

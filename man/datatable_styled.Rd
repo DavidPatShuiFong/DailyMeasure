@@ -20,8 +20,8 @@ datatable_styled(data, fillContainer = TRUE, extensions = c("Buttons",
   `responsive-display` = DT::JS(paste("function ( e, datatable, row, showHide, update )",
   "{console.log( 'Details for row '+row.index()+' '",
   "+(showHide ? 'shown' : 'hidden'))}")), paging = FALSE,
-  scrollY = "60vh", scrollX = FALSE, fixedColumns = FALSE,
-  columnDefs = list(list()), ...)
+  scrollY = "60vh", deferRender = TRUE, scrollX = FALSE,
+  fixedColumns = FALSE, columnDefs = list(list()), ...)
 }
 \arguments{
 \item{data}{the datatable}
@@ -41,6 +41,8 @@ datatable_styled(data, fillContainer = TRUE, extensions = c("Buttons",
 \item{paging}{'pages' for long table. default is FALSE, otherwise hard to 'print'/copy a whole table}
 
 \item{scrollY}{percentage of window height}
+
+\item{deferRender}{don't render all rows on page immediately}
 
 \item{scrollX}{left-right scrolling}
 

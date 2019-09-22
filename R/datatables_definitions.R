@@ -24,6 +24,7 @@ semantic_popupJS <- c("window.onload = function() {$('.ui.button') .popup({on: '
 #' @param drawCallback by default, execute JS code to enable semantic popups
 #' @param paging 'pages' for long table. default is FALSE, otherwise hard to 'print'/copy a whole table
 #' @param scrollY percentage of window height
+#' @param deferRender don't render all rows on page immediately
 #' @param scrollX left-right scrolling
 #' @param fixedColumns fix left- or right-most columns in place
 #' @param columnDefs allow customization of columns e.g. hiding by default
@@ -68,6 +69,7 @@ datatable_styled <- function(data, fillContainer = TRUE,
                              paging = FALSE,
                              scrollY = "60vh",
                              # 60% of window height, otherwise will be just a few rows in size
+                             deferRender = TRUE,
                              scrollX = FALSE,
                              fixedColumns = FALSE,
                              columnDefs = list(list()), # allows hiding columns by default
@@ -82,7 +84,7 @@ datatable_styled <- function(data, fillContainer = TRUE,
   }
 
   options <- list(dom = dom, buttons = buttons, drawCallback = drawCallback,
-                  paging = paging, scrollY = scrollY, scrollX = scrollX,
+                  paging = paging, scrollY = scrollY, deferRender = deferRender, scrollX = scrollX,
                   fixedColumns = fixedColumns, columnDefs = columnDefs,
                   `responsive-resize` = `responsive-resize`,
                   `responsive-display` = `responsive-display`)

@@ -2,6 +2,15 @@ GP stat! (c) David Fong, 2019
 
 front-end to DailyMeasure package
 
+Version 1.3.4, 23rd September 2019
+==================================
+
+Bug fixes
+
+* Fix crash if trying to access logs when no logs database is open
+* Fix attempts to download 'graphical' (fomantic/semantic) tables
+* Prevent opening of Chronic Disease Management (CDM) tab if Billings module not available
+
 Version 1.3.3, 21st September 2019
 ==================================
 

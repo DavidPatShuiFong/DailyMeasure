@@ -200,6 +200,7 @@ admin_result_datatable <- function(input, output, session, dM) {
                                       'Appointments'),
                          printButton = NULL, # no copy/print buttons
                          copyHtml5 = NULL,
+                         downloadButton = NULL,
                          scrollX = '100%', # allow horizontal scroll-bar
                          extensions = c('Buttons', 'Scroller'),
                          # no 'Responsive' column collapsing

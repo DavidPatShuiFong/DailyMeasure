@@ -264,7 +264,7 @@ DailyMeasureServer <- function(input, output, session) {
     callModule(billings_datatable, "billings_dt", dMBillings)
   }
 
-  if (CDMmodule == TRUE) {
+  if (CDMmodule == TRUE & Billingsmodule == TRUE) {
     output$CDMMenu <- shinydashboard::renderMenu({
       shinydashboard::menuItem("CDM items",
                                tabName = "cdm", icon = shiny::icon("file-medical-alt"))

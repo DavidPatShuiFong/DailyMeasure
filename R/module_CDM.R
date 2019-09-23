@@ -122,7 +122,8 @@ cdm_datatable <- function(input, output, session, dMCDM) {
                                          AppointmentTime, Provider, cdm),
                          colnames = c('Patient', 'Appointment Date', 'Appointment Time',
                                       'Provider', 'CDM items'),
-                         printButton = NULL, copyHtml5 = NULL, # no copy/print buttons
+                         printButton = NULL, copyHtml5 = NULL,
+                         downloadButton = NULL,  # no copy/print buttons
                          escape = c(5)) # only interpret HTML for last column
       }
     }

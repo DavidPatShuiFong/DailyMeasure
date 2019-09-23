@@ -137,7 +137,8 @@ cancerscreen_datatable <- function(input, output, session, dM) {
                          dplyr::select(c('Patient', 'AppointmentDate', 'AppointmentTime',
                                          'Provider', 'DOB', 'Age', 'screentag')),
                        escape = c(7),
-                       copyHtml5 = NULL, printButton = NULL, # no copy/print buttons
+                       copyHtml5 = NULL, printButton = NULL,
+                       downloadButton = NULL,  # no copy/print buttons
                        colnames = c('Screening' = 'screentag'))
     }
   })

@@ -219,12 +219,11 @@ logging_datatable <- function(input, output, session, dM) {
   })
 
   shiny::observeEvent(input$update_logs, ignoreInit = TRUE, {
-    tryCatch(logs <- dM$ReadLog,
-             warning = function(w) {
-               shinytoastr::toastr_warning(message = w$message,
-                                           position = "bottom-left")
-             })
-
+    logs <- tryCatch(dM$ReadLog,
+                     warning = function(w) {
+                       shinytoastr::toastr_warning(message = w$message,
+                                                   position = "bottom-left")
+                     })
     if (!is.null(logs)) {
       shiny::showModal(shiny::modalDialog(
         title = "Logs",

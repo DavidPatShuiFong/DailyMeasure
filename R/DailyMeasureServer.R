@@ -264,7 +264,7 @@ DailyMeasureServer <- function(input, output, session) {
     callModule(billings_datatable, "billings_dt", dMBillings)
   }
 
-  if (CDMmodule == TRUE) {
+  if (CDMmodule == TRUE & Billingsmodule == TRUE) {
     output$CDMMenu <- shinydashboard::renderMenu({
       shinydashboard::menuItem("CDM items",
                                tabName = "cdm", icon = shiny::icon("file-medical-alt"))
@@ -657,7 +657,10 @@ DailyMeasureServer <- function(input, output, session) {
   output$user <- shinydashboardPlus::renderUser({
     shinydashboardPlus::dashboardUser(
       name = dM$identified_user()$Fullname,
-      src = 'icons/user-avatar.svg', # this depends on addResourcePath in zzz.R
+      src = 'icons/doctor.svg', # this depends on addResourcePath in zzz.R
+      # doctor.svg or user-icon.svg
+      # Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a>
+      # from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
       subtitle = Sys.info()[["user"]], # not necessarily an identified user
       shiny::fluidRow(
         shinydashboardPlus::dashboardUserItem(

@@ -14,8 +14,8 @@ datatable_styled(data, fillContainer = TRUE, extensions = c("Buttons",
   list(columns = ":visible"), filename = "DailyMeasure"), list(extend =
   "excel", exportOptions = list(columns = ":visible"), filename =
   "DailyMeasure"), list(extend = "pdf", exportOptions = list(columns =
-  ":visible"), filename = "DailyMeasure")), text = "Download"),
-  drawCallback = DT::JS(semantic_popupJS),
+  ":visible"), filename = "DailyMeasure")), text = "Download", dropup =
+  TRUE), drawCallback = DT::JS(semantic_popupJS),
   `responsive-resize` = DT::JS(semantic_popupJS),
   `responsive-display` = DT::JS(paste("function ( e, datatable, row, showHide, update )",
   "{console.log( 'Details for row '+row.index()+' '",

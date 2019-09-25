@@ -35,13 +35,15 @@ datatable_styled <- function(data, fillContainer = TRUE,
                              extensions = c('Buttons', 'Scroller', 'Responsive'),
                              dom = 'frltiBp',
                              colvis = list(extend = 'colvis',
-                                           collectionLayout = "four-column",
+                                           collectionLayout = "fixed four-column"
                                            # https://datatables.net/reference/button/collection
-                                           # force 'dropdown' to drop-up
+                                           # another option is to force 'dropdown' to drop-up
+                                           # 'dropup' = TRUE
                                            # because this button is at bottom of page
-                                           # another option is to add 'fixed' to collectionLayout
-                                           # to result in 'centred' drop-down
-                                           dropup = TRUE),
+                                           # 'dropup' doesn't seem to work for collection list
+                                           # below
+                                           # 'fixed' in collectionLayout 'centres' the drop-down
+                                           ),
                              copyHtml5 = list(extend = 'copyHtml5',
                                               exportOptions = list(columns = ':visible')),
                              printButton = list(extend = 'print',
@@ -58,7 +60,7 @@ datatable_styled <- function(data, fillContainer = TRUE,
                                                           exportOptions = list(columns = ':visible'),
                                                           filename = 'DailyMeasure')),
                                                    text = 'Download',
-                                                   dropup = TRUE),
+                                                   collectionLayout = "fixed"),
                              # initComplete = DT::JS(semantic_popupJS),
                              drawCallback = DT::JS(semantic_popupJS),
                              `responsive-resize` = DT::JS(semantic_popupJS),

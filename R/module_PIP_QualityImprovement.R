@@ -861,7 +861,7 @@ qim_copd <- function(input, output, session, dMQIM, contact) {
           }
           return(dt)
         } else if (input$list_view == "Appointments") {
-          df <- dMQIM$qim_diabetes_list_appointmentsR() %>>%
+          df <- dMQIM$qim_copd_list_appointmentsR() %>>%
             dplyr::select(Patient, RecordNo,
                           AppointmentDate, AppointmentTime, Provider, Status,
                           Age5, Sex, Ethnicity,

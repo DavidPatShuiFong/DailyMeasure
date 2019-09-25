@@ -6,7 +6,7 @@
 \usage{
 datatable_styled(data, fillContainer = TRUE, extensions = c("Buttons",
   "Scroller", "Responsive"), dom = "frltiBp", colvis = list(extend =
-  "colvis", collectionLayout = "four-column", dropup = TRUE),
+  "colvis", collectionLayout = "fixed four-column"),
   copyHtml5 = list(extend = "copyHtml5", exportOptions = list(columns =
   ":visible")), printButton = list(extend = "print", exportOptions =
   list(columns = ":visible")), downloadButton = list(extend =
@@ -14,8 +14,8 @@ datatable_styled(data, fillContainer = TRUE, extensions = c("Buttons",
   list(columns = ":visible"), filename = "DailyMeasure"), list(extend =
   "excel", exportOptions = list(columns = ":visible"), filename =
   "DailyMeasure"), list(extend = "pdf", exportOptions = list(columns =
-  ":visible"), filename = "DailyMeasure")), text = "Download", dropup =
-  TRUE), drawCallback = DT::JS(semantic_popupJS),
+  ":visible"), filename = "DailyMeasure")), text = "Download",
+  collectionLayout = "fixed"), drawCallback = DT::JS(semantic_popupJS),
   `responsive-resize` = DT::JS(semantic_popupJS),
   `responsive-display` = DT::JS(paste("function ( e, datatable, row, showHide, update )",
   "{console.log( 'Details for row '+row.index()+' '",

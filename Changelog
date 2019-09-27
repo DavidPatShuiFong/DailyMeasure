@@ -2,6 +2,18 @@ GP stat! (c) David Fong, 2019
 
 front-end to DailyMeasure package
 
+
+Version 1.3.5, 27th September 2019
+==================================
+
+Improvement
+
+* round framingham risk equation results to 3 decimal places
+
+Bug fixes
+
+* COPD patients in QIM COPD appointments, instead of diabetic patients
+
 Version 1.3.4, 23rd September 2019
 ==================================
 

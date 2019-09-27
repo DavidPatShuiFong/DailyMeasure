@@ -998,7 +998,8 @@ qim_cvdRisk <- function(input, output, session, dMQIM, contact) {
                           dplyr::select(., -remove_demographic)}
           datatable_styled(df,
                            extensions = c('Buttons', 'Scroller'), colvis = NULL,
-                           scrollX = TRUE) # this is a wide table
+                           scrollX = TRUE) %>>% # this is a wide table
+          DT::formatRound(which(names(df) %in% c("frisk")), digits = 3)
         }
       }
   )

@@ -120,8 +120,8 @@ DailyMeasureUI <- function() {
             inputId = "appointment_status",
             label = "Appointment status shown",
             choices = c("Booked", "Waiting", "With doctor",
-                        "At billing", "Completed"),
-            selected = c("With doctor", "At billing", "Completed"),
+                        "At billing", "Invoiced", "Completed"),
+            selected = c("With doctor", "At billing", "Invoiced", "Completed"),
             # all 'completed' choices initially selected
             options = list(style = "btn-primary",
                            `actions-box` = TRUE),

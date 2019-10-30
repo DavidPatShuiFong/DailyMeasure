@@ -15,6 +15,8 @@
 #' needed for simple encode/decode
 DailyMeasureServer <- function(input, output, session) {
 
+  print(.bcdyz.option)
+
   # IMPORTANT!
   # this is needed to terminate the R process when the
   # shiny app session ends. Otherwise, you end up with a zombie process

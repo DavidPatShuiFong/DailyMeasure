@@ -5,11 +5,18 @@
 \title{DailyMeasure
 (C) David Fong, 2019}
 \usage{
-GPstat(appmode = "chrome", launch.browser = TRUE)
+GPstat(appmode = "chrome", launch.browser = TRUE, port = NULL,
+  demonstration = FALSE, ...)
 }
 \arguments{
 \item{appmode}{set to "chrome" if wanting to launch chrome in app mode
 app-mode has not forward/back buttons, tabs, or address-bar}
+
+\item{port}{set to port number if to open on specified port. default is NULL,
+which is a random port number}
+
+\item{demonstration}{set to TRUE if to run in demonstration mode where
+some settings cannot be changed. default is FALSE}
 
 \item{launch.browser=TRUE}{normally launches a web-browser. within
 Rstudio, launch.browser=FALSE will start a RStudio browser.}

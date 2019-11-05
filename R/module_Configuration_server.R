@@ -76,8 +76,6 @@ servers_datatableUI <- function(id) {
 #' @include calculation_definitions.R
 #' required for simple encoding/decoding
 servers_datatable <- function(input, output, session, dM) {
-  # as of 22nd June 2019, this function doesn't actually use emr_db
-  #
   # Practice locations/groups server part of module
   # returns server_list_change$count - increments with each GUI edit of server list
   # change in server_list_change to prompt change in selectable filter list of locations
@@ -98,11 +96,16 @@ servers_datatable <- function(input, output, session, dM) {
 
   output$selection <- shiny::renderUI({
     # drop-down list of servers (including 'None')
-    shiny::selectInput(inputId = ns("server_chosen"),
-                       label = "Chosen Best Practice server",
-                       choices = servername_list(),
-                       selected = dM$BPdatabaseChoice)
+    x <- shiny::selectInput(inputId = ns("server_chosen"),
+                            label = "Chosen Best Practice server",
+                            choices = servername_list(),
+                            selected = dM$BPdatabaseChoice)
+    if (.bcdyz.option$demonstration) {
+      x <- shinyjs::disabled(x) # if demonstration mode, disable server selection
+    }
+    x
   })
+
 
   shiny::observeEvent(dM$BPdatabaseChoiceR(), {
     # if the choice has been changed, change the entry in the drop-down list
@@ -213,7 +216,12 @@ servers_datatable <- function(input, output, session, dM) {
                                                dbPassword = 'passwordInput'),
                                callback.update = servers.update.callback,
                                callback.insert = servers.insert.callback,
-                               callback.delete = servers.delete.callback
+                               callback.delete = servers.delete.callback,
+                               # only show new/copy/delete/update if not demonstration mode
+                               show.delete = .bcdyz.option$demonstration == FALSE,
+                               show.update = .bcdyz.option$demonstration == FALSE,
+                               show.insert = .bcdyz.option$demonstration == FALSE,
+                               show.copy = .bcdyz.option$demonstration == FALSE
   )
 
   return(list(

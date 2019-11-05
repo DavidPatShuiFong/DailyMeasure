@@ -5,12 +5,15 @@
 \title{DailyMeasure
 (C) David Fong, 2019}
 \usage{
-GPstat(appmode = "chrome", launch.browser = TRUE, port = NULL,
+GPstat(appmode = "chrome", launch.browser = TRUE,
+  host = getOption("shiny.host", "127.0.0.1"), port = NULL,
   demonstration = FALSE, ...)
 }
 \arguments{
 \item{appmode}{set to "chrome" if wanting to launch chrome in app mode
 app-mode has not forward/back buttons, tabs, or address-bar}
+
+\item{host}{set host. "0.0.0.0" if wanting access outside the local machine}
 
 \item{port}{set to port number if to open on specified port. default is NULL,
 which is a random port number}

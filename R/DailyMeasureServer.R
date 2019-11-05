@@ -1,5 +1,8 @@
 ##### Define server logic #####################################################
 
+sessionCount <- reactiveValues(count = 0) # initially no sessions opened
+# strangely, doesn't work if not a reactive
+
 #' Shiny app server function
 #'
 #' @param input required for shiny server
@@ -15,7 +18,10 @@
 #' needed for simple encode/decode
 DailyMeasureServer <- function(input, output, session) {
 
-  print(.bcdyz.option)
+  print(.bcdyz.option) # this can be passed from a calling function shiny::runApp()
+
+  isolate(sessionCount$count <- sessionCount$count + 1)
+  print(paste("Session Count:", isolate(sessionCount$count)))
 
   # IMPORTANT!
   # this is needed to terminate the R process when the
@@ -25,7 +31,12 @@ DailyMeasureServer <- function(input, output, session) {
     dM$close()
     # close $config_db and $emr_db
 
-    shiny::stopApp()
+    isolate(sessionCount$count <- sessionCount$count - 1)
+    print(paste("Session Count:", isolate(sessionCount$count)))
+
+    if (isolate(sessionCount$count) == 0) {
+      shiny::stopApp() # last session closed, so stop the App
+    }
   })
 
   # create the dMeasure object
@@ -375,16 +386,21 @@ DailyMeasureServer <- function(input, output, session) {
                                  # location of sqlite configuration file
                                ),
                                shiny::wellPanel(
-                                 shinyFiles::shinyFilesButton(
+                                 {x <- shinyFiles::shinyFilesButton(
                                    "choose_configuration_file",
                                    label = "Choose configuration file",
                                    title = "Choose configuration file (must end in '.sqlite')",
-                                   multiple = FALSE),
-                                 shinyFiles::shinySaveButton(
+                                   multiple = FALSE);
+                                 # disabled if demonstration mode
+                                 if (.bcdyz.option$demonstration) {shinyjs::disabled(x)} else {x}}
+                                 ,
+                                 {x <- shinyFiles::shinySaveButton(
                                    "create_configuration_file",
                                    label = "Create configuration file",
                                    title = "Create configuration file (must end in '.sqlite')",
-                                   filetype = list(sqlite = c('sqlite'))),
+                                   filetype = list(sqlite = c('sqlite')));
+                                 # disabled if demonstration mode
+                                 if (.bcdyz.option$demonstration) {shinyjs::disabled(x)} else {x}},
                                  shiny::helpText(paste("Choose location of an existing configuration file,",
                                                        "or create a new configuration file"))
                                ))

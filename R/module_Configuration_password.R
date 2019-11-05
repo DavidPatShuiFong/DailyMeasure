@@ -12,7 +12,9 @@ passwordConfig_UI <- function(id) {
     shiny::wellPanel(
       "Change User Password",
       shiny::br(), shiny::br(),
-      shiny::actionButton(ns("ChangePassword"), "Change Password", icon("unlock-alt"))
+      {x <- shiny::actionButton(ns("ChangePassword"), "Change Password", icon("unlock-alt"));
+      # disabled if demonstration mode
+      if (.bcdyz.option$demonstration) {shinyjs::disabled(x)} else {x}}
     )
   )
 

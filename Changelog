@@ -2,14 +2,14 @@ GP stat! (c) David Fong, 2019
 
 front-end to DailyMeasure package
 
-
-Version 1.3.6.1, 30th October 2019
+Version 1.3.7, 5th November 2019
 ==================================
 
 Features
 
-* can define port number in GPstat()
-* demontration mode option in GPstat() (not working yet)
+* define host and port number in GPstat()
+* multiple sessions can be opened. app does not stop until all sessions are closed
+* demontration mode option in GPstat()
 
 Bugfix
 

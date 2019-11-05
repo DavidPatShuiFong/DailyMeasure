@@ -29,8 +29,10 @@ userconfig_resetpasswordUI <- function(id) {
       shiny::br(), shiny::br(),
       shiny::uiOutput(ns("ConfiguredUserList")),
       shiny::br(),
-      shiny::actionButton(ns('reset_password'), 'Reset Password',
-                          icon('broom'), class = 'btn btn-primary'))
+      {x <- shiny::actionButton(ns('reset_password'), 'Reset Password',
+                          icon('broom'), class = 'btn btn-primary');
+      # disabled if demonstration mode
+      if (.bcdyz.option$demonstration) {shinyjs::disabled(x)} else {x}})
   )
 }
 
@@ -110,6 +112,10 @@ userconfig_resetpassword <- function(input, output, session, dM) {
 userconfig_enableRestrictionsUI <- function(id) {
   ns <- shiny::NS(id)
   shiny::tagList(
+    {if (.bcdyz.option$demonstration)
+    {shiny::span(shiny::p(), shiny::strong("Demonstration mode : Restriction changes disabled"),
+                 style = "color:red", shiny::p())}
+      else {}},
     lapply(dMeasure::restrictionTypes_list(),
            # goes through restrictionTypes
            # extracts the names labelled in $label
@@ -118,12 +124,14 @@ userconfig_enableRestrictionsUI <- function(id) {
                shiny::br(),
                shiny::fluidRow(
                  shiny::column(width = 3,
-                               shinyWidgets::materialSwitch(
+                               {x <- shinyWidgets::materialSwitch(
                                  inputId = ns(type$id),
                                  label = type$label,
                                  right = TRUE,
                                  value = FALSE,
-                                 status = "primary")),
+                                 status = "primary")
+                               # disabled if demonstration mode
+                               if (.bcdyz.option$demonstration) {shinyjs::disabled(x)} else {x}}),
                  shiny::column(width = 8, type$Description)
                )
              )

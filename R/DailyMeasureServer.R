@@ -46,9 +46,10 @@ DailyMeasureServer <- function(input, output, session) {
   QIMmodule <- requireNamespace('dMeasureQIM', quietly = TRUE)
   # is module (package) available?
   if (QIMmodule) {
-    dMQIM <- dMeasureQIM::dMeasureQIM$new(dM)
+    dMQIMrept <- dMeasureQIM::dMeasureQIM$new(dM) # 'report' view of module
     dMQIMappt <- dMeasureQIM::dMeasureQIM$new(dM) # a second QIM module
     dMQIMappt$qim_contact <- FALSE # second module uses appointment list, not contact list
+    dMQIMappt$qim_demographicGroup <- c("") # by default, the second module does not show QIM aggregate groups
   }
   Billingsmodule <- requireNamespace('dMeasureBillings', quietly = TRUE)
   # is module (package) available?
@@ -266,7 +267,7 @@ DailyMeasureServer <- function(input, output, session) {
         shinydashboard::menuItem("Billings",
                                  tabName = "billings", icon = shiny::icon("receipt"))
       ))
-    }) # if QIMmodule is FALSE, then output$PIPqimMenu will be left undefined
+    }) # if Billingsmodule is FALSE, then output$BillingsMenu will be left undefined
     shinytabItems <- c(shinytabItems,
                        list(shinydashboard::tabItem(
                          tabName = "billings",
@@ -281,7 +282,7 @@ DailyMeasureServer <- function(input, output, session) {
     output$CDMMenu <- shinydashboard::renderMenu({
       shinydashboard::menuItem("CDM items",
                                tabName = "cdm", icon = shiny::icon("file-medical-alt"))
-    }) # if QIMmodule is FALSE, then output$PIPqimMenu will be left undefined
+    }) # if CDMmodule or Billingsmodule is FALSE, then output$CDMMenu will be left undefined
     shinytabItems <- c(shinytabItems,
                        list(shinydashboard::tabItem(
                          tabName = "cdm",
@@ -302,7 +303,7 @@ DailyMeasureServer <- function(input, output, session) {
     output$PIPqimMenu <- shinydashboard::renderMenu({
       shinydashboard::sidebarMenu(.list = list(
         shinydashboard::menuItem("PIP Quality Improvement",
-                                 tabName = "qim", icon = shiny::icon("chart-line")),
+                                 tabName = "qimRept", icon = shiny::icon("chart-line")),
         shinydashboard::menuItem("QIM Appointment",
                                  tabName = "qimAppt", icon = shiny::icon("chart-line"))
       ))
@@ -311,11 +312,11 @@ DailyMeasureServer <- function(input, output, session) {
     # add PIP QIM tab items to the tabItem vector
     shinytabItems <- c(shinytabItems,
                        list(shinydashboard::tabItem(
-                         tabName = "qim",
+                         tabName = "qimRept",
                          shiny::fluidRow(column(width = 12, align = "center",
                                                 h2("Quality Improvement Measure Reporting"))),
                          shiny::fluidRow(column(width = 12,
-                                                qim_UI("qim")))
+                                                qim_UI("qimRept")))
                        )),
                        list(shinydashboard::tabItem(
                          tabName = "qimAppt",
@@ -325,7 +326,7 @@ DailyMeasureServer <- function(input, output, session) {
                                                 qim_UI("qimAppt")))
                        ))
     )
-    qim_results <- callModule(qim, "qim", dMQIM, contact = TRUE)
+    qim_results_rept <- callModule(qim, "qimRept", dMQIMrept, contact = TRUE) # 'report' view
     # Practice Incentive Program (PIP) Quality Improvement (QI) measures
     # appointment view
     qim_results_appt <- callModule(qim, "qimAppt", dMQIMappt, contact = FALSE)

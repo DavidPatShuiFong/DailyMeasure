@@ -230,6 +230,9 @@ qim <- function(input, output, session, dMQIM, contact) {
     # for some reason the above line doesn't remove the tab...
     shiny::updateTabsetPanel(session = session, inputId = "tab_qim", selected = "Diabetes")
   }
+  initial_demographic <- dMQIM$qim_demographicGroup
+  # this is an unusual kludge, for some reason specifying dMQIM$qim_demographicGroup
+  # in the 'choices' of checkboxGroupButtons does not work
 
   output$settings_group <- shiny::renderUI({
     shinyWidgets::dropdown(
@@ -247,8 +250,7 @@ qim <- function(input, output, session, dMQIM, contact) {
       shinyWidgets::checkboxGroupButtons(
         inputId = ns("demographic_chosen"), label = "Demographic grouping",
         choices = dMQIM$qim_demographicGroupings,
-        selected = dMQIM$qim_demographicGroupings,
-        # all choices initially selected
+        selected = initial_demographic,
         status = "primary", width = "15em",
         checkIcon = list(yes = icon("ok", lib = "glyphicon")))
     )
@@ -261,7 +263,6 @@ qim <- function(input, output, session, dMQIM, contact) {
     # if selected, will filter out appointments older than current date
     dMQIM$qim_ignoreOld <- ("Ignore old measurements" %in% input$ignore_old)
   })
-
 
 }
 
@@ -439,8 +440,7 @@ qim_diabetes <- function(input, output, session, dMQIM, contact) {
                               {if ("BP" %in% input$measure_chosen) {.}
                                 else {dplyr::select(., -c(BPDate, BP))}}
           datatable_styled(df,
-                           extensions = c('Buttons', 'Scroller'),
-                           colvis = NULL) %>>%
+                           extensions = c('Buttons', 'Scroller')) %>>%
                            {if ("HbA1C" %in% input$measure_chosen) {
                              DT::formatStyle(., 'HbA1CDate',
                                              backgroundcolor = DT::styleInterval(as.Date(Sys.Date()-365), c("ffeeee", "eeffee"))
@@ -543,7 +543,7 @@ qim_cst <- function(input, output, session, dMQIM, contact) {
                           # finds the demographics that were NOT chosen
                           dplyr::select(., -remove_demographic)}
           datatable_styled(df,
-                           extensions = c('Buttons', 'Scroller'), colvis = NULL,
+                           extensions = c('Buttons', 'Scroller'),
                            scrollX = TRUE) # this is a wide table
         }
       }
@@ -686,7 +686,7 @@ qim_15plus <- function(input, output, session, dMQIM, contact) {
                                                                                     PastAlcoholLevel, YearStarted, YearStopped,
                                                                                     AlcoholComment))}}
           return(datatable_styled(df,
-                                  extensions = c('Buttons', 'Scroller'), colvis = NULL,
+                                  extensions = c('Buttons', 'Scroller'),
                                   scrollX = TRUE)) # this is a wide table
         }
       }
@@ -780,7 +780,7 @@ qim_65plus <- function(input, output, session, dMQIM, contact) {
                           # finds the demographics that were NOT chosen
                           dplyr::select(., -remove_demographic)}
           datatable_styled(df,
-                           extensions = c('Buttons', 'Scroller'), colvis = NULL,
+                           extensions = c('Buttons', 'Scroller'),
                            scrollX = TRUE) # this is a wide table
         }
       }
@@ -873,7 +873,7 @@ qim_copd <- function(input, output, session, dMQIM, contact) {
                           # finds the demographics that were NOT chosen
                           dplyr::select(., -remove_demographic)}
           datatable_styled(df,
-                           extensions = c('Buttons', 'Scroller'), colvis = NULL,
+                           extensions = c('Buttons', 'Scroller'),
                            scrollX = TRUE) # this is a wide table
         }
       }
@@ -997,7 +997,7 @@ qim_cvdRisk <- function(input, output, session, dMQIM, contact) {
                           # finds the demographics that were NOT chosen
                           dplyr::select(., -remove_demographic)}
           datatable_styled(df,
-                           extensions = c('Buttons', 'Scroller'), colvis = NULL,
+                           extensions = c('Buttons', 'Scroller'),
                            scrollX = TRUE) %>>% # this is a wide table
           DT::formatRound(which(names(df) %in% c("frisk")), digits = 3)
         }

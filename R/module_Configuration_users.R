@@ -27,6 +27,10 @@ userconfig_resetpasswordUI <- function(id) {
     shiny::wellPanel(
       "Only configured users can have passwords reset (or set)",
       shiny::br(), shiny::br(),
+      {if (.bcdyz.option$demonstration)
+      {shiny::span(shiny::p(), shiny::strong("Demonstration mode : Password reset disabled"),
+                   style = "color:red", shiny::p())}
+        else {}},
       shiny::uiOutput(ns("ConfiguredUserList")),
       shiny::br(),
       {x <- shiny::actionButton(ns('reset_password'), 'Reset Password',

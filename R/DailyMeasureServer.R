@@ -386,6 +386,11 @@ DailyMeasureServer <- function(input, output, session) {
                                  # location of sqlite configuration file
                                ),
                                shiny::wellPanel(
+                                 {if (.bcdyz.option$demonstration)
+                                 {shiny::span(shiny::p(),
+                                              shiny::strong("Demonstration mode : Configuration file choice disabled"),
+                                              style = "color:red", shiny::p())}
+                                   else {}},
                                  {x <- shinyFiles::shinyFilesButton(
                                    "choose_configuration_file",
                                    label = "Choose configuration file",

@@ -2,6 +2,11 @@ GP stat! (c) David Fong, 2019
 
 front-end to DailyMeasure package
 
+
+Features
+
+* demonstration mode disables log file choosing/creation
+
 Version 1.3.7, 5th November 2019
 ==================================
 

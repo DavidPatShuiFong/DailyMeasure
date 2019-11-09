@@ -14,7 +14,11 @@ servers_datatableUI <- function(id) {
 
   shiny::tagList(
     shiny::wellPanel(
-      shiny::uiOutput(ns("selection"))
+      shiny::uiOutput(ns("selection")),
+      {if (.bcdyz.option$demonstration)
+      {shiny::span(shiny::p(), shiny::strong("Demonstration mode : Server changes/additions disabled"),
+                   style = "color:red", shiny::p())}
+        else {}}
     ),
     shiny::fluidRow(
       shiny::div(style = "display: inline-block; vertical-align:top",

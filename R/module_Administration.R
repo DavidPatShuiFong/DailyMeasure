@@ -17,12 +17,42 @@ administration_UI <- function(id) {
       width = 12,
       height = "85vh",
       shiny::tabPanel(
+        title = "Data Quality",
+        width = 12,
+        shiny::br(),
+        admin_dataQuality_datatableUI(ns("data_quality"))
+      ),
+      shiny::tabPanel(
         title = "Result Management",
         width = 12,
         shiny::br(),
         admin_result_datatableUI(ns("result_management"))
       )
     )
+  )
+}
+
+admin_dataQuality_datatableUI <- function(id) {
+  ns <- shiny::NS(id)
+
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(4,
+                    shinyWidgets::switchInput(
+                      inputId = ns("printcopy_view"),
+                      label = paste("<i class=\"fas fa-print\"></i>",
+                                    "<i class=\"far fa-copy\"></i>",
+                                    " Print and Copy View"),
+                      labelWidth = "12em",
+                      width = "20em")),
+      shiny::column(2, # note that total 'column' width = 12
+                    shiny::uiOutput(ns("dataQuality_choice")))
+    ),
+    shinycssloaders::withSpinner(
+      DT::DTOutput(ns("dataQuality_table")),
+      type = 8,
+      hide.element.when.recalculating = FALSE,
+      proxy.height = NULL)
   )
 }
 
@@ -58,7 +88,6 @@ admin_result_datatableUI <- function(id) {
       hide.element.when.recalculating = FALSE,
       proxy.height = NULL)
   )
-
 }
 
 #' administration user interface
@@ -73,8 +102,90 @@ admin_result_datatableUI <- function(id) {
 administration <- function(input, output, session, dM) {
   ns <- session$ns
 
+  # data quality
+  callModule(admin_dataQuality_datatable, "data_quality", dM)
+
   # result management
   callModule(admin_result_datatable, "result_management", dM)
+}
+
+#' data quality module - server
+#'
+#' with appointments
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param dM dMeasure R6 object
+#'  access to appointments lists, results, correspondence and EMR database
+#'
+#' @return none
+admin_dataQuality_datatable <- function(input, output, session, dM) {
+  ns <- session$ns
+
+  output$dataQuality_choice <- renderUI({
+    shinyWidgets::dropdown(
+      input_id = "dataQuality_choice_dropdown",
+      shinyWidgets::checkboxGroupButtons(
+        inputId = ns("dataQuality_chosen"), label = "Data Quality choices",
+        choices = dM$dataQuality_choices,
+        selected = dM$dataQuality_choices,
+        status = "primary",
+        checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
+      icon = icon("gear"),
+      label = "Data Quality choices shown"
+    )
+  })
+
+  dataQuality <-
+    shiny::eventReactive(
+      c(dM$appointments_listR(),
+        input$dataQuality_chosen,
+        input$printcopy_view), ignoreInit = TRUE, {
+          # respond to appointments_listR()
+          # when clinician or dates is changed
+          appointments <- dM$list_dataQuality(lazy = TRUE,
+                                              qualitytag = !input$printcopy_view,
+                                              qualitytag_print = input$printcopy_view,
+                                              chosen = input$dataQuality_chosen) %>>%
+            dplyr::collect()
+          # no need to re-calculate $appointments_list
+
+          return(appointments)
+        })
+
+  ### create tag-styled datatable (or 'printable' datatable)
+  dataQuality_table <- shiny::reactive({
+    if (!is.null(dM$appointments_list)) {
+      if (input$printcopy_view == TRUE) {
+        # printable/copyable view
+        datatable_styled(dataQuality() %>>%
+                           dplyr::select(Patient, AppointmentDate, AppointmentTime,
+                                         Provider, DOB, Age, qualitytag_print),
+                         colnames = c('Data Quality' = 'qualitytag_print'),
+                         extensions = c("Buttons", "Scroller"),
+                         scrollX = TRUE) # don't collapse columns
+      } else {
+        # fomantic/semantic tag view
+        datatable_styled(dataQuality() %>>%
+                           dplyr::select(Patient, AppointmentDate, AppointmentTime,
+                                         Provider, DOB, Age, qualitytag),
+                         colnames = c('Data Quality' = 'qualitytag'),
+                         printButton = NULL, # no copy/print buttons
+                         copyHtml5 = NULL,
+                         downloadButton = NULL,
+                         scrollX = '100%', # allow horizontal scroll-bar
+                         extensions = c('Buttons', 'Scroller'),
+                         # no 'Responsive' column collapsing
+                         escape = c(7)) # only interpret HTML for last column
+      }
+    }
+  })
+
+  output$dataQuality_table <- DT::renderDT({
+    dataQuality_table()
+  },
+  server = TRUE)
 }
 
 #' result management module - server
@@ -204,7 +315,7 @@ admin_result_datatable <- function(input, output, session, dM) {
                          scrollX = '100%', # allow horizontal scroll-bar
                          extensions = c('Buttons', 'Scroller'),
                          # no 'Responsive' column collapsing
-                         escape = c(1, 3, 10))# only interpret HTML for last column
+                         escape = c(1, 3, 10)) # only interpret HTML for some columns
       }
     }
   })

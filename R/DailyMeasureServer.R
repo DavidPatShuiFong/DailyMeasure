@@ -1,5 +1,8 @@
 ##### Define server logic #####################################################
 
+sessionCount <- reactiveValues(count = 0) # initially no sessions opened
+# strangely, doesn't work if not a reactive
+
 #' Shiny app server function
 #'
 #' @param input required for shiny server
@@ -15,6 +18,11 @@
 #' needed for simple encode/decode
 DailyMeasureServer <- function(input, output, session) {
 
+  print(.bcdyz.option) # this can be passed from a calling function shiny::runApp()
+
+  isolate(sessionCount$count <- sessionCount$count + 1)
+  print(paste("Session Count:", isolate(sessionCount$count)))
+
   # IMPORTANT!
   # this is needed to terminate the R process when the
   # shiny app session ends. Otherwise, you end up with a zombie process
@@ -23,7 +31,12 @@ DailyMeasureServer <- function(input, output, session) {
     dM$close()
     # close $config_db and $emr_db
 
-    shiny::stopApp()
+    isolate(sessionCount$count <- sessionCount$count - 1)
+    print(paste("Session Count:", isolate(sessionCount$count)))
+
+    if (isolate(sessionCount$count) == 0) {
+      shiny::stopApp() # last session closed, so stop the App
+    }
   })
 
   # create the dMeasure object
@@ -33,9 +46,10 @@ DailyMeasureServer <- function(input, output, session) {
   QIMmodule <- requireNamespace('dMeasureQIM', quietly = TRUE)
   # is module (package) available?
   if (QIMmodule) {
-    dMQIM <- dMeasureQIM::dMeasureQIM$new(dM)
+    dMQIMrept <- dMeasureQIM::dMeasureQIM$new(dM) # 'report' view of module
     dMQIMappt <- dMeasureQIM::dMeasureQIM$new(dM) # a second QIM module
     dMQIMappt$qim_contact <- FALSE # second module uses appointment list, not contact list
+    dMQIMappt$qim_demographicGroup <- c("") # by default, the second module does not show QIM aggregate groups
   }
   Billingsmodule <- requireNamespace('dMeasureBillings', quietly = TRUE)
   # is module (package) available?
@@ -253,7 +267,7 @@ DailyMeasureServer <- function(input, output, session) {
         shinydashboard::menuItem("Billings",
                                  tabName = "billings", icon = shiny::icon("receipt"))
       ))
-    }) # if QIMmodule is FALSE, then output$PIPqimMenu will be left undefined
+    }) # if Billingsmodule is FALSE, then output$BillingsMenu will be left undefined
     shinytabItems <- c(shinytabItems,
                        list(shinydashboard::tabItem(
                          tabName = "billings",
@@ -268,7 +282,7 @@ DailyMeasureServer <- function(input, output, session) {
     output$CDMMenu <- shinydashboard::renderMenu({
       shinydashboard::menuItem("CDM items",
                                tabName = "cdm", icon = shiny::icon("file-medical-alt"))
-    }) # if QIMmodule is FALSE, then output$PIPqimMenu will be left undefined
+    }) # if CDMmodule or Billingsmodule is FALSE, then output$CDMMenu will be left undefined
     shinytabItems <- c(shinytabItems,
                        list(shinydashboard::tabItem(
                          tabName = "cdm",
@@ -289,7 +303,7 @@ DailyMeasureServer <- function(input, output, session) {
     output$PIPqimMenu <- shinydashboard::renderMenu({
       shinydashboard::sidebarMenu(.list = list(
         shinydashboard::menuItem("PIP Quality Improvement",
-                                 tabName = "qim", icon = shiny::icon("chart-line")),
+                                 tabName = "qimRept", icon = shiny::icon("chart-line")),
         shinydashboard::menuItem("QIM Appointment",
                                  tabName = "qimAppt", icon = shiny::icon("chart-line"))
       ))
@@ -298,11 +312,11 @@ DailyMeasureServer <- function(input, output, session) {
     # add PIP QIM tab items to the tabItem vector
     shinytabItems <- c(shinytabItems,
                        list(shinydashboard::tabItem(
-                         tabName = "qim",
+                         tabName = "qimRept",
                          shiny::fluidRow(column(width = 12, align = "center",
                                                 h2("Quality Improvement Measure Reporting"))),
                          shiny::fluidRow(column(width = 12,
-                                                qim_UI("qim")))
+                                                qim_UI("qimRept")))
                        )),
                        list(shinydashboard::tabItem(
                          tabName = "qimAppt",
@@ -312,7 +326,7 @@ DailyMeasureServer <- function(input, output, session) {
                                                 qim_UI("qimAppt")))
                        ))
     )
-    qim_results <- callModule(qim, "qim", dMQIM, contact = TRUE)
+    qim_results_rept <- callModule(qim, "qimRept", dMQIMrept, contact = TRUE) # 'report' view
     # Practice Incentive Program (PIP) Quality Improvement (QI) measures
     # appointment view
     qim_results_appt <- callModule(qim, "qimAppt", dMQIMappt, contact = FALSE)
@@ -373,16 +387,26 @@ DailyMeasureServer <- function(input, output, session) {
                                  # location of sqlite configuration file
                                ),
                                shiny::wellPanel(
-                                 shinyFiles::shinyFilesButton(
+                                 {if (.bcdyz.option$demonstration)
+                                 {shiny::span(shiny::p(),
+                                              shiny::strong("Demonstration mode : Configuration file choice disabled"),
+                                              style = "color:red", shiny::p())}
+                                   else {}},
+                                 {x <- shinyFiles::shinyFilesButton(
                                    "choose_configuration_file",
                                    label = "Choose configuration file",
                                    title = "Choose configuration file (must end in '.sqlite')",
-                                   multiple = FALSE),
-                                 shinyFiles::shinySaveButton(
+                                   multiple = FALSE);
+                                 # disabled if demonstration mode
+                                 if (.bcdyz.option$demonstration) {shinyjs::disabled(x)} else {x}}
+                                 ,
+                                 {x <- shinyFiles::shinySaveButton(
                                    "create_configuration_file",
                                    label = "Create configuration file",
                                    title = "Create configuration file (must end in '.sqlite')",
-                                   filetype = list(sqlite = c('sqlite'))),
+                                   filetype = list(sqlite = c('sqlite')));
+                                 # disabled if demonstration mode
+                                 if (.bcdyz.option$demonstration) {shinyjs::disabled(x)} else {x}},
                                  shiny::helpText(paste("Choose location of an existing configuration file,",
                                                        "or create a new configuration file"))
                                ))

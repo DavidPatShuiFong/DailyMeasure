@@ -53,16 +53,25 @@ logging_datatableUI <- function(id) {
               shiny::column(
                 width = 8,
                 shiny::wellPanel(
-                  shinyFiles::shinyFilesButton(
+                  {if (.bcdyz.option$demonstration)
+                  {shiny::span(shiny::p(), shiny::strong("Demonstration mode : Log file changes disabled"),
+                               style = "color:red", shiny::p())}
+                    else {}},
+                  {x <- shinyFiles::shinyFilesButton(
                     id = ns("choose_logDB_file"),
                     label = "Choose log database file",
                     title = "Choose log database file (must end in '.sqlite')",
-                    multiple = FALSE),
-                  shinyFiles::shinySaveButton(
+                    multiple = FALSE)
+                  # disabled if demonstration mode
+                  if (.bcdyz.option$demonstration) {shinyjs::disabled(x)} else {x}},
+                  {x <- shinyFiles::shinySaveButton(
                     id = ns("create_logDB_file"),
                     label = "Create log database file",
                     title = "Create log database file (must end in '.sqlite')",
-                    filetype = list(sqlite = c('sqlite'))),
+                    filetype = list(sqlite = c('sqlite')))
+                  # disabled if demonstration mode
+                  if (.bcdyz.option$demonstration) {shinyjs::disabled(x)} else {x}}
+                  ,
                   shiny::helpText(
                     paste("Choose location of an existing configuration file",
                           "or create a new configuration file. Can only be",

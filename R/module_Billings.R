@@ -93,6 +93,7 @@ billings_datatable <- function(input, output, session, dMBillings) {
                                        Provider, billingtag),
                        escape = c(5),
                        copyHtml5 = NULL, printButton = NULL, # no copy/print buttons
+                       downloadButton = NULL,
                        colnames = c('Billings' = 'billingtag'))
     }
   })

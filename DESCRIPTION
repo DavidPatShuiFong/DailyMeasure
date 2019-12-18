@@ -40,7 +40,9 @@ Suggests:
     pool,
     dMeasureQIM,
     dMeasureBillings,
-    dMeasureCDM
+    dMeasureCDM,
+    knitr,
+    rmarkdown
 ImportComments:
  shinycssloaders - loading animations
   custom version based on Gao Zheng's 'transparent' background version
@@ -71,3 +73,4 @@ Collate:
     'module_Configuration_logs.R'
     'module_PIP_QualityImprovement.R'
     'zzz.R'
+VignetteBuilder: knitr

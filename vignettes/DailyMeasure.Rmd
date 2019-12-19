@@ -4,10 +4,6 @@ author: "David Fong"
 date: "`r Sys.Date()`"
 abstract: "Installation and configuration of **GPstat!**, a screening, preventative health activity, chronic disease management, care planning and billing aid for the **Best Practice** Electronic Medical Record."
 output:
-  rmarkdown::html_vignette: null
-  pdf_document:
-    toc: yes
-    toc_depth: '3'
   html_document:
     number_sections: yes
     theme: lumen
@@ -16,10 +12,14 @@ output:
     toc_float:
       collapsed: yes
       smooth_scroll: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  rmarkdown::html_vignette: null
 vignette: >
   %\VignetteIndexEntry{DailyMeasure}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
 ---
 
 ```{r, include = FALSE}
@@ -35,9 +35,9 @@ library(DailyMeasure)
 
 # Video documentation
 
-* [Installation and basic configuration, including Best Practice server description](https://youtu.be/i6jhy_wY0bM)
+* <a href = "https://youtu.be/i6jhy_wY0bM" target = "_blank">Installation and basic configuration, including Best Practice server description</a>
 
-* [Demonstration of GPstat! features](https://youtu.be/4zuYG4uU4-4)
+* <a href = "https://youtu.be/4zuYG4uU4-4" target = "_blank">Demonstration of GPstat! features</a>
 
 # Installation
 

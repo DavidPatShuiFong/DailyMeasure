@@ -2,6 +2,14 @@ GP stat! (c) David Fong, 2019
 
 front-end to DailyMeasure package
 
+Version 1.4.1, 19th December 2019
+=================================
+
+Features
+
+* modified module_Immunization to depend on dM$vaccine_choices to choose vaccines.
+  (in effect, adds 'measles vaccine' to list of choices without
+  explicitly adding 'measles' as a vaccine coice from within GPstat!)
 
 Version 1.4.0, 12th November 2019
 =================================

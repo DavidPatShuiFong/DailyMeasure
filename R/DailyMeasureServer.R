@@ -254,11 +254,9 @@ DailyMeasureServer <- function(input, output, session) {
   #####################################################################################
 
   # Immunization functions
-
   vax_table_results <- callModule(vax_datatable, "vax_dt", dM)
 
-  # Bowel cancer screening
-
+  # Cancer screening
   callModule(cancerscreen_datatable, "cancerscreen_dt", dM)
 
   if (Billingsmodule == TRUE) {
@@ -295,6 +293,8 @@ DailyMeasureServer <- function(input, output, session) {
     cdm_table_results <- callModule(cdm_datatable, "cdm_dt", dMCDM)
   }
 
+  # Conditions
+  callModule(conditions, "conditions_dt", dM)
   # administration and result management tab
   admin_table_results <- callModule(administration, "admin_dt", dM)
 
@@ -308,6 +308,7 @@ DailyMeasureServer <- function(input, output, session) {
                                  tabName = "qimAppt", icon = shiny::icon("chart-line"))
       ))
     }) # if QIMmodule is FALSE, then output$PIPqimMenu will be left undefined
+
     # Practice Incentive Program (PIP) Quality Improvement (QI) measures
     # add PIP QIM tab items to the tabItem vector
     shinytabItems <- c(shinytabItems,
@@ -333,7 +334,6 @@ DailyMeasureServer <- function(input, output, session) {
   }
 
   # appointment list
-
   callModule(appointments_datatable, "appointments_dt", dM)
 
   output$test_dt <-
@@ -359,6 +359,10 @@ DailyMeasureServer <- function(input, output, session) {
   ##### final definition of tabItems #################################################
 
   shinytabItems <- c(shinytabItems,
+                     list(shinydashboard::tabItem(
+                       tabName = "conditions",
+                       fluidRow(column(width = 12, conditions_UI("conditions_dt")))
+                     )),
                      list(shinydashboard::tabItem(
                        tabName = "administration",
                        #shiny::fluidRow(column(width = 12, align = "center",

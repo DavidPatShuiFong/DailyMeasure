@@ -2,7 +2,7 @@
 % Please edit documentation in R/module_Conditions.R
 \name{conditions_postnatal_datatable}
 \alias{conditions_postnatal_datatable}
-\title{data quality module - server}
+\title{condition post-natal - server}
 \usage{
 conditions_postnatal_datatable(input, output, session, dM)
 }
@@ -14,11 +14,19 @@ conditions_postnatal_datatable(input, output, session, dM)
 \item{session}{as required by Shiny modules}
 
 \item{dM}{dMeasure R6 object
-access to appointments lists, results, correspondence and EMR database}
+access to appointments lists, visits, user interface elements
+and post-natal status database}
 }
 \value{
 none
 }
 \description{
-with appointments
+search for post-natal (or potentially post-natal) patients.
+}
+\details{
+Filtered by number of days post-natal, whether a 'visit' recorded by the
+selected physicians during the potential pregnancy period, and any
+recorded pregnancy outcome.
+
+Attached to appointments within the defined appointment search period.
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/module_Conditions.R
 \name{conditions}
 \alias{conditions}
-\title{administration user interface}
+\title{conditions server}
 \usage{
 conditions(input, output, session, dM)
 }
@@ -19,5 +19,5 @@ conditions(input, output, session, dM)
 none
 }
 \description{
-administration user interface
+conditions server
 }

@@ -37,27 +37,82 @@ conditions_postnatal_datatableUI <- function(id) {
 
   shiny::tagList(
     shiny::fluidRow(
-      shiny::column(3, offset = 5,
-                    shinyWidgets::switchInput(
-                      inputId = ns("include_edc"),
-                      value = TRUE,
-                      label = paste(" Include EDC"),
-                      labelWidth = "10em",
-                      width = "16em")),
+      shiny::column(1,
+                    shinyWidgets::dropdown(
+                      shiny::tags$h3("Post-natal list"),
+                      shiny::tags$h4("Search for post-natal (or potentially post-natal) patients."),
+                      shiny::br(),
+                      "Filtered by number of",
+                      shiny::HTML("<strong>days post-natal</strong>"),
+                      ", whether a 'visit' recorded by the",
+                      "selected clinicians during the potential pregnancy period, and any",
+                      "recorded", shiny::HTML("<strong>pregnancy outcome</strong>"), ".",
+                      shiny::br(), shiny::br(),
+                      "The list only includes patients who have a recorded visit with a clinician during",
+                      "the past (280 + 30 + 'maximum days post-natal') days. The clinician list",
+                      "to include is chosen with the",
+                      shiny::HTML("<strong>Appointment Details</strong>"),
+                      "tab on the",
+                      "right side-bar. Applicable visit-types (by default, most 'in-person'",
+                      "visit types) are chosen in the",
+                      shiny::HTML("<strong>Contact details - Visit types shown</strong>"),
+                      "panel of the right side-bar.",
+                      shiny::br(), shiny::br(),
+                      "The list of post-natal patients is attached to appointments, within",
+                      "the selected",
+                      shiny::HTML("<strong>date range</strong>"),
+                      "(right side-bar, 'Selected date range') and",
+                      "with clinicians as chosen in the right side-bar.",
+                      shiny::br(), shiny::br(),
+                      "Pregnancies which have a defined end-date are 'post-natal'.",
+                      "By default, pregnancies which are after the due date,",
+                      "as defined by the EDC ('estimated date of confinement'), are also",
+                      "considered post-natal. If only pregnancies which have a defined",
+                      "end-date are to be included in this list, turn off the",
+                      shiny::HTML("<strong>Include EDC</strong>"), "switch.",
+                      status = "primary",
+                      size = "sm",
+                      width = "600px",
+                      icon = icon("question"),
+                      animate = shinyWidgets::animateOptions(
+                        enter = shinyWidgets::animations$fading_entrances$fadeIn,
+                        exit = shinyWidgets::animations$fading_exits$fadeOut),
+                      tooltip = shinyWidgets::tooltipOptions(placement = "top",
+                                                             title = "Post-natal list help")
+                    )),
+      shiny::column(2, offset = 4,
+                    shinyWidgets::dropdown(
+                      inputId = ns("include_edc_dropdown"),
+                      icon = icon("birthday-cake"),
+                      label = "Include EDC",
+                      shinyWidgets::switchInput(
+                        inputId = ns("include_edc"),
+                        value = TRUE,
+                        label = paste(" Include EDC"),
+                        labelWidth = "10em",
+                        width = "16em"),
+                      "Pregnancies which have a defined end-date are post-natal (by definition).",
+                      shiny::br(), shiny::br(),
+                      "If 'Include EDC' is", shiny::HTML("<strong>ON</strong>"),
+                      "pregnancies which have no defined end-date ('Not recorded' outcome)",
+                      "are also defined as post-natal after the defined",
+                      "'estimated date of confinement (EDC)'"
+                    )),
       shiny::column(2,
                     shiny::tags$style(text = "text/css", ".menu{dropdown-menu: dropdown-menu-left;}"),
                     shinyWidgets::dropdown(
                       inputId = ns("days_postnatal_dropdown"),
                       right = TRUE,
                       icon = icon("calendar"),
-                      label = "Days postnatal",
+                      label = "Days post-natal",
                       shiny::sliderInput(
                         ns("days_postnatal"),
                         label = "Days postnatal",
                         min = 0, max = 180,
-                        value = c(0,180))
+                        value = c(0,180)),
+                      "Number of days post-natal, minimum and maximum."
                     )),
-      shiny::column(2, # note that total 'column' width = 12
+      shiny::column(3, # note that total 'column' width = 12
                     shinyWidgets::dropdown(
                       inputId = ns("pregnancy_outcomes_dropdown"),
                       icon = icon("baby"),
@@ -69,7 +124,8 @@ conditions_postnatal_datatableUI <- function(id) {
                         choices = pregnancy_outcome_levels,
                         selected = c("Not recorded", "Live birth"),
                         options = list(style = "btn-primary"),
-                        multiple = TRUE)
+                        multiple = TRUE),
+                      "Pregnancy outcome is 'not recorded' until the pregnancy outcome is explicitly"
                     )
       )
     ),

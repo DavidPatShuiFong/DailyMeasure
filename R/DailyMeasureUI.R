@@ -172,7 +172,10 @@ DailyMeasureUI <- function() {
         tags$style(HTML(".dataTables_wrapper .dt-buttons { float:none;
                       text-align:right;
                       padding-top:7px;
-                      }"))
+                      }")),
+        tags$style("@import url(https://use.fontawesome.com/releases/v5.12.0/css/all.css);")
+        # currently shiny (up to 1.4.0, uses fontawsome v5.3.1)
+        # if no internet access, then some icons will be missing e.g. 'baby'
       ),
       shiny::uiOutput("tabItems")
       # tabItems are dynamically generated in the server

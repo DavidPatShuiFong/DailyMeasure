@@ -24,7 +24,7 @@ servers_datatableUI <- function(id) {
       shiny::div(style = "display: inline-block; vertical-align:top",
                  shiny::h3("Server descriptions")),
       shiny::div(style = "display: inline-block; vertical-align:-100%",
-                 # '-50%' still results in a '+50%' compraed to the h3 title!
+                 # '-50%' still results in a '+50%' compared to the h3 title!
                  # '-100%' results in a dropdown widget roughly in line with the title
                  shinyWidgets::dropdown(
                    shiny::tags$h3("Server descriptions"),

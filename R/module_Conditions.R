@@ -180,6 +180,7 @@ conditions_postnatal_datatable <- function(input, output, session, dM) {
         input$pregnancy_outcomes,
         input$include_edc,
         dM$cliniciansR(), dM$appointments_listR(),
+        dM$date_aR(), dM$date_bR(),
         dM$visit_typeR()), ignoreInit = TRUE, {
           # respond to appointments_listR()
           # when clinician or dates is changed

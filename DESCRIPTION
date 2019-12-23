@@ -70,6 +70,7 @@ Collate:
     'module_Appointments.R'
     'DailyMeasureUI.R'
     'module_Administration.R'
+    'module_Conditions.R'
     'module_Configuration_logs.R'
     'module_PIP_QualityImprovement.R'
     'zzz.R'

@@ -181,7 +181,7 @@ conditions_postnatal_datatable <- function(input, output, session, dM) {
         input$include_edc,
         dM$cliniciansR(), dM$appointments_listR(),
         dM$date_aR(), dM$date_bR(),
-        dM$visit_typeR()), ignoreInit = TRUE, {
+        dM$visit_typeR()), ignoreInit = FALSE, {
           # respond to appointments_listR()
           # when clinician or dates is changed
 
@@ -232,7 +232,7 @@ conditions_postnatal_datatable <- function(input, output, session, dM) {
             dplyr::mutate(Name = paste(Firstname, Surname)) %>>%
             dplyr::select(InternalID, ExternalID, Name)
 
-          patientAppointments <- dM$list_appointments() %>>%
+          patientAppointments <- dM$appointments_listR() %>>%
             # accept defaults for $date_a, $date_b and $clinicians
             dplyr::filter(InternalID %in% postnatalID) %>>%
             dplyr::select(-Patient) # we don't need the name
@@ -248,7 +248,7 @@ conditions_postnatal_datatable <- function(input, output, session, dM) {
 
   ### create tag-styled datatable (or 'printable' datatable)
   postnatal_table <- shiny::reactive({
-    if (!is.null(dM$appointments_list)) {
+    if (!is.null(postnatal())) {
 
       d <- postnatal() %>>%
         dplyr::mutate(Outcome = as.character(pregnancy_outcome_levels[OutcomeCode + 1])) %>>%

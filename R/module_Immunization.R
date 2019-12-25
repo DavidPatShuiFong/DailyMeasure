@@ -33,27 +33,6 @@ vax_datatableUI <- function(id) {
   )
 }
 
-zostavax_list <- function(appointments_list, dM) {
-  # return datatable of appointments where Zostavax is recommended (might already be given)
-  #  Patient, InternalID, AppointmentDate, ApppointmentTime, Provider, DOB, Age
-  #  vaxtag, vaxtag_print (these two are the 'semantic' tags and printable tags)
-  # input - appointment_list - reactive of appointment list
-  # input - dM - access to Best Practice EMR database
-
-  return(dM$list_zostavax(vaxtag = TRUE, vaxtag_print = TRUE))
-
-}
-
-influenza_list <- function(appointments_list, dM) {
-  # return datatable of appointments where influenza is recommended (might already be given)
-  #  Patient, InternalID, AppointmentDate, ApppointmentTime, Provider, DOB, Age
-  #  vaxtag, vaxtag_print (these two are the 'semantic' tags and printable tags)
-  # input - dM - access to Best Practice EMR database
-
-  return(dM$list_influenza(vaxtag = TRUE, vaxtag_print = TRUE))
-
-}
-
 #' immunization module - UI function
 #'
 #' vaccinations done, pending or never done for appointment list
@@ -68,14 +47,13 @@ influenza_list <- function(appointments_list, dM) {
 vax_datatable <- function(input, output, session, dM) {
   ns <- session$ns
 
-  vax_names <- c("Zostavax", "Influenza")
-
   output$vax_item_choice <- shiny::renderUI({
     shinyWidgets::dropdown(
       inputid = "choice_dropdown",
       shinyWidgets::checkboxGroupButtons(
         inputId = ns("vax_chosen"), label = "Vaccination items shown",
-        choices = vax_names, selected = vax_names,
+        choices = dM$vaccine_choices,
+        selected = dM$vaccine_choices,
         # all choices initially selected
         status = "primary",
         checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
@@ -85,40 +63,29 @@ vax_datatable <- function(input, output, session, dM) {
   })
 
   vax_list <- shiny::eventReactive(
-    c(dM$appointments_listR(), input$vax_chosen), {
-      shiny::validate(
-        shiny::need(dM$appointments_listR(),
-                    "No appointments in chosen range"),
-        shiny::need(nrow(dM$appointments_listR()) > 0,
-                    "No appointments in chosen range")
-      )
+    c(dM$appointments_listR(),
+      input$vax_chosen,
+      input$printcopy_view), ignoreInit = TRUE, {
+        shiny::validate(
+          shiny::need(dM$appointments_listR(),
+                      "No appointments in chosen range"),
+          shiny::need(nrow(dM$appointments_listR()) > 0,
+                      "No appointments in chosen range")
+        )
 
-      vlist <- NULL
-      # Zostavax (herpes zoster 'shingles' vaccine)
-      if ("Zostavax" %in% input$vax_chosen)
-      {vlist <- rbind(vlist, zostavax_list(appointments_list, dM))}
-      # influenza
-      if ("Influenza" %in% input$vax_chosen)
-      {vlist <- rbind(vlist, influenza_list(appointments_list, dM))}
+        vlist <- dM$list_vax(lazy = TRUE,
+                             vaxtag = !input$printcopy_view,
+                             vaxtag_print = input$printcopy_view,
+                             chosen = input$vax_chosen) %>>%
+          dplyr::collect()
+        return(vlist)
 
-      if (!is.null(vlist)) {
-        vlist <- vlist %>>%
-          dplyr::group_by(Patient, InternalID, AppointmentDate, AppointmentTime,
-                          Provider, DOB, Age) %>>%
-          # gathers vaccination notifications on the same appointment into a single row
-          dplyr::summarise(vaxtag = paste(vaxtag, collapse = ""),
-                           vaxtag_print = paste(vaxtag_print, collapse = ", ")) %>>%
-          dplyr::ungroup()
-      }
-      vlist
-    })
+      })
 
   styled_vax_list <- shiny::reactive({
     shiny::validate(
       shiny::need(dM$appointments_listR(),
-                  "No appointments in selected range"),
-      shiny::need(input$vax_chosen,
-                  "Choose at least one vaccination to display")
+                  "No appointments in selected range")
     )
     dummy <- vax_list()
 

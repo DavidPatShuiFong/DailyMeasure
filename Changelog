@@ -2,6 +2,23 @@ GP stat! (c) David Fong, 2019
 
 front-end to DailyMeasure package
 
+Version 1.4.1, 22nd December 2019
+=================================
+
+Features
+
+* modified module_Immunization to depend on dM$vaccine_choices to choose vaccines.
+  (in effect, adds 'measles vaccine' to list of choices without
+  explicitly adding 'measles' as a vaccine coice from within GPstat!)
+
+* Conditions tab
+
+  search for post-natal (or potentially post-natal) patients.
+  Filtered by number of days post-natal, whether a 'visit' recorded by the
+  selected physicians during the potential pregnancy period, and any
+  recorded pregnancy outcome.
+
+  Attached to appointments within the defined appointment search period.
 
 Version 1.4.0, 12th November 2019
 =================================

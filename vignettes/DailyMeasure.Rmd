@@ -1,0 +1,82 @@
+---
+title: "GPstat! (DailyMeasure)"
+author: "David Fong"
+date: "`r Sys.Date()`"
+abstract: "Installation and configuration of **GPstat!**, a screening, preventative health activity, chronic disease management, care planning and billing aid for the **Best Practice** Electronic Medical Record."
+output:
+  html_document:
+    number_sections: yes
+    theme: lumen
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  rmarkdown::html_vignette: null
+vignette: >
+  %\VignetteIndexEntry{DailyMeasure}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(DailyMeasure)
+```
+
+# Video documentation
+
+* <a href = "https://youtu.be/i6jhy_wY0bM" target = "_blank">Installation and basic configuration, including Best Practice server description</a>
+
+* <a href = "https://youtu.be/4zuYG4uU4-4" target = "_blank">Demonstration of GPstat! features</a>
+
+# Installation
+
+* Run ('double-click') **GPstat! Setup**
+* Choose Install Mode
+  * **Install for me only** is recommended. GPstat! can then only be used by the current logged-in user.
+* Choose installation directory
+  * Clicking **Next** is recommended.
+  * If *Install for me only*, this will be the a *Appdata\Local* directory
+* 'Ready to Install' - Click **Install**
+* Installation takes a few minutes
+* 'Completing the GPstat! Setup Wizard' - Click **Finish**
+
+# Configuration
+
+## Setting the location of Best Practice database
+
+* Choose **Configuration** from left-hand side-bar.
+* Choose **Microsoft SQL Server details** tab from Configuration panel.
+
+* If a server has already been configured, then choose with **Choose Best Practice Server** drop-down.
+
+* If a server has not been configured, a new server description can be configured with the **New** button under *Server descriptions*
+  * Choose a **Name** for the server description e.g. "Main", "MyServer", "MyClinic", ...
+  * Enter the address of the server.
+    * This will be of the form **CLINICSERVER\\BPSINSTANCE**
+    * The address *CLINICSERVER* can be found in Best Practice through the *Setup-Configuration-Database* menu. Click **Find servers**, which will show the available Best Practice servers (usually just one!). Add '\\BPSINSTANCE' to the end of the server name.
+  * Enter the database to be used. This will usually be **BPSPatients**. The other option is **BPSSamples**, which is the samples database.
+  * Enter the UserID to be used. This will always be **bpsrawdata**
+  * Enter the (database) Password. This is configured through the *Setup-Configuration-Database* menu in Best Practice. You may need to ask your system administrator what the database password is.
+  * Click **Save**
+  * Choose your new server description with the **Choose Best Practice server** dropdown. Messages should appear on the bottom-left of the screen indicating the success (or failure) of the server description configuration.
+
+## Choosing configuration file
+
+A configuration file, e.g. created by another user and available for system-wide use, can be chosen from the configuration panel.
+
+* Choose **Configuration** from left-hand side-bar.
+* Choose **Configuration file** tab.
+* Click **Choose configuration file**, then choose the configuration file location.
+* It is recommended that *GPstat!* is exited and re-started after choosing a configuration file.
+  * To exit *GPstat!*, close the *GPstat!* window by clicking the cross on the top-right of the *GPstat!* window.

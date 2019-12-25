@@ -1,7 +1,7 @@
 Package: DailyMeasure
 Type: Package
 Title: Case-finds from patient appointment list
-Version: 1.4.0
+Version: 1.4.1
 Author: David Fong
 Maintainer: David Fong <vkelim@bigpond.com>
 Description: R Shiny application looking through Electronic Medical Record's (EMR)
@@ -12,7 +12,7 @@ License: (C) David Fong. All rights reserved. License: file LICENSE
 Encoding: UTF-8
 LazyData: true
 ByteCompile: true
-RoxygenNote: 6.1.1.9000
+RoxygenNote: 7.0.2.9000
 Imports:
     dplyr,
     dbplyr,
@@ -40,7 +40,9 @@ Suggests:
     pool,
     dMeasureQIM,
     dMeasureBillings,
-    dMeasureCDM
+    dMeasureCDM,
+    knitr,
+    rmarkdown
 ImportComments:
  shinycssloaders - loading animations
   custom version based on Gao Zheng's 'transparent' background version
@@ -68,6 +70,8 @@ Collate:
     'module_Appointments.R'
     'DailyMeasureUI.R'
     'module_Administration.R'
+    'module_Conditions.R'
     'module_Configuration_logs.R'
     'module_PIP_QualityImprovement.R'
     'zzz.R'
+VignetteBuilder: knitr

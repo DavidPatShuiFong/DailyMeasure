@@ -44,7 +44,9 @@ DailyMeasureUI <- function() {
                                  tabName = "configuration", icon = shiny::icon("wrench"),
                                  selected = TRUE
                                  # this is a dummy entry and will be re-selected in the server
-                                 )
+                                 ),
+        shinydashboard::menuItem("About",
+                                 tabName = "about", icon = shiny::icon("info"))
         # menuItem("Test", tabName = "test")
       )
     ),
@@ -161,6 +163,7 @@ DailyMeasureUI <- function() {
         # that is included in the header,
         # which disturbs the layout of shiny/flexdashboard
         includeCSS(system.file('www', 'fomantic_components.css', package = "DailyMeasure")),
+        includeCSS(system.file('www', 'Gentium.css', package = "DailyMeasure")),
         # defining additional fomantic JS popup initialization in the header does not work.
         # Popup initialization does work inside DataTables
         # use of 'full' fomantic.js interferes with the popups from DTedit

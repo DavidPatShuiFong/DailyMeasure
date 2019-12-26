@@ -297,6 +297,8 @@ DailyMeasureServer <- function(input, output, session) {
   callModule(conditions, "conditions_dt", dM)
   # administration and result management tab
   admin_table_results <- callModule(administration, "admin_dt", dM)
+  # about
+  callModule(about, "about_dt", dM)
 
   if (QIMmodule == TRUE) {
     # only if QIM module/package is available
@@ -449,9 +451,13 @@ DailyMeasureServer <- function(input, output, session) {
                              value = "PasswordPanel",
                              shiny::column(width = 12,
                                            passwordConfig_UI("password_config"))
-                           )
-                         )
-                       ))),
+                           ))
+                         ))),
+                     list(shinydashboard::tabItem(
+                       tabName = "about",
+                       fluidRow(column(width = 12, align = "center", h2("About"))),
+                       fluidRow(column(width = 12, about_UI("about_dt")))
+                     )),
                      list(shinydashboard::tabItem(
                        tabName = "test",
                        shiny::fluidRow(shiny::column(width = 12, align = "center",

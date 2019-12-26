@@ -140,7 +140,9 @@ about_contact_UI <- function(id) {
                     "vkelim at bigpond dot com", shiny::br(),
                     "david dot fong at cohealth dot org dot au", shiny::br(),
                     shiny::br(), shiny::br(),
-                    uiOutput(ns("string1"))
+                    "\u0398\u03c5\u03b3\u03ac\u03c4\u03b7\u03c1 \u002e\u002e\u002e \u1f55\u03c0\u03b1\u03b3\u03b5 \u03b5\u1f30\u03c2 \u03b5\u1f30\u03c1\u03ae\u03bd\u03b7\u03bd\u002c \u03ba\u03b1\u1f76 \u1f34\u03c3\u03b8\u03b9 \u1f51\u03b3\u03b9\u1f74\u03c2 \u1f00\u03c0\u1f78 \u03c4\u1fc6\u03c2 \u03bc\u03ac\u03c3\u03c4\u03b9\u03b3\u03cc\u03c2 \u03c3\u03bf\u03c5",
+                    shiny::br(),
+                    shiny::uiOutput(ns("string1"))
       )
     )
   )
@@ -181,8 +183,8 @@ about_documentation_datatable <- function(input, output, session, dM) {
 about_contact <- function(input, output, session, dM) {
   ns <- session$ns
 
-  output$string1 <- renderUI(({
-    "Daughter ... go in peace and wholeness, be freed of your suffering (Mark 5:34)"
+  output$string1 <- shiny::renderUI(({
+    "Daughter ... go in peace and wholeness, be freed of your suffering (\u99ac\u592a\u798f\u97f3 5:34)"
   }))
 
 }

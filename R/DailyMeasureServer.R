@@ -455,7 +455,6 @@ DailyMeasureServer <- function(input, output, session) {
                          ))),
                      list(shinydashboard::tabItem(
                        tabName = "about",
-                       fluidRow(column(width = 12, align = "center", h2("About"))),
                        fluidRow(column(width = 12, about_UI("about_dt")))
                      )),
                      list(shinydashboard::tabItem(

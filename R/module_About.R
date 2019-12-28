@@ -146,6 +146,32 @@ about_credits_UI <- function(id) {
                     shiny::br(),
                     "Credits are too many to list, but here goes...", shiny::br(),
                     shiny::br(),
+                    "The ",
+                    shiny::a(href = "https://www.povertyactionlab.org/",
+                             target = "_blank", # open in new tab
+                             "Abdul-Latif Jameel Povery Action Lab (J-PAL)"),
+                    " and ",
+                    shiny::a(href = "https://micromasters.mit.edu/dedp/",
+                             target = "_blank", # open in new tab
+                             "Data, Economics and Development Policy (MITx Micromasters) course"),
+                    " for providing inspiration instruction into how data can be used to improve lives, ",
+                    "including the practical use of 'R'.", shiny::br(), "The ",
+                    shiny::a(href = "https://www.coursera.org/specializations/jhu-data-science",
+                             target = "_blank", # open in new tab
+                             "John Hopkins University Data Science Specialization course"),
+                    " (much of which was taught by practitioners in public health) for providing ",
+                    " solid foundations and wide exposure to 'R' web-technologies which made ",
+                    " GPstat! possible, and sometimes fun!, to develop for an enthusiast like me.", shiny::br(),
+                    shiny::br(),
+                    shiny::a(href = "https://www.doctorscontrolpanel.com.au/e",
+                             target = "_blank", # open in new tab
+                             "Dr Anton Knieriemen's \"Doctor's Control Panel\""),
+                    " for providing an example of point-of-care assessment of potential patient interventions and needs.", shiny::br(),
+                    "I once wrote a prototype of some of GPstat's functionality using DCP's ",
+                    "'macro' language.", shiny::br(),
+                    shiny::br(),
+                    "My brother, Dr Lee Fong, for voice-over in some documentation and overall invaluable support.",
+                    shiny::br(), shiny::br(),
                     shiny::pre(shiny::includeText(system.file('www', 'LICENSE', package = "DailyMeasure")))
       )
     )

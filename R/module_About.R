@@ -1,0 +1,240 @@
+###### conditions modules ###################################################
+
+#' about_UI - information module
+#'
+#' information module
+#'
+#' @param id module ID (used in conjunction with 'callModule')
+#'
+#' @return Shiny user interface element
+about_UI <- function(id) {
+  ns <- shiny::NS(id)
+
+  shiny::tagList(
+    shinydashboard::tabBox(
+      id = "tab_conditions",
+      title = "About",
+      width = 12,
+      height = "85vh",
+      shiny::tabPanel(
+        title = "Documentation",
+        width = 12,
+        shiny::br(),
+        about_documentation_UI(ns("documentation"))
+      ),
+      shiny::tabPanel(
+        title = "Version",
+        width = 12,
+        shiny::br(),
+        about_version_UI(ns("version"))
+      ),
+      shiny::tabPanel(
+        title = "Credits",
+        width = 12,
+        shiny::br(),
+        about_credits_UI(ns("credits"))
+      ),
+      shiny::tabPanel(
+        title = "Contact",
+        width = 12,
+        shiny::br(),
+        about_contact_UI(ns("contact"))
+      )
+    )
+  )
+}
+
+about_documentation_UI <- function(id) {
+  ns <- shiny::NS(id)
+
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(10, offset = 1,
+                    shiny::h2("Installation and initial configuration of GPstat!"),
+                    shiny::a(href = "http://rpubs.com/DavidFong/GPstatInstall",
+                             target = "_blank", # open in new tab
+                             "Installation and configuration description (RPubs)"), shiny::br(),
+                    shiny::a(href = "https://youtu.be/i6jhy_wY0bM",
+                             target = "_blank",
+                             "Video demonstration of installation and configuration (Youtube)"),
+                    shiny::br(), shiny::br(),
+                    shiny::h2("Usage"),
+                    shiny::a(href = "https://youtu.be/4zuYG4uU4-4",
+                             target = "_blank",
+                             "Video demonstration of features (Youtube)"), shiny::br(),
+                    shiny::a(href = "http://rpubs.com/DavidFong/dMeasure",
+                             target = "_blank",
+                             "'dMeasure' backend documentation - highly technical! (RPubs)"), shiny::br(),
+                    shiny::a(href = "http://rpubs.com/DavidFong/framinghamRiskEquation",
+                             target = "_blank",
+                             "'framinghamRiskEquation' : implementation of Framingham Risk Equation - highly technical! (RPubs)"),
+                    shiny::br()
+      )
+    )
+  )
+}
+
+about_version_UI <- function(id) {
+  ns <- shiny::NS(id)
+
+  BillingsVersion <- tryCatch(packageVersion("dMeasureBillings"),
+                              error = function(cond) {return(NULL)})
+  CDMVersion <- tryCatch(packageVersion("dMeasureCDM"),
+                         error = function(cond) {return(NULL)})
+
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(10, offset = 1,
+
+                    shiny::fluidRow(
+                      shinydashboardPlus::dashboardUserItem(
+                        width = 6,
+                        shinydashboardPlus::descriptionBlock(
+                          header = "GPstat!",
+                          text = paste("v",packageVersion("DailyMeasure")),
+                          right_border = TRUE,
+                          margin_bottom = TRUE)
+                      ),
+                      shinydashboardPlus::dashboardUserItem(
+                        width = 6,
+                        shinydashboardPlus::descriptionBlock(
+                          header = "dMeasure",
+                          text = paste("v", packageVersion("dMeasure")),
+                          right_border = FALSE,
+                          margin_bottom = TRUE)
+                      )
+                    ),
+                    shiny::fluidRow(
+                      shinydashboardPlus::dashboardUserItem(
+                        width = 6,
+                        shinydashboardPlus::descriptionBlock(
+                          header = "Billings module",
+                          text = paste("v", ifelse(!is.null(BillingsVersion),
+                                                   as.character(BillingsVersion),
+                                                   "None")),
+                          right_border = TRUE,
+                          margin_bottom = TRUE)
+                      ),
+                      shinydashboardPlus::dashboardUserItem(
+                        width = 6,
+                        shinydashboardPlus::descriptionBlock(
+                          header = "CDM module",
+                          text = paste("v", ifelse(!is.null(CDMVersion),
+                                                   as.character(CDMVersion),
+                                                   "None")),
+                          right_border = FALSE,
+                          margin_bottom = TRUE)
+                      )
+                    )
+      )))
+}
+
+about_credits_UI <- function(id) {
+  ns <- shiny::NS(id)
+
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(10, offset = 1,
+                    '"GPstat!/DailyMeasure" is written by David Fong.', shiny::br(),
+                    'YEAR: 2019', shiny::br(),
+                    'COPYRIGHT HOLDER: Dr David Pat Shui Fong', shiny::br(),
+                    'Proprietary. All rights reserved.', shiny::br(),
+                    shiny::br(),
+                    'Some individual components of DailyMeasure have "liberal" copy-left licenses', shiny::br(),
+                    'applicable e.g. DTedit has a LGPL license. framinghamRiskEquation and dMeasureQIM', shiny::br(),
+                    'have Mozilla Public Licenses (MPL).', shiny::br(),
+                    shiny::br(),
+                    "Credits are too many to list, but here goes...", shiny::br(),
+                    shiny::br(),
+                    shiny::pre(shiny::includeText(system.file('www', 'LICENSE', package = "DailyMeasure")))
+      )
+    )
+  )
+}
+
+about_contact_UI <- function(id) {
+  ns <- shiny::NS(id)
+
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(10, offset = 1,
+                    tags$head(tags$style(
+                      type="text/css",
+                      ".chinese_type {\u5fae\u8f6f\u96c5\u9ed1}",
+                      paste(".chinese_type_large {font-family:FangSong, \u4eff\u5b8b, STFangSong, \u534e\u6587\u4eff\u5b8b,",
+                            "KaiTi, \u6977\u4f53, STKaiti, \u534e\u6587\u6977\u4f53, \u5fae\u8f6f\u96c5\u9ed1}"))),
+                    shiny::h2("Author"),
+                    shiny::strong("Dr. David Fong"), shiny::br(),
+                    shiny::em("MBSS FRACGP FARGP DipRANZCOG GradCertDrugAlcohol GradCertIntegrativeMedicine"),
+                    shiny::br(),
+                    "coHealth Kensington (lead doctor)", shiny::br(),
+                    shiny::br(), shiny::br(),
+                    shiny::h3("E-mail"),
+                    "vkelim at bigpond dot com", shiny::br(),
+                    "david dot fong at cohealth dot org dot au", shiny::br(),
+                    shiny::br(), shiny::br(),
+                    shiny::span(style = 'font-size:x-large',
+                                "\u0398\u03c5\u03b3\u03ac\u03c4\u03b7\u03c1 \u002e\u002e\u002e",
+                                "\u1f55\u03c0\u03b1\u03b3\u03b5 \u03b5\u1f30\u03c2 \u03b5\u1f30\u03c1\u03ae\u03bd\u03b7\u03bd\u002c",
+                                "\u03ba\u03b1\u1f76 \u1f34\u03c3\u03b8\u03b9 \u1f51\u03b3\u03b9\u1f74\u03c2 \u1f00\u03c0\u1f78",
+                                "\u03c4\u1fc6\u03c2 \u03bc\u03ac\u03c3\u03c4\u03b9\u03b3\u03cc\u03c2 \u03c3\u03bf\u03c5"),
+                    shiny::br(),
+                    shiny::span(class = "chinese_type",
+                                style = 'font-size:small',
+                                "Daughter ... go in peace and wholeness, be freed of your suffering (\u99ac\u592a\u798f\u97f3 5:34)"),
+                    shiny::br(), shiny::br(),
+                    shiny::span(style = "font-size:large",
+                                '“Wen yu gibit enijing langa enibodi, God garra gibitbek langa yu.', shiny::br(),
+                                'En if yu gibit olabat detmatj, wal God garra gibitbek yu mowa,', shiny::br(),
+                                'en pipul garra gibit yu detmatj du.”'
+                                ), shiny::br(),
+                    shiny::span(style = "font-size:small",
+                                '“Give, and it will be given to you.',
+                                'A good measure, pressed down, shaken together and running over, will be poured into your lap.', shiny::br(),
+                                'For with the measure you use, it will be measured to you.”    ',
+                                shiny::span(class = "chinese_type",
+                                            "(\u8def\u52a0\u798f\u97f3 6:38)")),
+                    shiny::br(), shiny::br(),
+                    shiny::span(style = 'font-size:x-large', class = "chinese_type_large",
+                        "\u6211\u7948\u7977\u4f60\u4eec\u5c31\u80fd\u9886\u609f\u795e\u7684\u7231\u662f\u591a\u4e48\u7684\u957f\u9614\u9ad8\u6df1\u002c", shiny::br(),
+                        "\u5e76\u4e14\u77e5\u9053\u4ed6\u7684\u7231\u662f\u8d85\u8fc7\u4eba\u6240\u80fd\u7406\u89e3\u7684\u002c", shiny::br(),
+                        "\u4f7f\u4f60\u4eec\u88ab\u5145\u6ee1\u002c \u5f97\u7740\u795e\u7684\u4e00\u5207\u4e30\u76db\u002e   "), shiny::br(),
+                    shiny::span(style = 'font-size:small', class = "chinese_type",
+                                "I pray that you, being rooted and established in love, may have power to grasp", shiny::br(),
+                                "how wide and long and high and deep Love is, and to know this love that surpasses knowledge", shiny::br(),
+                                "that you may be filled to the measure of all fullness   (\u4ee5\u5f17\u6240\u66f8 3:17-19)")
+      )
+    )
+  )
+}
+
+#' about server
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param dM dMeasure R6 object
+#'
+#' @return none
+about <- function(input, output, session, dM) {
+  ns <- session$ns
+
+  # data quality
+  callModule(about_documentation_datatable, "documentation", dM)
+
+}
+
+#' about documentation - server
+#'
+#' list some documentation
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param dM dMeasure R6 object
+#'
+#' @return none
+about_documentation_datatable <- function(input, output, session, dM) {
+  ns <- session$ns
+  NULL
+}

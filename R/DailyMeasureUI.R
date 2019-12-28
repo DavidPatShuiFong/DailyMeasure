@@ -44,7 +44,9 @@ DailyMeasureUI <- function() {
                                  tabName = "configuration", icon = shiny::icon("wrench"),
                                  selected = TRUE
                                  # this is a dummy entry and will be re-selected in the server
-                                 )
+                                 ),
+        shinydashboard::menuItem("About",
+                                 tabName = "about", icon = shiny::icon("info"))
         # menuItem("Test", tabName = "test")
       )
     ),

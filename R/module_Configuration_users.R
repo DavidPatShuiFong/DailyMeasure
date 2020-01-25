@@ -34,7 +34,7 @@ userconfig_resetpasswordUI <- function(id) {
       shiny::uiOutput(ns("ConfiguredUserList")),
       shiny::br(),
       {x <- shiny::actionButton(ns('reset_password'), 'Reset Password',
-                          icon('broom'), class = 'btn btn-primary');
+                                icon('broom'), class = 'btn btn-primary');
       # disabled if demonstration mode
       if (.bcdyz.option$demonstration) {shinyjs::disabled(x)} else {x}})
   )
@@ -97,16 +97,16 @@ userconfig_resetpassword <- function(input, output, session, dM) {
       # $password.reset sets $UserConfig and writes to SQLite configuration
       error = function(e) {
         shinytoastr::toastr_error(
-        paste(e$message), title = "Reset password error",
-        closeButton = TRUE, position = "bottom-left",
-        timeOut = 10000) # stays open ten seconds}
+          paste(e$message), title = "Reset password error",
+          closeButton = TRUE, position = "bottom-left",
+          timeOut = 10000) # stays open ten seconds}
       })
   })
 
 }
 
 ####### Restriction of permissions #############################################
-#' userconfig_enableRestrictionUI
+#' userconfig_enableRestrictionsUI
 #'
 #' set or unset user restrictions
 #'
@@ -166,7 +166,7 @@ userconfig_enableRestrictions <- function (input, out, session, dM) {
       # set the switches according the what is stored in the configuration database
       shinyWidgets::updateMaterialSwitch(
         session, restriction,
-        restriction %in% (dM$UserRestrictions()$Restriction))
+        restriction %in% (dM$UserRestrictions() %>>% dplyr::pull(Restriction)))
     }
   })
 
@@ -178,7 +178,8 @@ userconfig_enableRestrictions <- function (input, out, session, dM) {
       restrictionLocal <- restriction
       shiny::observeEvent(input[[restrictionLocal$id]], ignoreInit = TRUE, {
         if (input[[restrictionLocal$id]] !=
-            (restrictionLocal$id) %in% isolate(dM$UserRestrictions()$Restriction)) {
+            (restrictionLocal$id) %in% (isolate(dM$UserRestrictions() %>>%
+                                                dplyr::pull(Restriction)))) {
           # change in state
           state <- dM$userrestriction.change(restrictionLocal$id,
                                              input[[restrictionLocal$id]])
@@ -211,6 +212,20 @@ userconfig_enableRestrictions <- function (input, out, session, dM) {
                 message = state$warn$message,
                 closeButton = TRUE, position = "bottom-left")
             }
+          }
+        }
+        if (suppressWarnings(dM$useradmin.permission())) {
+          # warning will be issued if no UserAdmin permission, so suppress
+          # UserAdmin restriction is either disabled or
+          # this user has the permission
+          for (restriction in unlist(dM$restrictionTypes_df$id, use.names = FALSE)) {
+            # show the switches
+            shinyjs::show(restriction)
+          }
+        } else {
+          for (restriction in unlist(dM$restrictionTypes_df$id, use.names = FALSE)) {
+            # hide the switches
+            shinyjs::hide(restriction)
           }
         }
       })

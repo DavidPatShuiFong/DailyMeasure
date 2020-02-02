@@ -91,6 +91,23 @@ DailyMeasureServer <- function(input, output, session) {
           closeButton = TRUE,
           position = "bottom-left",
           title = "Best Practice database")
+        tryCatch({
+          dM$read_subscription_db()
+          # next line not executed if warning raised
+          shinytoastr::toastr_success(
+            "Subscription database read!",
+            closeButton = TRUE,
+            position = "bottom-left",
+            title = "Best Practice database")
+
+        },
+        warning = function(w) {
+          shinytoastr::toastr_warning(
+            w$message,
+            closeButton = TRUE,
+            position = "bottom-left",
+            title = "Best Practice database")
+        })
       }
     }
   })
@@ -122,6 +139,20 @@ DailyMeasureServer <- function(input, output, session) {
     # change date range to today
     shinyjs::click('update_date')
 
+  })
+
+  shiny::observeEvent(dM$date_aR(), {
+    # change 'date_from' in response to $date_a
+    if (input$date1 != dM$date_aR()) {
+      shiny::updateDateInput(session, 'date1', value = dM$date_aR())
+    }
+  })
+
+  shiny::observeEvent(dM$date_bR(), {
+    # change 'date_to' in response to $date_a
+    if (input$date1 != dM$date_bR()) {
+      shiny::updateDateInput(session, 'date2', value = dM$date_bR())
+    }
   })
 
   output$locationList <- shiny::renderUI({

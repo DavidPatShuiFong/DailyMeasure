@@ -2,6 +2,18 @@ GP stat! (c) David Fong, 2019
 
 front-end to DailyMeasure package
 
+Version 1.5.0, 2nd February 2020
+================================
+
+New
+
+* subscription features
+*  reads subscription database
+*  CDM UI checks subscription status
+*  user configuration displays license information
+* updates date range dialog if dM$date_aR or dM$date_bR changes
+
+
 Version 1.4.1, 22nd December 2019
 =================================
 

@@ -88,11 +88,26 @@ cdm_datatable <- function(input, output, session, dMCDM) {
           # respond to appointments_filteredR, since that is what is changed
           # when clinician or dates is changed
 
+          original_date_b <- dMCDM$dM$date_b
+          # $date_b might be changed by dMCDM$appointment_billings_cdm
+          # due to user chosen not having subscription, and not able
+          # to view the date range chosen
+
           appointments <- dMCDM$appointments_billings_cdm(
             cdm_chosen = input$cdm_chosen,
             lazy = TRUE, # no need to re-calculate $appointments_billings
             screentag = !input$printcopy_view,
             screentag_print = input$printcopy_view)
+
+          if (original_date_b != dMCDM$dM$date_b) {
+            # warning generated if dates have been changed as
+            # the result of subscription
+            shinytoastr::toastr_warning(
+              message = paste("A chosen user has no subscription for chosen date range.",
+                              "Dates changed (minimum one week old)."),
+              position = "bottom-left",
+              closeButton = TRUE,
+              timeOut = 0)} # keep open until closed
 
           return(appointments)
         })

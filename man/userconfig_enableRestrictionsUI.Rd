@@ -2,7 +2,7 @@
 % Please edit documentation in R/module_Configuration_users.R
 \name{userconfig_enableRestrictionsUI}
 \alias{userconfig_enableRestrictionsUI}
-\title{userconfig_enableRestrictionUI}
+\title{userconfig_enableRestrictionsUI}
 \usage{
 userconfig_enableRestrictionsUI(id)
 }

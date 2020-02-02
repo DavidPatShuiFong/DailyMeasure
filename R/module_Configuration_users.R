@@ -368,15 +368,16 @@ userconfig_datatable <- function(input, output, session, dM) {
   }
 
   userconfig_dt_viewcols <- c("id", "Fullname", "AuthIdentity", "Location",
-                              "Attributes")
+                              "Attributes", "Identifier", "LicenseDate")
   userconfig_dt_editcols <-
-    userconfig_dt_viewcols[!userconfig_dt_viewcols %in% c("id")]
+    userconfig_dt_viewcols[!userconfig_dt_viewcols %in%
+                             c("id", "Identifier", "LicenseDate")]
   # columns viewed in DTedit when adding/editing/removing user config
 
   # depends on modularized version of DTedit
   userconfig_edited <-
     callModule(DTedit::dtedit, "userconfigs",
-               thedataframe = dM$UserConfigR, # pass a ReactiveVal
+               thedataframe = dM$UserConfigLicenseR, # pass a ReactiveVal
                view.cols = userconfig_dt_viewcols, # no need to show 'id' in future
                edit.cols = userconfig_dt_editcols,
                # edit.label.cols = ,

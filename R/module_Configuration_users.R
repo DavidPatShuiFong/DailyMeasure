@@ -34,7 +34,7 @@ userconfig_resetpasswordUI <- function(id) {
       shiny::uiOutput(ns("ConfiguredUserList")),
       shiny::br(),
       {x <- shiny::actionButton(ns('reset_password'), 'Reset Password',
-                                icon('broom'), class = 'btn btn-primary');
+                                shiny::icon('broom'), class = 'btn btn-primary');
       # disabled if demonstration mode
       if (.bcdyz.option$demonstration) {shinyjs::disabled(x)} else {x}})
   )
@@ -249,7 +249,24 @@ userconfig_datatableUI <- function(id) {
       shiny::tabPanel(
         title = "User settings",
         width = 12,
-        DTedit::dteditUI(ns("userconfigs"))
+        shiny::tagList(
+          shiny::br(),
+          shiny::wellPanel(
+            {if (.bcdyz.option$demonstration)
+            {shiny::span(shiny::p(), shiny::strong("Demonstration mode : License read disabled"),
+                         style = "color:red", shiny::p())}
+              else {}},
+            {x <- shiny::tagList(shiny::actionButton(ns('reread_subscription'),
+                                                     'Re-read Subscriptions',
+                                                     shiny::icon('book-reader'),
+                                                     class = 'btn btn-primary'),
+                                 shiny::HTML("&nbsp;"), shiny::HTML("&nbsp;"), shiny::HTML("&nbsp;"),
+                                 "Read subscription/license dates from GPstat!/DailyMeasure databases"
+            );
+            # disabled if demonstration mode
+            if (.bcdyz.option$demonstration) {shinyjs::disabled(x)} else {x}}),
+          DTedit::dteditUI(ns("userconfigs"))
+        )
       ),
       shiny::tabPanel(
         title = "Reset password",
@@ -284,6 +301,28 @@ userconfig_datatable <- function(input, output, session, dM) {
   # enable/disable restrictions module
   callModule(userconfig_enableRestrictions, "enable_restrictions", dM)
 
+  shiny::observeEvent(input$reread_subscription, {
+    shiny::validate(
+      need(dM$emr_db$is_open(), "Best Practice database not open"),
+      need(dM$config_db$is_open(), "Configuration database not open")
+    )
+    tryCatch({
+      dM$read_subscription_db()
+      # next line not executed if warning raised
+      shinytoastr::toastr_success(
+        "Subscription database read!",
+        closeButton = TRUE,
+        position = "bottom-left",
+        title = "Best Practice database")},
+      warning = function(w) {
+        shinytoastr::toastr_warning(
+          w$message,
+          closeButton = TRUE,
+          position = "bottom-left",
+          title = "Best Practice database")
+      })
+  })
+
   usernames <- shiny::reactiveVal()
   # list of user names
   shiny::observeEvent(dM$dbversion(), {
@@ -306,6 +345,8 @@ userconfig_datatable <- function(input, output, session, dM) {
   ### callback definitions for DTedit userconfig
   userconfig.insert.callback <- function(data, row) {
     # adding a new user configuration
+
+    browser()
 
     description <- data[row,]
 

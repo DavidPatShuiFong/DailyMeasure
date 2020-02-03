@@ -98,16 +98,14 @@ DailyMeasureServer <- function(input, output, session) {
             "Subscription database read!",
             closeButton = TRUE,
             position = "bottom-left",
-            title = "Best Practice database")
-
-        },
-        warning = function(w) {
-          shinytoastr::toastr_warning(
-            w$message,
-            closeButton = TRUE,
-            position = "bottom-left",
-            title = "Best Practice database")
-        })
+            title = "Best Practice database")},
+          warning = function(w) {
+            shinytoastr::toastr_warning(
+              w$message,
+              closeButton = TRUE,
+              position = "bottom-left",
+              title = "Best Practice database")
+          })
       }
     }
   })
@@ -483,7 +481,7 @@ DailyMeasureServer <- function(input, output, session) {
                              shiny::column(width = 12,
                                            passwordConfig_UI("password_config"))
                            ))
-                         ))),
+                       ))),
                      list(shinydashboard::tabItem(
                        tabName = "about",
                        fluidRow(column(width = 12, about_UI("about_dt")))

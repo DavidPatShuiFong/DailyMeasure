@@ -35,6 +35,12 @@ about_UI <- function(id) {
         about_credits_UI(ns("credits"))
       ),
       shiny::tabPanel(
+        title = "Privacy",
+        width = 12,
+        shiny::br(),
+        about_privacy_UI(ns("privacy"))
+      ),
+      shiny::tabPanel(
         title = "Contact",
         width = 12,
         shiny::br(),
@@ -173,6 +179,41 @@ about_credits_UI <- function(id) {
                     "My brother, Dr Lee Fong, for voice-over in some documentation and overall invaluable support.",
                     shiny::br(), shiny::br(),
                     shiny::pre(shiny::includeText(system.file('www', 'LICENSE', package = "DailyMeasure")))
+      )
+    )
+  )
+}
+
+about_privacy_UI <- function(id) {
+  ns <- shiny::NS(id)
+
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(8, offset = 2,
+                    shiny::h2("Privacy statement"),
+                    shiny::br(),
+                    shiny::span(paste("No patient information, identified, de-identified, aggregated or",
+                                      "otherwise is stored locally (on the computers used by the clinic),",
+                                      "unless explicitly saved/copied/printed by the user.")),
+                    shiny::br(), shiny::br(),
+                    shiny::span(paste("No patient information, identified, de-identified, aggregated or",
+                                      "otherwise is sent/transmitted across the network or Internet.")),
+                    shiny::br(), shiny::br(),
+                    shiny::span(paste("Information about the users of the software, as stored in",
+                                      "Best Practice and modified by the user, is stored locally",
+                                      "(on the computers used by the clinic).")),
+                    shiny::br(), shiny::br(),
+                    shiny::span(paste("Information about the users of the software, and the name of the clinic",
+                                      "is sent in encrypted form - using the Internet - to GPstat!/DailyMeasure",
+                                      "subscription databases. The information about the users includes",
+                                      "provider number and user name, as is stored in the Best Practice database.",
+                                      "The information is stored in those databases",
+                                      "in encrypted form. Those databases will send back information to the",
+                                      "user, in encrypted form, which includes the clinic name, user details",
+                                      "and subscription details.")),
+                    shiny::br(), shiny::br(),
+                    shiny::span(paste("All changes to privacy conditions will be described on this page."))
+
       )
     )
   )

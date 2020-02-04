@@ -346,8 +346,6 @@ userconfig_datatable <- function(input, output, session, dM) {
   userconfig.insert.callback <- function(data, row) {
     # adding a new user configuration
 
-    browser()
-
     description <- data[row,]
 
     tryCatch(newdata <- dM$userconfig.insert(description),
@@ -366,7 +364,9 @@ userconfig_datatable <- function(input, output, session, dM) {
   userconfig.update.callback <- function(data, olddata, row) {
     # change (update) a user configuration
 
-    description <- data[row,]
+    description <- data[row,] %>>%
+      dplyr::select(id, Fullname, AuthIdentity, Location,
+                    Attributes, Identifier, LicenseDate)
 
     tryCatch(newdata <- dM$userconfig.update(description),
              error = function(e) stop (e))

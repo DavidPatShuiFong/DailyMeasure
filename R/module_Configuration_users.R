@@ -366,7 +366,7 @@ userconfig_datatable <- function(input, output, session, dM) {
 
     description <- data[row,] %>>%
       dplyr::select(id, Fullname, AuthIdentity, Location,
-                    Attributes, Identifier, LicenseDate)
+                    Attributes)
 
     tryCatch(newdata <- dM$userconfig.update(description),
              error = function(e) stop (e))

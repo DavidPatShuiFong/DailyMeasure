@@ -410,9 +410,7 @@ userconfig_datatable <- function(input, output, session, dM) {
 
   userconfig_dt_viewcols <- c("id", "Fullname", "AuthIdentity", "Location",
                               "Attributes", "Identifier", "LicenseDate")
-  userconfig_dt_editcols <-
-    userconfig_dt_viewcols[!userconfig_dt_viewcols %in%
-                             c("id", "Identifier", "LicenseDate")]
+  userconfig_dt_editcols <- c("Fullname", "AuthIdentity", "Location", "Attributes", "License")
   # columns viewed in DTedit when adding/editing/removing user config
 
   # depends on modularized version of DTedit
@@ -426,7 +424,8 @@ userconfig_datatable <- function(input, output, session, dM) {
                input.types = c(Fullname = 'selectInputReactive',
                                Attributes = 'selectInputMultiple',
                                AuthIdentity = 'textInput',
-                               Location = 'selectInputMultipleReactive'),
+                               Location = 'selectInputMultipleReactive',
+                               License = 'textInput'),
                input.choices = c(Location = 'LocationNames',
                                  Fullname = 'Fullname',
                                  Attributes = list(dM$user_attribute_types)),
@@ -437,8 +436,8 @@ userconfig_datatable <- function(input, output, session, dM) {
                                              LocationNames = dM$location_groupR),
                callback.update = userconfig.update.callback,
                callback.insert = userconfig.insert.callback,
-               callback.delete = userconfig.delete.callback
-    )
+               callback.delete = userconfig.delete.callback)
+
 
   return(reactive({userconfig_list_change()}))
   # increments each time a callback changes UserConfig

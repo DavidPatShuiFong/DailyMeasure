@@ -64,9 +64,25 @@ billings_datatable <- function(input, output, session, dMBillings) {
                       "No appointments in chosen range")
         )
 
+        original_date_b <- dMBillings$dM$date_b
+        # $date_b might be changed by dMBillings$list_billings
+        # due to user chosen not having subscription, and not able
+        # to view the date range chosen
+
         billingslist <- dMBillings$list_billings(lazy = TRUE,
                                                  screentag = !input$printcopy_view,
                                                  screentag_print = input$printcopy_view)
+        browser()
+
+        if (original_date_b != dMBillings$dM$date_b) {
+          # warning generated if dates have been changed as
+          # the result of subscription
+          shinytoastr::toastr_warning(
+            message = paste("A chosen user has no subscription for chosen date range.",
+                            "Dates changed (minimum one week old)."),
+            position = "bottom-left",
+            closeButton = TRUE,
+            timeOut = 0)} # keep open until closed
 
         return(billingslist)
       })

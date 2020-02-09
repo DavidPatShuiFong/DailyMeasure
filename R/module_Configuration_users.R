@@ -346,7 +346,23 @@ userconfig_datatable <- function(input, output, session, dM) {
   userconfig.insert.callback <- function(data, row) {
     # adding a new user configuration
 
-    description <- data[row,]
+    description <- data[row,] %>>%
+      dplyr::select(id, Fullname, AuthIdentity, Location,
+                    Attributes)
+
+    Identifier <- dM$UserFullConfig %>>%
+      dplyr::filter(Fullname == data[row,]$Fullname) %>>%
+      dplyr::pull(Identifier) # does not yet have identifier in 'data'
+
+    License <- trimws(data[row,]$License) # strip whitespace
+    if (License == "") {License <- NA} # if empty, change to NA
+    LicenseDate <- dMeasure::verify_license(License,
+                                            Identifier)
+    # returns the LicenseDate, or NA if not a valid License (including "")
+    if (!is.na(License) && is.na(LicenseDate)) {
+      # License string 'provided', but not valid
+      stop("Invalid License. If no license available, License should be 'empty'.")
+    }
 
     tryCatch(newdata <- dM$userconfig.insert(description),
              error = function(e) stop(e))
@@ -356,10 +372,15 @@ userconfig_datatable <- function(input, output, session, dM) {
     # dM$userconfig.insert will change the SQLite configuration file if appropriate
     # and $UserConfig
 
+    dM$update_subscription(Fullname = description$Fullname,
+                           License = License,
+                           verify = FALSE)
+    # write license, already verified
+
     userconfig_list_change(userconfig_list_change() + 1)
     # this value returned by module
 
-    return(newdata)
+    return(data)
   }
   userconfig.update.callback <- function(data, olddata, row) {
     # change (update) a user configuration
@@ -368,19 +389,36 @@ userconfig_datatable <- function(input, output, session, dM) {
       dplyr::select(id, Fullname, AuthIdentity, Location,
                     Attributes)
 
+    License <- trimws(data[row,]$License) # strip whitespace
+    if (License == "") {License <- NA} # if empty, change to NA
+    LicenseDate <- dMeasure::verify_license(License,
+                                            data[row,]$Identifier)
+    # returns the LicenseDate, or NA if not a valid License (including "")
+    if (!is.na(License) && is.na(LicenseDate)) {
+      # License string 'provided', but not valid
+      stop("Invalid License. If no license available, License should be 'empty'.")
+    }
+
     tryCatch(newdata <- dM$userconfig.update(description),
              error = function(e) stop (e))
     # possible errors include
     # if restrictions have been placed on who can modify the server or user configuration
     # then at least one user must have the restricted attribute
 
+    # 'newdata' has more columns than 'data' (has 'Identifier' and 'LicenseDate')
+
     # dM$userconfig.update will change the SQLite configuration file if appropriate
     # and $UserConfig
+
+    dM$update_subscription(Fullname = description$Fullname,
+                           License = License,
+                           verify = FALSE)
+    # write license, already verified
 
     userconfig_list_change(userconfig_list_change() + 1)
     # this value returned by module
 
-    return(newdata)
+    return(data)
 
   }
   userconfig.delete.callback <- function(data, row) {
@@ -438,6 +476,12 @@ userconfig_datatable <- function(input, output, session, dM) {
                callback.insert = userconfig.insert.callback,
                callback.delete = userconfig.delete.callback)
 
+  shiny::observeEvent(userconfig_list_change(), {
+    invisible(dM$UserConfig)
+    # this will provoke a change in $UserConfigR,
+    # which will in turn provoke a change in $UserConfigLicenseR
+    # and then update the userconfig_edited DT table
+  })
 
   return(reactive({userconfig_list_change()}))
   # increments each time a callback changes UserConfig

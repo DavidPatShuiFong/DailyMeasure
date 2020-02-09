@@ -91,21 +91,6 @@ DailyMeasureServer <- function(input, output, session) {
           closeButton = TRUE,
           position = "bottom-left",
           title = "Best Practice database")
-        tryCatch({
-          dM$read_subscription_db()
-          # next line not executed if warning raised
-          shinytoastr::toastr_success(
-            "Subscription database read!",
-            closeButton = TRUE,
-            position = "bottom-left",
-            title = "Best Practice database")},
-          warning = function(w) {
-            shinytoastr::toastr_warning(
-              w$message,
-              closeButton = TRUE,
-              position = "bottom-left",
-              title = "Best Practice database")
-          })
       }
     }
   })

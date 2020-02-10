@@ -9,7 +9,9 @@ New
 
 * subscription features
 *  reads subscription database (user-action, from user configuration panel)
-*  CDM UI checks subscription status
+*  CDM and BIllings UI checks subscription status
+*   if clinician selected with no subscription, then
+*   appointments must be minimum one week old
 *  user configuration displays license information
 *  subscripton information can be added manually in user configuration
 * updates date range dialog if dM$date_aR or dM$date_bR changes

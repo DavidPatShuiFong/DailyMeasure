@@ -307,7 +307,7 @@ userconfig_datatable <- function(input, output, session, dM) {
       need(dM$config_db$is_open(), "Configuration database not open")
     )
     tryCatch({
-      dM$read_subscription_db()
+      dM$read_subscription_db(forcecheck = TRUE)
       # next line not executed if warning raised
       shinytoastr::toastr_success(
         "Subscription database read!",

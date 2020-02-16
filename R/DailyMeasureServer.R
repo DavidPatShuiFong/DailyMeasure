@@ -124,6 +124,20 @@ DailyMeasureServer <- function(input, output, session) {
 
   })
 
+  shiny::observeEvent(dM$date_aR(), {
+    # change 'date_from' in response to $date_a
+    if (input$date1 != dM$date_aR()) {
+      shiny::updateDateInput(session, 'date1', value = dM$date_aR())
+    }
+  })
+
+  shiny::observeEvent(dM$date_bR(), {
+    # change 'date_to' in response to $date_a
+    if (input$date1 != dM$date_bR()) {
+      shiny::updateDateInput(session, 'date2', value = dM$date_bR())
+    }
+  })
+
   output$locationList <- shiny::renderUI({
     shiny::selectInput(inputId = 'location', label = 'Practice location',
                        choices = dM$location_list, selected = 'All')
@@ -452,7 +466,7 @@ DailyMeasureServer <- function(input, output, session) {
                              shiny::column(width = 12,
                                            passwordConfig_UI("password_config"))
                            ))
-                         ))),
+                       ))),
                      list(shinydashboard::tabItem(
                        tabName = "about",
                        fluidRow(column(width = 12, about_UI("about_dt")))
@@ -755,5 +769,16 @@ DailyMeasureServer <- function(input, output, session) {
         )
       )
     )
+  })
+
+  shiny::observeEvent(dM$check_subscription_datechange_trigR(), ignoreInit = TRUE, {
+    # warning generated if dates have been changed as
+    # the result of subscription check
+    shinytoastr::toastr_warning(
+      message = paste("A chosen user has no subscription for chosen date range.",
+                      "Dates changed (minimum one week old)."),
+      position = "bottom-left",
+      closeButton = TRUE,
+      timeOut = 0) # keep open until closed
   })
 }

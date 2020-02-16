@@ -81,9 +81,7 @@ cdm_datatable <- function(input, output, session, dMCDM) {
         input$printcopy_view), {
           shiny::validate(
             shiny::need(dMCDM$dMBillings$appointments_billingsR(),
-                        "No appointments defined"),
-            shiny::need(nrow(dMCDM$dMBillings$appointments_billingsR()) > 0,
-                        "No appointments in chosen range")
+                        "No appointments defined")
           )
           # respond to appointments_filteredR, since that is what is changed
           # when clinician or dates is changed

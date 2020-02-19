@@ -148,7 +148,7 @@ about_credits_UI <- function(id) {
                     shiny::br(),
                     'Some individual components of DailyMeasure have "liberal" copy-left licenses applicable', shiny::br(),
                     'e.g. DTedit has an LGPL license,', shiny::br(),
-                    'framinghamRiskEquation and dMeasureQIM have Mozilla Public Licenses (MPL).', shiny::br(),
+                    'framinghamRiskEquation and dMeasureQIM have Mozilla Public Licenses (MPL 2.0).', shiny::br(),
                     shiny::br(),
                     "Credits are too many to list, but here goes...", shiny::br(),
                     shiny::br(),

@@ -629,8 +629,8 @@ qim_15plus <- function(input, output, session, dMQIM, contact) {
                                         BMIDate, BMIValue, BMIClass,
                                         WaistDate, WaistValue))}} %>>%
                                         {if ("Alcohol" %in% input$measure_chosen) {.}
-                                          else {dplyr::select(., -c(AlcoholDate, NonDrinker, DaysPerWeek,
-                                                                    DrinksPerDay, AlcoholDescription,
+                                          else {dplyr::select(., -c(AlcoholDate, NonDrinker, AlcoholDaysPerWeek,
+                                                                    AlcoholDrinksPerDay, AlcoholDescription,
                                                                     PastAlcoholLevel, YearStarted, YearStopped,
                                                                     AlcoholComment))}}
           return(datatable_styled(
@@ -665,8 +665,8 @@ qim_15plus <- function(input, output, session, dMQIM, contact) {
                           HeightDate, HeightValue, WeightDate, WeightValue,
                           BMIDate, BMIValue, BMIClass,
                           WaistDate, WaistValue,
-                          AlcoholDate, NonDrinker, DaysPerWeek,
-                          DrinksPerDay, AlcoholDescription,
+                          AlcoholDate, NonDrinker, AlcoholDaysPerWeek,
+                          AlcoholDrinksPerDay, AlcoholDescription,
                           PastAlcoholLevel, YearStarted, YearStopped,
                           AlcoholComment) %>>%
             # re-orders the fields
@@ -681,8 +681,9 @@ qim_15plus <- function(input, output, session, dMQIM, contact) {
                                                         BMIDate, BMIValue, BMIClass,
                                                         WaistDate, WaistValue))}} %>>%
                                                         {if ("Alcohol" %in% input$measure_chosen) {.}
-                                                          else {dplyr::select(., -c(AlcoholDate, NonDrinker, DaysPerWeek,
-                                                                                    DrinksPerDay, AlcoholDescription,
+                                                          else {dplyr::select(.,
+                                                                              -c(AlcoholDate, NonDrinker, AlcoholDaysPerWeek,
+                                                                                    AlcoholDrinksPerDay, AlcoholDescription,
                                                                                     PastAlcoholLevel, YearStarted, YearStopped,
                                                                                     AlcoholComment))}}
           return(datatable_styled(df,

@@ -422,13 +422,20 @@ DailyMeasureServer <- function(input, output, session) {
                                  ,
                                  {x <- shinyFiles::shinySaveButton(
                                    "create_configuration_file",
-                                   label = "Create configuration file",
-                                   title = "Create configuration file (must end in '.sqlite')",
+                                   label = "Create (and choose) configuration file",
+                                   title = "Create (and choose) configuration file (must end in '.sqlite')",
                                    filetype = list(sqlite = c('sqlite')));
                                  # disabled if demonstration mode
                                  if (.bcdyz.option$demonstration) {shinyjs::disabled(x)} else {x}},
                                  shiny::helpText(paste("Choose location of an existing configuration file,",
-                                                       "or create a new configuration file"))
+                                                       "or create a new configuration file."),
+                                                 shiny::br(), shiny::br(),
+                                                 paste("It is strongly recommended that if a different",
+                                                       "configuration file is chosen, or a new configuration",
+                                                       "file is created,"),
+                                                 shiny::br(),
+                                                 paste("that the user exit(/close) GPstat!",
+                                                       "and then (re-)start GPstat!"))
                                ))
                            ),
                            shiny::tabPanel(
@@ -510,6 +517,12 @@ DailyMeasureServer <- function(input, output, session) {
       file_name <- paste(inFile$datapath)
       dM$configuration_file_path <- file_name
       # this dMeasure method will also update the YAML configuration file
+      shinytoastr::toastr_warning(
+        message = paste("New configuration file chosen.",
+                        "Recommend GPstat! is re-started!"),
+        position = "bottom-left",
+        closeButton = TRUE,
+        timeOut = 0) # keep open until closed
     }
   })
 
@@ -532,6 +545,12 @@ DailyMeasureServer <- function(input, output, session) {
       dM$open_configuration_db()
       # this will initialize the .sqlite configuration file and open it
       dM$read_configuration_db()
+      shinytoastr::toastr_warning(
+        message = paste("New configuration file created and chosen.",
+                        "Recommend GPstat! is re-started!"),
+        position = "bottom-left",
+        closeButton = TRUE,
+        timeOut = 0) # keep open until closed
     }
   })
 

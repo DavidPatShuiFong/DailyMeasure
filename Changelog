@@ -2,7 +2,7 @@ GP stat! (c) David Fong, 2019
 
 front-end to DailyMeasure package
 
-Version 1.5.0, 9th February 2020
+Version 1.5.1, 19th February 2020
 ================================
 
 New
@@ -15,6 +15,13 @@ New
 *  user configuration displays license information
 *  subscripton information can be added manually in user configuration
 * updates date range dialog if dM$date_aR or dM$date_bR changes
+
+Changes
+
+* warnings regarding changing configuration filepath location
+   GPstat! restart recommended.
+   though changing configuration filepath appears to work 'on-the-fly' currently!
+* better handling if Best Practice database not opened
 
 
 Version 1.4.1, 22nd December 2019

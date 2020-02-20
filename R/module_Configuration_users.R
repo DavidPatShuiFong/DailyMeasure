@@ -259,12 +259,11 @@ userconfig_datatableUI <- function(id) {
             {x <- shiny::tagList(shiny::actionButton(ns('reread_subscription'),
                                                      'Re-read Subscriptions',
                                                      shiny::icon('book-reader'),
-                                                     class = 'btn btn-primary'),
-                                 shiny::HTML("&nbsp;"), shiny::HTML("&nbsp;"), shiny::HTML("&nbsp;"),
-                                 "Read subscription/license dates from GPstat!/DailyMeasure databases"
-            );
+                                                     class = 'btn btn-primary'));
             # disabled if demonstration mode
-            if (.bcdyz.option$demonstration) {shinyjs::disabled(x)} else {x}}),
+            if (.bcdyz.option$demonstration) {shinyjs::disabled(x)} else {x}},
+            shiny::HTML("&nbsp;"), shiny::HTML("&nbsp;"), shiny::HTML("&nbsp;"),
+            "Read subscription/license dates from GPstat!/DailyMeasure databases"),
           DTedit::dteditUI(ns("userconfigs"))
         )
       ),

@@ -10,3 +10,5 @@ DailyMeasure_cfg\.yaml
 
 debug.log
 inst/doc
+
+R/example.R

@@ -124,6 +124,20 @@ DailyMeasureServer <- function(input, output, session) {
 
   })
 
+  shiny::observeEvent(dM$date_aR(), {
+    # change 'date_from' in response to $date_a
+    if (input$date1 != dM$date_aR()) {
+      shiny::updateDateInput(session, 'date1', value = dM$date_aR())
+    }
+  })
+
+  shiny::observeEvent(dM$date_bR(), {
+    # change 'date_to' in response to $date_a
+    if (input$date1 != dM$date_bR()) {
+      shiny::updateDateInput(session, 'date2', value = dM$date_bR())
+    }
+  })
+
   output$locationList <- shiny::renderUI({
     shiny::selectInput(inputId = 'location', label = 'Practice location',
                        choices = dM$location_list, selected = 'All')
@@ -297,6 +311,8 @@ DailyMeasureServer <- function(input, output, session) {
   callModule(conditions, "conditions_dt", dM)
   # administration and result management tab
   admin_table_results <- callModule(administration, "admin_dt", dM)
+  # about
+  callModule(about, "about_dt", dM)
 
   if (QIMmodule == TRUE) {
     # only if QIM module/package is available
@@ -406,13 +422,20 @@ DailyMeasureServer <- function(input, output, session) {
                                  ,
                                  {x <- shinyFiles::shinySaveButton(
                                    "create_configuration_file",
-                                   label = "Create configuration file",
-                                   title = "Create configuration file (must end in '.sqlite')",
+                                   label = "Create (and choose) configuration file",
+                                   title = "Create (and choose) configuration file (must end in '.sqlite')",
                                    filetype = list(sqlite = c('sqlite')));
                                  # disabled if demonstration mode
                                  if (.bcdyz.option$demonstration) {shinyjs::disabled(x)} else {x}},
                                  shiny::helpText(paste("Choose location of an existing configuration file,",
-                                                       "or create a new configuration file"))
+                                                       "or create a new configuration file."),
+                                                 shiny::br(), shiny::br(),
+                                                 paste("It is strongly recommended that if a different",
+                                                       "configuration file is chosen, or a new configuration",
+                                                       "file is created,"),
+                                                 shiny::br(),
+                                                 paste("that the user exit(/close) GPstat!",
+                                                       "and then (re-)start GPstat!"))
                                ))
                            ),
                            shiny::tabPanel(
@@ -449,9 +472,12 @@ DailyMeasureServer <- function(input, output, session) {
                              value = "PasswordPanel",
                              shiny::column(width = 12,
                                            passwordConfig_UI("password_config"))
-                           )
-                         )
+                           ))
                        ))),
+                     list(shinydashboard::tabItem(
+                       tabName = "about",
+                       fluidRow(column(width = 12, about_UI("about_dt")))
+                     )),
                      list(shinydashboard::tabItem(
                        tabName = "test",
                        shiny::fluidRow(shiny::column(width = 12, align = "center",
@@ -491,6 +517,12 @@ DailyMeasureServer <- function(input, output, session) {
       file_name <- paste(inFile$datapath)
       dM$configuration_file_path <- file_name
       # this dMeasure method will also update the YAML configuration file
+      shinytoastr::toastr_warning(
+        message = paste("New configuration file chosen.",
+                        "Recommend GPstat! is re-started!"),
+        position = "bottom-left",
+        closeButton = TRUE,
+        timeOut = 0) # keep open until closed
     }
   })
 
@@ -513,6 +545,12 @@ DailyMeasureServer <- function(input, output, session) {
       dM$open_configuration_db()
       # this will initialize the .sqlite configuration file and open it
       dM$read_configuration_db()
+      shinytoastr::toastr_warning(
+        message = paste("New configuration file created and chosen.",
+                        "Recommend GPstat! is re-started!"),
+        position = "bottom-left",
+        closeButton = TRUE,
+        timeOut = 0) # keep open until closed
     }
   })
 
@@ -750,5 +788,16 @@ DailyMeasureServer <- function(input, output, session) {
         )
       )
     )
+  })
+
+  shiny::observeEvent(dM$check_subscription_datechange_trigR(), ignoreInit = TRUE, {
+    # warning generated if dates have been changed as
+    # the result of subscription check
+    shinytoastr::toastr_warning(
+      message = paste("A chosen user has no subscription for chosen date range.",
+                      "Dates changed (minimum one week old)."),
+      position = "bottom-left",
+      closeButton = TRUE,
+      timeOut = 0) # keep open until closed
   })
 }

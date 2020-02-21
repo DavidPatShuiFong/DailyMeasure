@@ -29,15 +29,16 @@ GPstat <- function (appmode = "chrome", launch.browser = TRUE,
     }
   }
 
-  .GlobalEnv$.bcdyz.option <- list(demonstration = demonstration)
-  on.exit(rm(.bcdyz.option, envir = .GlobalEnv))
-  # accessible as .bcdyz.option in the server
-  # example of this is found in https://github.com/rstudio/shiny/issues/440
-
   ##### Run the application ###########################################
-  app <- shiny::shinyApp(ui = DailyMeasureUI(), server = DailyMeasureServer,
-                         options = list(launch.browser = launch.browser,
-                                        host = host, port = port))
-  shiny::runApp(app, ...)
+  shiny::shinyApp(ui = DailyMeasureUI(), server = DailyMeasureServer,
+                  options = list(launch.browser = launch.browser,
+                                 host = host, port = port),
+                  onStart = function() {
+                    .bcdyz.option <<- list(demonstration = demonstration) # set global
+                    # accessible as .bcdyz.option in the server
+                    # example of this is found in https://github.com/rstudio/shiny/issues/440
+                    # https://stackoverflow.com/questions/31118236/how-to-set-global-variable-values-in-the-onstart-parameter-of-shiny-application
+                  }, ...)
+  # shiny::runApp(app, ...) - runApp does NOT pass through unicode e.g. Chinese/Greek un-modified!
 
 }

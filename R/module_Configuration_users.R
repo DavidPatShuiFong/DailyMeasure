@@ -34,7 +34,7 @@ userconfig_resetpasswordUI <- function(id) {
       shiny::uiOutput(ns("ConfiguredUserList")),
       shiny::br(),
       {x <- shiny::actionButton(ns('reset_password'), 'Reset Password',
-                          icon('broom'), class = 'btn btn-primary');
+                                shiny::icon('broom'), class = 'btn btn-primary');
       # disabled if demonstration mode
       if (.bcdyz.option$demonstration) {shinyjs::disabled(x)} else {x}})
   )
@@ -97,16 +97,16 @@ userconfig_resetpassword <- function(input, output, session, dM) {
       # $password.reset sets $UserConfig and writes to SQLite configuration
       error = function(e) {
         shinytoastr::toastr_error(
-        paste(e$message), title = "Reset password error",
-        closeButton = TRUE, position = "bottom-left",
-        timeOut = 10000) # stays open ten seconds}
+          paste(e$message), title = "Reset password error",
+          closeButton = TRUE, position = "bottom-left",
+          timeOut = 10000) # stays open ten seconds}
       })
   })
 
 }
 
 ####### Restriction of permissions #############################################
-#' userconfig_enableRestrictionUI
+#' userconfig_enableRestrictionsUI
 #'
 #' set or unset user restrictions
 #'
@@ -166,7 +166,7 @@ userconfig_enableRestrictions <- function (input, out, session, dM) {
       # set the switches according the what is stored in the configuration database
       shinyWidgets::updateMaterialSwitch(
         session, restriction,
-        restriction %in% (dM$UserRestrictions()$Restriction))
+        restriction %in% (dM$UserRestrictions() %>>% dplyr::pull(Restriction)))
     }
   })
 
@@ -178,7 +178,8 @@ userconfig_enableRestrictions <- function (input, out, session, dM) {
       restrictionLocal <- restriction
       shiny::observeEvent(input[[restrictionLocal$id]], ignoreInit = TRUE, {
         if (input[[restrictionLocal$id]] !=
-            (restrictionLocal$id) %in% isolate(dM$UserRestrictions()$Restriction)) {
+            (restrictionLocal$id) %in% (isolate(dM$UserRestrictions() %>>%
+                                                dplyr::pull(Restriction)))) {
           # change in state
           state <- dM$userrestriction.change(restrictionLocal$id,
                                              input[[restrictionLocal$id]])
@@ -213,6 +214,20 @@ userconfig_enableRestrictions <- function (input, out, session, dM) {
             }
           }
         }
+        if (suppressWarnings(dM$useradmin.permission())) {
+          # warning will be issued if no UserAdmin permission, so suppress
+          # UserAdmin restriction is either disabled or
+          # this user has the permission
+          for (restriction in unlist(dM$restrictionTypes_df$id, use.names = FALSE)) {
+            # show the switches
+            shinyjs::show(restriction)
+          }
+        } else {
+          for (restriction in unlist(dM$restrictionTypes_df$id, use.names = FALSE)) {
+            # hide the switches
+            shinyjs::hide(restriction)
+          }
+        }
       })
     })
   }
@@ -234,7 +249,23 @@ userconfig_datatableUI <- function(id) {
       shiny::tabPanel(
         title = "User settings",
         width = 12,
-        DTedit::dteditUI(ns("userconfigs"))
+        shiny::tagList(
+          shiny::br(),
+          shiny::wellPanel(
+            {if (.bcdyz.option$demonstration)
+            {shiny::span(shiny::p(), shiny::strong("Demonstration mode : License read disabled"),
+                         style = "color:red", shiny::p())}
+              else {}},
+            {x <- shiny::tagList(shiny::actionButton(ns('reread_subscription'),
+                                                     'Re-read Subscriptions',
+                                                     shiny::icon('book-reader'),
+                                                     class = 'btn btn-primary'));
+            # disabled if demonstration mode
+            if (.bcdyz.option$demonstration) {shinyjs::disabled(x)} else {x}},
+            shiny::HTML("&nbsp;"), shiny::HTML("&nbsp;"), shiny::HTML("&nbsp;"),
+            "Read subscription/license dates from GPstat!/DailyMeasure databases"),
+          DTedit::dteditUI(ns("userconfigs"))
+        )
       ),
       shiny::tabPanel(
         title = "Reset password",
@@ -269,6 +300,28 @@ userconfig_datatable <- function(input, output, session, dM) {
   # enable/disable restrictions module
   callModule(userconfig_enableRestrictions, "enable_restrictions", dM)
 
+  shiny::observeEvent(input$reread_subscription, {
+    shiny::validate(
+      need(dM$emr_db$is_open(), "Best Practice database not open"),
+      need(dM$config_db$is_open(), "Configuration database not open")
+    )
+    tryCatch({
+      dM$read_subscription_db(forcecheck = TRUE)
+      # next line not executed if warning raised
+      shinytoastr::toastr_success(
+        "Subscription database read!",
+        closeButton = TRUE,
+        position = "bottom-left",
+        title = "Best Practice database")},
+      warning = function(w) {
+        shinytoastr::toastr_warning(
+          w$message,
+          closeButton = TRUE,
+          position = "bottom-left",
+          title = "Best Practice database")
+      })
+  })
+
   usernames <- shiny::reactiveVal()
   # list of user names
   shiny::observeEvent(dM$dbversion(), {
@@ -292,7 +345,23 @@ userconfig_datatable <- function(input, output, session, dM) {
   userconfig.insert.callback <- function(data, row) {
     # adding a new user configuration
 
-    description <- data[row,]
+    description <- data[row,] %>>%
+      dplyr::select(id, Fullname, AuthIdentity, Location,
+                    Attributes)
+
+    Identifier <- dM$UserFullConfig %>>%
+      dplyr::filter(Fullname == data[row,]$Fullname) %>>%
+      dplyr::pull(Identifier) # does not yet have identifier in 'data'
+
+    License <- trimws(data[row,]$License) # strip whitespace
+    if (License == "") {License <- NA} # if empty, change to NA
+    LicenseDate <- dMeasure::verify_license(License,
+                                            Identifier)
+    # returns the LicenseDate, or NA if not a valid License (including "")
+    if (!is.na(License) && is.na(LicenseDate)) {
+      # License string 'provided', but not valid
+      stop("Invalid License. If no license available, License should be 'empty'.")
+    }
 
     tryCatch(newdata <- dM$userconfig.insert(description),
              error = function(e) stop(e))
@@ -302,15 +371,32 @@ userconfig_datatable <- function(input, output, session, dM) {
     # dM$userconfig.insert will change the SQLite configuration file if appropriate
     # and $UserConfig
 
+    dM$update_subscription(Fullname = description$Fullname,
+                           License = License,
+                           verify = FALSE)
+    # write license, already verified
+
     userconfig_list_change(userconfig_list_change() + 1)
     # this value returned by module
 
-    return(newdata)
+    return(data)
   }
   userconfig.update.callback <- function(data, olddata, row) {
     # change (update) a user configuration
 
-    description <- data[row,]
+    description <- data[row,] %>>%
+      dplyr::select(id, Fullname, AuthIdentity, Location,
+                    Attributes)
+
+    License <- trimws(data[row,]$License) # strip whitespace
+    if (License == "") {License <- NA} # if empty, change to NA
+    LicenseDate <- dMeasure::verify_license(License,
+                                            data[row,]$Identifier)
+    # returns the LicenseDate, or NA if not a valid License (including "")
+    if (!is.na(License) && is.na(LicenseDate)) {
+      # License string 'provided', but not valid
+      stop("Invalid License. If no license available, License should be 'empty'.")
+    }
 
     tryCatch(newdata <- dM$userconfig.update(description),
              error = function(e) stop (e))
@@ -318,13 +404,20 @@ userconfig_datatable <- function(input, output, session, dM) {
     # if restrictions have been placed on who can modify the server or user configuration
     # then at least one user must have the restricted attribute
 
+    # 'newdata' has more columns than 'data' (has 'Identifier' and 'LicenseDate')
+
     # dM$userconfig.update will change the SQLite configuration file if appropriate
     # and $UserConfig
+
+    dM$update_subscription(Fullname = description$Fullname,
+                           License = License,
+                           verify = FALSE)
+    # write license, already verified
 
     userconfig_list_change(userconfig_list_change() + 1)
     # this value returned by module
 
-    return(newdata)
+    return(data)
 
   }
   userconfig.delete.callback <- function(data, row) {
@@ -353,15 +446,14 @@ userconfig_datatable <- function(input, output, session, dM) {
   }
 
   userconfig_dt_viewcols <- c("id", "Fullname", "AuthIdentity", "Location",
-                              "Attributes")
-  userconfig_dt_editcols <-
-    userconfig_dt_viewcols[!userconfig_dt_viewcols %in% c("id")]
+                              "Attributes", "Identifier", "LicenseDate")
+  userconfig_dt_editcols <- c("Fullname", "AuthIdentity", "Location", "Attributes", "License")
   # columns viewed in DTedit when adding/editing/removing user config
 
   # depends on modularized version of DTedit
   userconfig_edited <-
     callModule(DTedit::dtedit, "userconfigs",
-               thedataframe = dM$UserConfigR, # pass a ReactiveVal
+               thedataframe = dM$UserConfigLicenseR, # pass a ReactiveVal
                view.cols = userconfig_dt_viewcols, # no need to show 'id' in future
                edit.cols = userconfig_dt_editcols,
                # edit.label.cols = ,
@@ -369,7 +461,8 @@ userconfig_datatable <- function(input, output, session, dM) {
                input.types = c(Fullname = 'selectInputReactive',
                                Attributes = 'selectInputMultiple',
                                AuthIdentity = 'textInput',
-                               Location = 'selectInputMultipleReactive'),
+                               Location = 'selectInputMultipleReactive',
+                               License = 'textInput'),
                input.choices = c(Location = 'LocationNames',
                                  Fullname = 'Fullname',
                                  Attributes = list(dM$user_attribute_types)),
@@ -380,8 +473,14 @@ userconfig_datatable <- function(input, output, session, dM) {
                                              LocationNames = dM$location_groupR),
                callback.update = userconfig.update.callback,
                callback.insert = userconfig.insert.callback,
-               callback.delete = userconfig.delete.callback
-    )
+               callback.delete = userconfig.delete.callback)
+
+  shiny::observeEvent(userconfig_list_change(), {
+    invisible(dM$UserConfig)
+    # this will provoke a change in $UserConfigR,
+    # which will in turn provoke a change in $UserConfigLicenseR
+    # and then update the userconfig_edited DT table
+  })
 
   return(reactive({userconfig_list_change()}))
   # increments each time a callback changes UserConfig

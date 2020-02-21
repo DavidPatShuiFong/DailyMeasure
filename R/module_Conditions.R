@@ -192,8 +192,7 @@ conditions_postnatal_datatable <- function(input, output, session, dM) {
 
           contactID <- dM$list_visits(date_from = search_back,
                                       date_to = today) %>>%
-            dplyr::pull(InternalID) %>>% unique() %>>%
-            c(-1) # need to add a 'dummy', empty vector causes errors later
+            dplyr::pull(InternalID) %>>% unique()
           # accepts the 'default' clinicians choice
           # and visit types
           #
@@ -201,10 +200,16 @@ conditions_postnatal_datatable <- function(input, output, session, dM) {
           # the recent past (depending on current system date)
           # who may have been pregnant at time of visit
 
-          d <- data.frame(InternalID = contactID,
-                          Date = today)
+          d <- data.frame(InternalID = contactID) %>>%
+            dplyr::mutate(Date = today)
           # we create a data frame with 'dummy' appointments on reference date
           # reference date for post-natal status is 'today'
+          # if contactID is an empty vector, this should create a zero-row data.frame
+          contactID <- c(contactID, -1)
+          # need to add a 'dummy', empty vector causes errors later
+          # if '-1' was added before 'd' was created, then an empty vector
+          # creates a data.frame with one row (ID = -1), which could
+          # happen when the clinical database isn't even open
 
           outcomes_string <- as.character(input$pregnancy_outcomes)
           # needs as.character conversion, for some reason,
@@ -224,13 +229,21 @@ conditions_postnatal_datatable <- function(input, output, session, dM) {
                               outcome = outcomes,
                               include_edc = input$include_edc)
           # post-natal patients within required parameters
+          # consists of -
+          #  InternalID  EDCbyDate   EDCbyScan   EndDate     OutcomeCode
           postnatalID <- patientPregnancyDetails %>>%
             dplyr::pull(InternalID) %>>% c(-1) # need to add a dummy
 
-          patientDetails <- dM$db$patients %>>%
-            dplyr::filter(InternalID %in% postnatalID) %>>%
-            dplyr::mutate(Name = paste(Firstname, Surname)) %>>%
-            dplyr::select(InternalID, ExternalID, Name)
+          if (nrow(patientPregnancyDetails) > 0) {
+            patientDetails <- dM$db$patients %>>%
+              dplyr::filter(InternalID %in% postnatalID) %>>%
+              dplyr::mutate(Name = paste(Firstname, Surname)) %>>%
+              dplyr::select(InternalID, ExternalID, Name)
+          } else {
+            patientDetails <- data.frame(InternalID = numeric(0),
+                                         ExternalID = character(0),
+                                         Name = character(0))
+          }
 
           patientAppointments <- dM$appointments_listR() %>>%
             # accept defaults for $date_a, $date_b and $clinicians

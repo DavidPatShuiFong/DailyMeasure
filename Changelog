@@ -2,6 +2,14 @@ GP stat! (c) David Fong, 2019
 
 front-end to DailyMeasure package
 
+Version 1.5.3, 4th March 2020
+=============================
+
+New
+
+* if date changed because of no subscription, the list of user without subscription
+  is shown in the alert
+
 Version 1.5.2, 20th February 2020
 =================================
 

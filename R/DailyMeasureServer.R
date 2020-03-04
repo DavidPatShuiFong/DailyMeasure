@@ -793,9 +793,17 @@ DailyMeasureServer <- function(input, output, session) {
   shiny::observeEvent(dM$check_subscription_datechange_trigR(), ignoreInit = TRUE, {
     # warning generated if dates have been changed as
     # the result of subscription check
+    no_subscription <- paste(setdiff(dM$clinicians,
+                                     dM$UserFullConfig %>>%
+                                       dplyr::filter(Fullname %in% dM$clinicians &
+                                                       !is.na(LicenseDate) &
+                                                       LicenseDate >= Sys.Date()) %>>%
+                                       dplyr::pull(Fullname)), collapse = ", ")
     shinytoastr::toastr_warning(
       message = paste("A chosen user has no subscription for chosen date range.",
-                      "Dates changed (minimum one week old)."),
+                      "Dates changed (minimum one week old).", shiny::br(), shiny::br(),
+                      "Chosen users without subscription: ",
+                      no_subscription),
       position = "bottom-left",
       closeButton = TRUE,
       timeOut = 0) # keep open until closed

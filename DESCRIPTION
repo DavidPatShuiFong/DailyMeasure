@@ -34,6 +34,7 @@ Imports:
     jsonlite,
     sodium,
     R6,
+    rintrojs,
     dbConnection,
     dMeasure
 Suggests:

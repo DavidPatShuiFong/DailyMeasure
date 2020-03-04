@@ -9,6 +9,7 @@ New
 
 * if date changed because of no subscription, the list of user without subscription
   is shown in the alert
+* introductory walkthrough with 'rintrojs'
 
 Version 1.5.2, 20th February 2020
 =================================

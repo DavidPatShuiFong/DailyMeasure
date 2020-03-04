@@ -719,6 +719,101 @@ DailyMeasureServer <- function(input, output, session) {
     }
   })
 
+  ###### Guides ###############################################################
+
+  steps_overview_df <-
+    data.frame(element = as.character(NA),
+               intro = c(paste(shiny::tags$h4("GPstat! introduction"),
+                               shiny::br(),
+                               "A 'near-future' tool to opportunistically find opportunities",
+                               "for screening and chronic disease management.")))
+  steps_overview_df <-
+    rbind(steps_overview_df,
+          data.frame(element = "#sidebarMenu-wrapper",
+                     intro = "Main menu"))
+  steps_overview_df <-
+    rbind(steps_overview_df,
+          data.frame(element = "#sidebarMenu-wrapper",
+                     intro = paste(shiny::tags$h5(shiny::icon("calendar-check"),
+                                                  " Appointments"),
+                                   shiny::br(),
+                                   "List of appointments with currently selected",
+                                   "provider(s) and selected date range.")))
+  steps_overview_df <-
+    rbind(steps_overview_df,
+          data.frame(element = "#rightsidebar-appointment-wrapper",
+                     intro = paste(shiny::tags$h5(shiny::icon("users"),
+                                                  " Appointments"),
+                                   shiny::br(),
+                                   "Choose providers who will be seen in",
+                                   "appointments lists.")))
+  steps_overview_df <-
+    rbind(steps_overview_df,
+          data.frame(element = "#rightsidebar-date-wrapper",
+                     intro = paste(shiny::tags$h5(shiny::icon("users"),
+                                                  " Date selection"),
+                                   shiny::br(),
+                                   "Choose date range seen in",
+                                   "appointments lists.")))
+  steps_overview_df <-
+    rbind(steps_overview_df,
+          data.frame(element = "#sidebarMenu-wrapper",
+                     intro = paste(shiny::tags$h5(shiny::icon("syringe"),
+                                                  " Immunization"),
+                                   shiny::br(),
+                                   "Immunization opportunities in currently list of",
+                                   "appointments.")))
+  steps_overview_df <-
+    rbind(steps_overview_df,
+          data.frame(element = "#sidebarMenu-wrapper",
+                     intro = paste(shiny::tags$h5(shiny::icon("x-ray"),
+                                                  " Cancer screening"),
+                                   shiny::br(),
+                                   "Cancer screening opportunities in current list of",
+                                   "of appointments.")))
+  steps_overview_df <-
+    rbind(steps_overview_df,
+          data.frame(element = "#sidebarMenu-wrapper",
+                     intro = paste(shiny::tags$h5(shiny::icon("fingerprint"),
+                                                  " Conditions"),
+                                   shiny::br(),
+                                   "Condition-specific review e.g. post-natal.")))
+  steps_overview_df <-
+    rbind(steps_overview_df,
+          data.frame(element = "#sidebarMenu-wrapper",
+                     intro = paste(shiny::tags$h5(shiny::icon("microscope"),
+                                                  " Administration"),
+                                   shiny::br(),
+                                   "Allergy, family history recording. Result management.")))
+  steps_overview_df <-
+    rbind(steps_overview_df,
+          data.frame(element = "#sidebarMenu-wrapper",
+                     intro = paste(shiny::tags$h5(shiny::icon("wrench"),
+                                                  " Configuration"),
+                                   shiny::br(),
+                                   "Best Practice server configuration.",
+                                   "Configuration file location.",
+                                   "User and subscription management. Log files.")))
+  steps_overview_df <-
+    rbind(steps_overview_df,
+          data.frame(element = "#sidebarMenu-wrapper",
+                     intro = paste(shiny::tags$h5(shiny::icon("info"),
+                                                  " About"),
+                                   shiny::br(),
+                                   "Video tutorials and other documentation.",
+                                   "Privacy statement. Licenses. Credits")))
+
+  steps_overview <- reactive(steps_overview_df)
+
+  shiny::observeEvent(input$guide_overview, {
+    shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+    # above opens the right side-bar
+    # see https://stackoverflow.com/questions/
+    #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
+    rintrojs::introjs(session, options = list(steps = steps_overview(),
+                                              onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
+  })
+
   ###### Render user information on top-right header ##########################
   output$user <- shinydashboardPlus::renderUser({
     shinydashboardPlus::dashboardUser(

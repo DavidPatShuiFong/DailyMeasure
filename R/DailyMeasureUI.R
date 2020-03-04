@@ -12,6 +12,7 @@
 #'
 DailyMeasureUI <- function() {
   shinydashboardPlus::dashboardPagePlus(
+    rintrojs::introjsUI(),
 
     header = shinydashboardPlus::dashboardHeaderPlus(
       enable_rightsidebar = TRUE,
@@ -20,35 +21,49 @@ DailyMeasureUI <- function() {
         icon = icon("heartbeat"),
         shiny::div(style = "display:inline-block",
                    shiny::HTML('<p style = "font-family:Verdana">  GP&thinsp;stat!</p>'))),
+      shinydashboardPlus::dropdownBlock(
+        title = "Help",
+        id = "tutorials",
+        icon = "graduation-cap",
+        badgeStatus = NULL, # no 'number' to indicate number of contents
+        shiny::actionButton("guide_overview", "Overview")
+      ),
       shinydashboardPlus::userOutput("user")
     ),
     sidebar = shinydashboard::dashboardSidebar(
-      shinydashboard::sidebarMenu(
-        id = "sidebartabs",
-        shinydashboard::menuItem("Appointments",
-                                 tabName = "appointments", icon = shiny::icon("calendar-check")),
-        shinydashboard::menuItem("Immunization",
-                                 tabName = "immunization", icon = shiny::icon("syringe")),
-        shinydashboard::menuItem("Cancer Screening",
-                                 tabName = "cancerscreen", icon = icon("x-ray")),
-        shinydashboard::menuItemOutput("BillingsMenu"),
-        shinydashboard::menuItemOutput("CDMMenu"),
-        shinydashboard::menuItemOutput("PIPqimMenu"),
-        # dynamically created Billigs, CDM, PIP quality improvement menu items. could be blank!
-        # will be blank unless dMeasureQIM module/package is available
-        shinydashboard::menuItem("Conditions",
-                                 tabName = "conditions", icon = shiny::icon("fingerprint")),
-        shinydashboard::menuItem("Administration",
-                                 tabName = "administration", icon = shiny::icon("microscope")),
-        shinydashboard::menuItem("Configuration",
-                                 tabName = "configuration", icon = shiny::icon("wrench"),
-                                 selected = TRUE
-                                 # this is a dummy entry and will be re-selected in the server
-                                 ),
-        shinydashboard::menuItem("About",
-                                 tabName = "about", icon = shiny::icon("info"))
-        # menuItem("Test", tabName = "test")
-      )
+      shiny::div(id = "sidebarMenu-wrapper", # this is needed for rintrojs
+                 shinydashboard::sidebarMenu(
+                   shinydashboard::menuItem("Appointments",
+                                            tabName = "appointments",
+                                            icon = shiny::icon("calendar-check")),
+                   shinydashboard::menuItem("Immunization",
+                                            tabName = "immunization",
+                                            icon = shiny::icon("syringe")),
+                   shinydashboard::menuItem("Cancer Screening",
+                                            tabName = "cancerscreen",
+                                            icon = icon("x-ray")),
+                   shinydashboard::menuItemOutput("BillingsMenu"),
+                   shinydashboard::menuItemOutput("CDMMenu"),
+                   shinydashboard::menuItemOutput("PIPqimMenu"),
+                   # dynamically created Billigs, CDM, PIP quality improvement menu items. could be blank!
+                   # will be blank unless dMeasureQIM module/package is available
+                   shinydashboard::menuItem("Conditions",
+                                            tabName = "conditions",
+                                            icon = shiny::icon("fingerprint")),
+                   shinydashboard::menuItem("Administration",
+                                            tabName = "administration",
+                                            icon = shiny::icon("microscope")),
+                   shinydashboard::menuItem("Configuration",
+                                            tabName = "configuration",
+                                            icon = shiny::icon("wrench"),
+                                            selected = TRUE
+                                            # this is a dummy entry and will be re-selected in the server
+                   ),
+                   shinydashboard::menuItem("About",
+                                            tabName = "about",
+                                            icon = shiny::icon("info"))
+                   # menuItem("Test", tabName = "test")
+                 ))
     ),
 
     # Sidebar with a slider input for number of bins
@@ -56,30 +71,33 @@ DailyMeasureUI <- function() {
       shinyjs::useShinyjs(), # this is needed to enable the 'click' of 'update_date' by 'Today'
       background = "dark",
       shinydashboardPlus::rightSidebarTabContent(
-        id = 1,
+        id = "rightsidebar-appointment",
         title = "Appointment Details",
         icon = "users",
         active = TRUE,
 
         # clinician list
-        shiny::wellPanel(
-          shiny::uiOutput('locationList'),
-          # list of practice sites
-          shiny::uiOutput('clinicianList'),
-          # list of clinicians at the currently chosen practice site
-          shiny::tags$div(title = "Select/De-select all clinicians",
-                          # toggle all listed clinicians on, or off
-                          shiny::actionButton('toggle_clinician_list', 'Select All/None',
-                                              shiny::icon('check-square'), class = 'btn btn-primary'))
-        )
+        shiny::div(id = "rightsidebar-appointment-wrapper",
+                   shiny::wellPanel(
+                     shiny::uiOutput('locationList'),
+                     # list of practice sites
+                     shiny::uiOutput('clinicianList'),
+                     # list of clinicians at the currently chosen practice site
+                     shiny::tags$div(title = "Select/De-select all clinicians",
+                                     # toggle all listed clinicians on, or off
+                                     shiny::actionButton('toggle_clinician_list',
+                                                         'Select All/None',
+                                                         shiny::icon('check-square'),
+                                                         class = 'btn btn-primary'))
+                   ))
       ),
       shinydashboardPlus::rightSidebarTabContent(
-        id = 2,
+        id = "rightsidebar-date",
         title = "Selected date range",
         icon = "calendar-alt",
 
         # appointment date range
-        shiny::wellPanel(
+        shiny::div(id = "rightsidebar-date-wrapper", shiny::wellPanel(
           shiny::dateInput('date1', label = 'From:', format='D dd/M/yyyy',
                            min = Sys.Date()-6000, max = Sys.Date()+180,
                            value = Sys.Date()),
@@ -93,12 +111,14 @@ DailyMeasureUI <- function() {
           shiny::helpText("After adjusting the date range, click the 'Update' button",
                           "to adjust the viewed appointment date range"),
           shiny::tags$div(title = "View today's appointments",
-                          shiny::actionButton('update_date_today', 'Today',
-                                              shiny::icon('calendar'), class = 'btn btn-info'))
+                          shiny::actionButton('update_date_today',
+                                              'Today',
+                                              shiny::icon('calendar'),
+                                              class = 'btn btn-info'))
           # manually change date range to 'today'
-        )),
+        ))),
       shinydashboardPlus::rightSidebarTabContent(
-        id = 3,
+        id = "rightsidebar-contact",
         title = "Contact details",
         icon = "handshake",
         shiny::wellPanel(
@@ -171,11 +191,11 @@ DailyMeasureUI <- function() {
         includeScript(system.file('www', 'transition.js', package = 'DailyMeasure')),
         # Pushes the export/save buttons for datatables to the right
         # and provide padding on the top
-        tags$style(HTML(".dataTables_wrapper .dt-buttons { float:none;
+        shiny::tags$style(HTML(".dataTables_wrapper .dt-buttons { float:none;
                       text-align:right;
                       padding-top:7px;
                       }")),
-        tags$style("@import url(https://use.fontawesome.com/releases/v5.12.0/css/all.css);")
+        shiny::tags$style("@import url(https://use.fontawesome.com/releases/v5.12.0/css/all.css);")
         # currently shiny (up to 1.4.0, uses fontawsome v5.3.1)
         # if no internet access, then some icons will be missing e.g. 'baby'
       ),

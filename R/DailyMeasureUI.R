@@ -33,6 +33,7 @@ DailyMeasureUI <- function() {
     sidebar = shinydashboard::dashboardSidebar(
       shiny::div(id = "sidebarMenu-wrapper", # this is needed for rintrojs
                  shinydashboard::sidebarMenu(
+                   id = "sidebartabs",
                    shinydashboard::menuItem("Appointments",
                                             tabName = "appointments",
                                             icon = shiny::icon("calendar-check")),

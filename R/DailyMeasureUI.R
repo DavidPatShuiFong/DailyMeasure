@@ -69,103 +69,108 @@ DailyMeasureUI <- function() {
 
     # Sidebar with a slider input for number of bins
     rightsidebar = shinydashboardPlus::rightSidebar(
+      shiny::tags$head(shiny::tags$style(shiny::HTML(
+        ".control-sidebar-tabs {display:none;}"))),
+      # removes empty space at top of rightsidebar
+      # https://stackoverflow.com/questions/59289622/
+      #  remove-the-dark-space-at-the-top-of-the-right-sidebar-in-a-shinydashboardplus
       shinyjs::useShinyjs(), # this is needed to enable the 'click' of 'update_date' by 'Today'
       background = "dark",
-      shinydashboardPlus::rightSidebarTabContent(
-        id = "rightsidebar-appointment",
-        title = "Appointment Details",
-        icon = "users",
-        active = TRUE,
-
-        # clinician list
-        shiny::div(id = "rightsidebar-appointment-wrapper",
-                   shiny::wellPanel(
-                     shiny::uiOutput('locationList'),
-                     # list of practice sites
-                     shiny::uiOutput('clinicianList'),
-                     # list of clinicians at the currently chosen practice site
-                     shiny::tags$div(title = "Select/De-select all clinicians",
-                                     # toggle all listed clinicians on, or off
-                                     shiny::actionButton('toggle_clinician_list',
-                                                         'Select All/None',
-                                                         shiny::icon('check-square'),
-                                                         class = 'btn btn-primary'))
-                   ))
-      ),
-      shinydashboardPlus::rightSidebarTabContent(
-        id = "rightsidebar-date",
-        title = "Selected date range",
-        icon = "calendar-alt",
-
-        # appointment date range
-        shiny::div(id = "rightsidebar-date-wrapper", shiny::wellPanel(
-          shiny::dateInput('date1', label = 'From:', format='D dd/M/yyyy',
-                           min = Sys.Date()-6000, max = Sys.Date()+180,
-                           value = Sys.Date()),
-          shiny::dateInput('date2', label = 'To:', format='D dd/M/yyyy',
-                           min = Sys.Date()-6000, max = Sys.Date()+180,
-                           value = Sys.Date()),
-          # range of dates, by default will be 'today'
-          shiny::actionButton('update_date', 'Update',
-                              shiny::icon('refresh'), class = 'btn btn-primary'),
-          # date range not activated until the 'Update' button is clicked
-          shiny::helpText("After adjusting the date range, click the 'Update' button",
-                          "to adjust the viewed appointment date range"),
-          shiny::tags$div(title = "View today's appointments",
-                          shiny::actionButton('update_date_today',
-                                              'Today',
-                                              shiny::icon('calendar'),
-                                              class = 'btn btn-info'))
-          # manually change date range to 'today'
-        ))),
-      shinydashboardPlus::rightSidebarTabContent(
-        id = "rightsidebar-contact",
-        title = "Contact details",
-        icon = "handshake",
-        shiny::wellPanel(
-          shinyWidgets::pickerInput(
-            inputId = "contact_type",
-            label = "Contact types",
-            choices = c("Appointments", "Visits", "Services"),
-            selected = c("Services"),
-            options = list(style = "btn-primary",
-                           `actions-box` = TRUE),
-            multiple = TRUE
-          ),
-          shinyWidgets::sliderTextInput(
-            inputId = "min_contact",
-            label = "Minimum number of contacts",
-            choices = c(1:10),
-            grid = TRUE,
-            selected = 1
-          )
+      shiny::tabsetPanel(
+        shiny::tabPanel(
+          shiny::icon("users"),
+          value = "rightsidebar-appointment",
+          shiny::br(), shiny::h4("Appointment Details"), shiny::br(),
+          # clinician list
+          shiny::div(id = "rightsidebar-appointment-wrapper",
+                     shiny::wellPanel(
+                       shiny::uiOutput('locationList'),
+                       # list of practice sites
+                       shiny::uiOutput('clinicianList'),
+                       # list of clinicians at the currently chosen practice site
+                       shiny::tags$div(title = "Select/De-select all clinicians",
+                                       # toggle all listed clinicians on, or off
+                                       shiny::actionButton('toggle_clinician_list',
+                                                           'Select All/None',
+                                                           shiny::icon('check-square'),
+                                                           class = 'btn btn-primary'))
+                     ))
         ),
-        shiny::wellPanel(
-          shinyWidgets::pickerInput(
-            inputId = "appointment_status",
-            label = "Appointment status shown",
-            choices = c("Booked", "Waiting", "With doctor",
-                        "At billing", "Invoiced", "Completed"),
-            selected = c("With doctor", "At billing", "Invoiced", "Completed"),
-            # all 'completed' choices initially selected
-            options = list(style = "btn-primary",
-                           `actions-box` = TRUE),
-            multiple = TRUE),
-          shinyWidgets::pickerInput(
-            inputId = "visit_type",
-            label = "Visit types shown",
-            choices = c("Surgery", "Home", "Non Visit", "Hospital",
-                        "RACF", "Telephone",
-                        "SMS", "Email", "Locum Service", "Out of Office",
-                        "Other", "Hostel",
-                        "Telehealth"),
-            selected = c("Surgery", "Home", "Hospital",
-                         "RACF", "Locum Service", "Out of Office",
-                         "Hostel", "Telehealth"),
-            # consult choices initially selected
-            options = list(style = "btn-primary",
-                           `actions-box` = TRUE),
-            multiple = TRUE
+        shiny::tabPanel(
+          shiny::icon("calendar-alt"),
+          value = "rightsidebar-date",
+          shiny::br(),shiny::h4("Selected date range"), shiny::br(),
+          # appointment date range
+          shiny::div(id = "rightsidebar-date-wrapper",
+                     shiny::wellPanel(
+                       shiny::dateInput('date1', label = 'From:', format='D dd/M/yyyy',
+                                        min = Sys.Date()-6000, max = Sys.Date()+180,
+                                        value = Sys.Date()),
+                       shiny::dateInput('date2', label = 'To:', format='D dd/M/yyyy',
+                                        min = Sys.Date()-6000, max = Sys.Date()+180,
+                                        value = Sys.Date()),
+                       # range of dates, by default will be 'today'
+                       shiny::actionButton('update_date', 'Update',
+                                           shiny::icon('refresh'), class = 'btn btn-primary'),
+                       # date range not activated until the 'Update' button is clicked
+                       shiny::helpText("After adjusting the date range, click the 'Update' button",
+                                       "to adjust the viewed appointment date range"),
+                       shiny::tags$div(title = "View today's appointments",
+                                       shiny::actionButton('update_date_today',
+                                                           'Today',
+                                                           shiny::icon('calendar'),
+                                                           class = 'btn btn-info'))
+                       # manually change date range to 'today'
+                     ))),
+        shiny::tabPanel(
+          shiny::icon("handshake"),
+          value = "rightsidebar-contact",
+          shiny::br(), shiny::h4("Contact details"), shiny::br(),
+          shiny::wellPanel(
+            shinyWidgets::pickerInput(
+              inputId = "contact_type",
+              label = "Contact types",
+              choices = c("Appointments", "Visits", "Services"),
+              selected = c("Services"),
+              options = list(style = "btn-primary",
+                             `actions-box` = TRUE),
+              multiple = TRUE
+            ),
+            shinyWidgets::sliderTextInput(
+              inputId = "min_contact",
+              label = "Minimum number of contacts",
+              choices = c(1:10),
+              grid = TRUE,
+              selected = 1
+            )
+          ),
+          shiny::wellPanel(
+            shinyWidgets::pickerInput(
+              inputId = "appointment_status",
+              label = "Appointment status shown",
+              choices = c("Booked", "Waiting", "With doctor",
+                          "At billing", "Invoiced", "Completed"),
+              selected = c("With doctor", "At billing", "Invoiced", "Completed"),
+              # all 'completed' choices initially selected
+              options = list(style = "btn-primary",
+                             `actions-box` = TRUE),
+              multiple = TRUE),
+            shinyWidgets::pickerInput(
+              inputId = "visit_type",
+              label = "Visit types shown",
+              choices = c("Surgery", "Home", "Non Visit", "Hospital",
+                          "RACF", "Telephone",
+                          "SMS", "Email", "Locum Service", "Out of Office",
+                          "Other", "Hostel",
+                          "Telehealth"),
+              selected = c("Surgery", "Home", "Hospital",
+                           "RACF", "Locum Service", "Out of Office",
+                           "Hostel", "Telehealth"),
+              # consult choices initially selected
+              options = list(style = "btn-primary",
+                             `actions-box` = TRUE),
+              multiple = TRUE
+            )
           )
         )
       )

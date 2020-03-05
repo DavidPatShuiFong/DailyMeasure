@@ -750,7 +750,7 @@ DailyMeasureServer <- function(input, output, session) {
   steps_overview_df <-
     rbind(steps_overview_df,
           data.frame(element = "#rightsidebar-date-wrapper",
-                     intro = paste(shiny::tags$h5(shiny::icon("users"),
+                     intro = paste(shiny::tags$h5(shiny::icon("calendar-alt"),
                                                   " Date selection"),
                                    shiny::br(),
                                    "Choose date range seen in",
@@ -811,7 +811,8 @@ DailyMeasureServer <- function(input, output, session) {
     # see https://stackoverflow.com/questions/
     #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
     rintrojs::introjs(session, options = list(steps = steps_overview(),
-                                              onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
+                                              showStepNumbers = FALSE),
+                      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
   })
 
   ###### Render user information on top-right header ##########################

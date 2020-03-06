@@ -70,10 +70,18 @@ DailyMeasureUI <- function() {
     # Sidebar with a slider input for number of bins
     rightsidebar = shinydashboardPlus::rightSidebar(
       shiny::tags$head(shiny::tags$style(shiny::HTML(
-        ".control-sidebar-tabs {display:none;}"))),
+        ".control-sidebar-tabs {display:none;}
+        .tabbable > .nav > li > a:hover {background-color: #333e43; color:white}
+        .tabbable > .nav > li[class=active] > a   {background-color: #222d32;  color:white}"))),
       # removes empty space at top of rightsidebar
       # https://stackoverflow.com/questions/59289622/
       #  remove-the-dark-space-at-the-top-of-the-right-sidebar-in-a-shinydashboardplus
+      # change tabpanel tab colouring on hover and active to be
+      # more like shinydashboardPlus::rightSidebarTabContent
+      # https://stackoverflow.com/questions/35025145/
+      #  background-color-of-tabs-in-shiny-tabpanel
+      # https://stackoverflow.com/questions/47798850/
+      #  change-background-color-of-tabpanel-when-it-is-active-or-hover-over-in-shiny
       shinyjs::useShinyjs(), # this is needed to enable the 'click' of 'update_date' by 'Today'
       background = "dark",
       shiny::tabsetPanel(

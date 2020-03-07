@@ -173,6 +173,7 @@ servers_datatable <- function(input, output, session, dM) {
     # this is a kludge, it is the same logic as used in dM$server.insert
     # another possibility could be to copy back from dM
     # e.g. data <- dM$BPdatabase
+    data[row,]$dbPassword <- dMeasure::simple_encode(data[row,]$dbPassword)
 
     servers_list_change(servers_list_change() + 1)
     # this value returned by module
@@ -182,11 +183,20 @@ servers_datatable <- function(input, output, session, dM) {
   servers.update.callback <- function(data, olddata, row) {
     # change (update) a server description
 
+    if (!is.na(data[row,]$dbPassword) && # is.na shouldn't happen...
+        data[row,]$dbPassword == olddata[row,]$dbPassword) {
+      data[row,]$dbPassword <- dMeasure::simple_decode(data[row,]$dbPassword)
+      # the password was not changed, but the 'old password' was encrypted!
+      # need to decrypt before re-encrypting
+    }
+
     tryCatch(dM$server.update(data[row,]),
              error = function(e) stop(e))
     # possible errors include the server is currently being used
     # or proposed name is same as another definition
     # $server.update will write to the SQLite configuration
+
+    data[row,]$dbPassword <- dMeasure::simple_encode(data[row,]$dbPassword)
 
     servers_list_change(servers_list_change() + 1) # this value returned by module
 

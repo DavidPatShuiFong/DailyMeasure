@@ -2,7 +2,7 @@ GP stat! (c) David Fong, 2019
 
 front-end to DailyMeasure package
 
-Version 1.5.3, 4th March 2020
+Version 1.5.3, 7th March 2020
 =============================
 
 New
@@ -10,6 +10,11 @@ New
 * if date changed because of no subscription, the list of user without subscription
   is shown in the alert
 * introductory walkthrough with 'rintrojs'
+
+Improvements & Fixes
+
+* server database password is 'maintained' (if not modified) during server description edit
+  bug fixed where sometimes database password was not useable until after restart
 
 Version 1.5.2, 20th February 2020
 =================================

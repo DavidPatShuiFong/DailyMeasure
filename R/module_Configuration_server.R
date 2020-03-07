@@ -215,10 +215,15 @@ servers_datatable <- function(input, output, session, dM) {
     return(data[-c(row),])
   }
 
-  servers_dt_viewcols <- c("id", "Name", "Address", "Database", "UserID")
+  servers_dt_viewcols <- c("id", "Name", "Address", "Database", "Driver", "UserID")
   # columns viewed in DTedit when adding/editing/removing servers
   # 'id' is likely not necessary for end-users
-  servers_dt_editcols <- c("Name", "Address", "Database", "UserID", "dbPassword")
+  servers_dt_editcols <- c("Name", "Address", "Database", "Driver", "UserID", "dbPassword")
+
+  server_driver_choices <- c(unique(unlist(odbc::odbcListDrivers()$name)))
+  # it is not possible to add an "" empty-string option, which means currently
+  # a 'default' choice cannot be chosen (although the 'default' of 'SQL Server' if
+  # the string is empty is recognized by dMeasure)
 
   # depends on modularized version of DTedit
   servers_edited <- callModule(DTedit::dtedit, "servers",
@@ -226,8 +231,11 @@ servers_datatable <- function(input, output, session, dM) {
                                view.cols = servers_dt_viewcols, # no need to show 'id' in future
                                edit.cols = servers_dt_editcols,
                                input.types = c(Name = 'textInput', Address = 'textInput',
-                                               Database = 'textInput', UserID = 'textInput',
-                                               dbPassword = 'passwordInput'),
+                                               Database = 'textInput', Driver = 'selectInput',
+                                               UserID = 'textInput', dbPassword = 'passwordInput'),
+                               input.choices = list(Driver = server_driver_choices),
+                               # a valid choice for Driver is "", which is the 'default'
+                               # e.g. 'SQL Server'
                                callback.update = servers.update.callback,
                                callback.insert = servers.insert.callback,
                                callback.delete = servers.delete.callback,

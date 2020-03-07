@@ -10,6 +10,7 @@ New
 * if date changed because of no subscription, the list of user without subscription
   is shown in the alert
 * introductory walkthrough with 'rintrojs'
+* can choose Database Server Driver
 
 Improvements & Fixes
 

@@ -74,24 +74,31 @@ DailyMeasureServer <- function(input, output, session) {
     # and updates old SQLite configuration databases with necessary fields
     dM$read_configuration_db()
     # reads server definitions, location definitions, user attributes etc..
-    newdb <- dM$BPdatabaseChoice_new()
-    if (newdb != dM$BPdatabaseChoice) {
-      shinytoastr::toastr_info(
-        "Opening link to Best Practice", closeButton = TRUE,
-        position = "bottom-left", title = "Best Practice database")
-      opened_base <- dM$open_emr_db()
-      if (opened_base == "None") {
-        shinytoastr::toastr_error(
-          "Error opening Best Practice database",
-          closeButton = TRUE, position = "bottom-left",
-          timeOut = 10000) # stays open ten seconds
-      } else {
-        shinytoastr::toastr_success(
-          "Linking to Best Practice database successful!",
-          closeButton = TRUE,
-          position = "bottom-left",
-          title = "Best Practice database")
+    if (dM$config_db$is_open()) {
+      newdb <- dM$BPdatabaseChoice_new()
+      if (newdb != dM$BPdatabaseChoice) {
+        shinytoastr::toastr_info(
+          "Opening link to Best Practice", closeButton = TRUE,
+          position = "bottom-left", title = "Best Practice database")
+        opened_base <- dM$open_emr_db()
+        if (opened_base == "None") {
+          shinytoastr::toastr_error(
+            "Error opening Best Practice database",
+            closeButton = TRUE, position = "bottom-left",
+            timeOut = 10000) # stays open ten seconds
+        } else {
+          shinytoastr::toastr_success(
+            "Linking to Best Practice database successful!",
+            closeButton = TRUE,
+            position = "bottom-left",
+            title = "Best Practice database")
+        }
       }
+    } else {
+      shinytoastr::toastr_error(
+        "Error opening configuration file",
+        closeButton = TRUE, position = "bottom-left",
+        timeOut = 10000) # stays open ten seconds
     }
   })
   invisible(dM$configuration_file_path)

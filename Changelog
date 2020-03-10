@@ -16,6 +16,7 @@ Improvements & Fixes
 
 * server database password is 'maintained' (if not modified) during server description edit
   bug fixed where sometimes database password was not useable until after restart
+* warning if configuration database could not be successfully opened
 
 Version 1.5.2, 20th February 2020
 =================================

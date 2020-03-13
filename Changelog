@@ -11,6 +11,10 @@ New
   is shown in the alert
 * introductory walkthrough with 'rintrojs'
 * can choose Database Server Driver
+* changes to allow shinyapps.io deployment
+   app.R dependencies.R
+   DailyMeasureUI and DailyMeasureServer are now exported objects
+
 
 Improvements & Fixes
 

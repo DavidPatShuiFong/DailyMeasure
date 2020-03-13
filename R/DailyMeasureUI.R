@@ -9,7 +9,7 @@
 #' requires all moduleUI definitions to be defined
 #'
 #' @return dashboardPagePlus object
-#'
+#' @export
 DailyMeasureUI <- function() {
   shinydashboardPlus::dashboardPagePlus(
     rintrojs::introjsUI(),

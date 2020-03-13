@@ -16,6 +16,7 @@ sessionCount <- reactiveValues(count = 0) # initially no sessions opened
 #' @include utils-pipe.R
 #'
 #' needed for simple encode/decode
+#' @export
 DailyMeasureServer <- function(input, output, session) {
 
   print(.bcdyz.option) # this can be passed from a calling function shiny::runApp()

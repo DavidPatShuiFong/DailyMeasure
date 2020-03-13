@@ -2,6 +2,8 @@
 
 export("%>%")
 export("%>>%")
+export(DailyMeasureServer)
+export(DailyMeasureUI)
 export(GPstat)
 export(datatable_styled)
 import(dbplyr)

@@ -1,0 +1,13 @@
+name: GPstat
+title: GPstat
+username:
+account: davidfong
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1943953
+bundleId: 2877066
+url: https://davidfong.shinyapps.io/GPstat/
+when: 1584071592.6657
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .Rbuildignore|.RData|Changelog|DailyMeasure_cfg.sqlite|DailyMeasure_cfg.yaml|debug.log|dependencies.R|DESCRIPTION|LICENSE|LICENSE.coHealth.odt|NAMESPACE|vignettes/.gitignore|vignettes/DailyMeasure.Rmd|vignettes/rsconnect/documents/DailyMeasure.Rmd/rpubs.com/rpubs/Document.dcf|vignettes/rsconnect/documents/DailyMeasure.Rmd/rpubs.com/rpubs/Publish Document.dcf|inst|LICENSEdetails|man|R

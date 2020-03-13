@@ -1,0 +1,13 @@
+name: shinyapps
+title: shinyapps
+username:
+account: davidfong
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1944730
+bundleId: 2878028
+url: https://davidfong.shinyapps.io/shinyapps/
+when: 1584098944.64679
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: dependencies.R|my_app.R

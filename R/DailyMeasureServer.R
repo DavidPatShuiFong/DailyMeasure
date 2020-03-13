@@ -19,6 +19,9 @@ sessionCount <- reactiveValues(count = 0) # initially no sessions opened
 #' @export
 DailyMeasureServer <- function(input, output, session) {
 
+  if (!exists(".bcdyz.option")) {
+    .bcdyz.option <<- list(demonstration = FALSE)
+  }
   print(.bcdyz.option) # this can be passed from a calling function shiny::runApp()
 
   isolate(sessionCount$count <- sessionCount$count + 1)

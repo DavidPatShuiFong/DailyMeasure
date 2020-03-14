@@ -11,3 +11,11 @@ debug.log
 inst/doc
 
 R/example.R
+
+shinyapps/.DailyMeasure_cfg.sqlite
+
+shinyapps/.DailyMeasure_cfg.yaml
+
+.DailyMeasure_cfg.sqlite
+
+.DailyMeasure_cfg.yaml

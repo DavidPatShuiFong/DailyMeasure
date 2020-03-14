@@ -159,7 +159,7 @@ userconfig_enableRestrictions <- function (input, out, session, dM) {
 
   shiny::observeEvent(dM$config_db_trigR(), {
     # if configuration pool has been initialized
-    validate(
+    shiny::validate(
       need(dM$UserRestrictions(), "No restriction list")
     )
     for (restriction in unlist(dM$restrictionTypes_df$id, use.names = FALSE)) {

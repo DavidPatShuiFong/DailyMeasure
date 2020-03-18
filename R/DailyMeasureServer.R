@@ -24,8 +24,8 @@ DailyMeasureServer <- function(input, output, session) {
   }
   print(.bcdyz.option) # this can be passed from a calling function shiny::runApp()
 
-  isolate(sessionCount$count <- sessionCount$count + 1)
-  print(paste("Session Count:", isolate(sessionCount$count)))
+  shiny::isolate(sessionCount$count <- sessionCount$count + 1)
+  print(paste("Session Count:", shiny::isolate(sessionCount$count)))
 
   # IMPORTANT!
   # this is needed to terminate the R process when the
@@ -71,7 +71,8 @@ DailyMeasureServer <- function(input, output, session) {
 
   ##### Configuration file ######################################################
 
-  shiny::observeEvent(dM$configuration_file_pathR(), ignoreNULL = TRUE, {
+  shiny::observeEvent(dM$configuration_file_pathR(),
+                      ignoreNULL = TRUE, {
     dM$open_configuration_db()
     # connects to SQLite configuration database, using either DBI or pool
     # generates the SQLite configuration database if needed
@@ -897,7 +898,8 @@ DailyMeasureServer <- function(input, output, session) {
     )
   })
 
-  shiny::observeEvent(dM$check_subscription_datechange_trigR(), ignoreInit = TRUE, {
+  shiny::observeEvent(dM$check_subscription_datechange_trigR(),
+                      ignoreInit = TRUE, {
     # warning generated if dates have been changed as
     # the result of subscription check
     no_subscription <- paste(setdiff(dM$clinicians,

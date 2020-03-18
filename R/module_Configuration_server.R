@@ -230,25 +230,27 @@ servers_datatable <- function(input, output, session, dM) {
   # the string is empty is recognized by dMeasure)
 
   # depends on modularized version of DTedit
-  servers_edited <- callModule(DTedit::dtedit, "servers",
-                               thedataframe = dM$BPdatabaseR, # pass a ReactiveVal
-                               view.cols = servers_dt_viewcols, # no need to show 'id' in future
-                               edit.cols = servers_dt_editcols,
-                               input.types = c(Name = 'textInput', Address = 'textInput',
-                                               Database = 'textInput', Driver = 'selectInput',
-                                               UserID = 'textInput', dbPassword = 'passwordInput'),
-                               input.choices = list(Driver = server_driver_choices),
-                               # a valid choice for Driver is "", which is the 'default'
-                               # e.g. 'SQL Server'
-                               callback.update = servers.update.callback,
-                               callback.insert = servers.insert.callback,
-                               callback.delete = servers.delete.callback,
-                               # only show new/copy/delete/update if not demonstration mode
-                               show.delete = .bcdyz.option$demonstration == FALSE,
-                               show.update = .bcdyz.option$demonstration == FALSE,
-                               show.insert = .bcdyz.option$demonstration == FALSE,
-                               show.copy = .bcdyz.option$demonstration == FALSE
-  )
+  shiny::observeEvent(dM$BPdatabaseR(), ignoreNULL = TRUE, once = TRUE, {
+    servers_edited <- callModule(DTedit::dtedit, "servers",
+                                 thedataframe = dM$BPdatabaseR, # pass a ReactiveVal
+                                 view.cols = servers_dt_viewcols, # no need to show 'id' in future
+                                 edit.cols = servers_dt_editcols,
+                                 input.types = c(Name = 'textInput', Address = 'textInput',
+                                                 Database = 'textInput', Driver = 'selectInput',
+                                                 UserID = 'textInput', dbPassword = 'passwordInput'),
+                                 input.choices = list(Driver = server_driver_choices),
+                                 # a valid choice for Driver is "", which is the 'default'
+                                 # e.g. 'SQL Server'
+                                 callback.update = servers.update.callback,
+                                 callback.insert = servers.insert.callback,
+                                 callback.delete = servers.delete.callback,
+                                 # only show new/copy/delete/update if not demonstration mode
+                                 show.delete = .bcdyz.option$demonstration == FALSE,
+                                 show.update = .bcdyz.option$demonstration == FALSE,
+                                 show.insert = .bcdyz.option$demonstration == FALSE,
+                                 show.copy = .bcdyz.option$demonstration == FALSE
+    )
+  })
 
   return(list(
     count = reactive({servers_list_change()})

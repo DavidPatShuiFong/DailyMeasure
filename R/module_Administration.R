@@ -284,40 +284,41 @@ admin_result_datatable <- function(input, output, session, dM) {
   ### create tag-styled datatable (or 'printable' datatable)
 
   result_management_table <- shiny::reactive({
-    if (!is.null(dM$investigations_filtered) |
-        !is.null(dM$correspondence_filtered)) {
-      if (input$printcopy_view == TRUE) {
-        # printable/copyable view
-        datatable_styled(results() %>>%
-                           dplyr::select(Patient, RecordNo, DOB, Age,
-                                         TestName, Reported, Checked, CheckedBy,
-                                         Notation, Action, Actioned, Comment, labeltag_print),
-                         colnames = c('Patient', 'RecordNo', 'DOB', 'Age',
-                                      'Report',
-                                      'Reported', 'Checked', 'Checked By',
-                                      'Notation', 'Action', 'Actioned', 'Comment',
-                                      'Appointments'),
-                         extensions = c("Buttons", "Scroller"),
-                         scrollX = TRUE) # don't collapse columns
-      } else {
-        # fomantic/semantic tag view
-        datatable_styled(results() %>>%
-                           dplyr::select(patienttag, RecordNo,
-                                         testtag, Checked, CheckedBy,
-                                         Notation, Action, Actioned, Comment, labeltag),
-                         colnames = c('Patient', 'RecordNo',
-                                      'Report', 'Checked', 'Checked By',
-                                      'Notation', 'Action', 'Actioned', 'Comment',
-                                      'Appointments'),
-                         printButton = NULL, # no copy/print buttons
-                         copyHtml5 = NULL,
-                         downloadButton = NULL,
-                         scrollX = '100%', # allow horizontal scroll-bar
-                         extensions = c('Buttons', 'Scroller'),
-                         # no 'Responsive' column collapsing
-                         escape = c(1, 3, 10)) # only interpret HTML for some columns
-      }
+    shiny::req(!is.null(dM$investigations_filtered),
+               !is.null(dM$correspondence_filtered))
+
+    if (input$printcopy_view == TRUE) {
+      # printable/copyable view
+      datatable_styled(results() %>>%
+                         dplyr::select(Patient, RecordNo, DOB, Age,
+                                       TestName, Reported, Checked, CheckedBy,
+                                       Notation, Action, Actioned, Comment, labeltag_print),
+                       colnames = c('Patient', 'RecordNo', 'DOB', 'Age',
+                                    'Report',
+                                    'Reported', 'Checked', 'Checked By',
+                                    'Notation', 'Action', 'Actioned', 'Comment',
+                                    'Appointments'),
+                       extensions = c("Buttons", "Scroller"),
+                       scrollX = TRUE) # don't collapse columns
+    } else {
+      # fomantic/semantic tag view
+      datatable_styled(results() %>>%
+                         dplyr::select(patienttag, RecordNo,
+                                       testtag, Checked, CheckedBy,
+                                       Notation, Action, Actioned, Comment, labeltag),
+                       colnames = c('Patient', 'RecordNo',
+                                    'Report', 'Checked', 'Checked By',
+                                    'Notation', 'Action', 'Actioned', 'Comment',
+                                    'Appointments'),
+                       printButton = NULL, # no copy/print buttons
+                       copyHtml5 = NULL,
+                       downloadButton = NULL,
+                       scrollX = '100%', # allow horizontal scroll-bar
+                       extensions = c('Buttons', 'Scroller'),
+                       # no 'Responsive' column collapsing
+                       escape = c(1, 3, 10)) # only interpret HTML for some columns
     }
+
   })
 
   output$result_table <- DT::renderDT({

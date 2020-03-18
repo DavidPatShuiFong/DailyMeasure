@@ -286,6 +286,8 @@ qim_active <- function(input, output, session, dMQIM, contact) {
       dMQIM$qim_active_listR(),
       dMQIM$qim_active_reportR(),
       dMQIM$qim_demographicGroupR()), {
+        shiny::req(input$list_view,
+                   dMQIM$qim_active_listR())
         if (input$list_view == "List") {
           datatable_styled(
             dMQIM$qim_active_listR() %>>%
@@ -380,7 +382,8 @@ qim_diabetes <- function(input, output, session, dMQIM, contact) {
       dMQIM$qim_diabetes_list_appointmentsR(),
       dMQIM$qim_diabetes_reportR(),
       dMQIM$qim_demographicGroupR()), {
-        shiny::req(input$list_view) # this might not be defined on first run!
+        shiny::req(input$list_view,  # this might not be defined on first run!
+                   dMQIM$qim_diabetes_listR())
         if (input$list_view == "List") {
           df <- dMQIM$qim_diabetes_listR() %>>%
             dplyr::select(Patient, RecordNo,
@@ -499,7 +502,8 @@ qim_cst <- function(input, output, session, dMQIM, contact) {
       dMQIM$qim_cst_list_appointmentsR(),
       dMQIM$qim_cst_reportR(),
       dMQIM$qim_demographicGroupR()), {
-        shiny::req(input$list_view)
+        shiny::req(input$list_view,
+                   dMQIM$qim_cst_listR())
         if (input$list_view == "List") {
           df <- dMQIM$qim_cst_listR() %>>%
             dplyr::select(Patient, RecordNo,
@@ -615,7 +619,8 @@ qim_15plus <- function(input, output, session, dMQIM, contact) {
       dMQIM$qim_15plus_list_appointmentsR(),
       dMQIM$qim_15plus_reportR(),
       dMQIM$qim_demographicGroupR()), {
-        shiny::req(input$list_view)
+        shiny::req(input$list_view,
+                   dMQIM$qim_15plus_listR())
         if (input$list_view == "List") {
           df <- dMQIM$qim_15plus_listR() %>>%
           {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
@@ -742,7 +747,8 @@ qim_65plus <- function(input, output, session, dMQIM, contact) {
       dMQIM$qim_65plus_list_appointmentsR(),
       dMQIM$qim_65plus_reportR(),
       dMQIM$qim_demographicGroupR()), {
-        shiny::req(input$list_view)
+        shiny::req(input$list_view,
+                   dMQIM$qim_65plus_listR())
         if (input$list_view == "List") {
           df <- dMQIM$qim_65plus_listR() %>>%
           {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
@@ -835,7 +841,8 @@ qim_copd <- function(input, output, session, dMQIM, contact) {
       dMQIM$qim_copd_list_appointmentsR(),
       dMQIM$qim_copd_reportR(),
       dMQIM$qim_demographicGroupR()), {
-        shiny::req(input$list_view)
+        shiny::req(input$list_view,
+                   dMQIM$qim_copd_listR())
         if (input$list_view == "List") {
           df <- dMQIM$qim_copd_listR() %>>%
           {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,
@@ -949,7 +956,8 @@ qim_cvdRisk <- function(input, output, session, dMQIM, contact) {
       dMQIM$qim_cvdRisk_list_appointmentsR(),
       dMQIM$qim_cvdRisk_reportR(),
       dMQIM$qim_demographicGroupR()), {
-        shiny::req(input$list_view)
+        shiny::req(input$list_view,
+                   dMQIM$qim_cvdRisk_listR())
         if (input$list_view == "List") {
           df <- dMQIM$qim_cvdRisk_listR() %>>%
           {remove_demographic <- setdiff(dMQIM$qim_demographicGroupings,

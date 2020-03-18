@@ -98,6 +98,10 @@ cdm_datatable <- function(input, output, session, dMCDM) {
   ### create tag-styled datatable (or 'printable' datatable)
 
   cdm_styled_datatable <- shiny::reactive({
+    shiny::validate(
+      shiny::need(dMCDM$dM$appointments_filtered_timeR(),
+                  "No appointments in selected range")
+    )
     if (!is.null(appointments_billings_cdm()) &
         !is.null(dMCDM$dM$appointments_filtered_timeR())) {
       if (input$printcopy_view == TRUE) {

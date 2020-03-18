@@ -71,7 +71,7 @@ DailyMeasureServer <- function(input, output, session) {
 
   ##### Configuration file ######################################################
 
-  observeEvent(dM$configuration_file_pathR(), ignoreNULL = TRUE, {
+  shiny::observeEvent(dM$configuration_file_pathR(), ignoreNULL = TRUE, {
     dM$open_configuration_db()
     # connects to SQLite configuration database, using either DBI or pool
     # generates the SQLite configuration database if needed
@@ -520,7 +520,7 @@ DailyMeasureServer <- function(input, output, session) {
     hidden = TRUE # the default is that configuration files have '.' hidden prefix
   )
 
-  observeEvent(input$choose_configuration_file, ignoreNULL = TRUE, {
+  shiny::observeEvent(input$choose_configuration_file, ignoreNULL = TRUE, {
     if (!is.integer(input$choose_configuration_file)) {
       # if input$choose_configuration_file is an integer,
       # it is just the 'click' event on the filechoose button
@@ -544,7 +544,7 @@ DailyMeasureServer <- function(input, output, session) {
     hidden = TRUE
   )
 
-  observeEvent(input$create_configuration_file, ignoreNULL = TRUE, {
+  shiny::observeEvent(input$create_configuration_file, ignoreNULL = TRUE, {
     if (!is.integer(input$create_configuration_file)) {
       # if input$choose_configuration_file is an integer,
       # it is just the 'click' event on the filechoose button

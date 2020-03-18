@@ -451,7 +451,7 @@ userconfig_datatable <- function(input, output, session, dM) {
   # columns viewed in DTedit when adding/editing/removing user config
 
   # depends on modularized version of DTedit
-  observeEvent(dM$UserConfigLicenseR(), ignoreNULL = TRUE, once = TRUE, {
+  shiny::observeEvent(dM$UserConfigLicenseR(), ignoreNULL = TRUE, once = TRUE, {
     userconfig_edited <-
       callModule(DTedit::dtedit, "userconfigs",
                  thedataframe = dM$UserConfigLicenseR, # pass a ReactiveVal

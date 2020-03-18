@@ -177,7 +177,7 @@ logging_datatable <- function(input, output, session, dM) {
     hidden = TRUE # the default is that configuration files have '.' hidden prefix
   )
 
-  observeEvent(input$choose_logDB_file, ignoreNULL = TRUE, {
+  shiny::observeEvent(input$choose_logDB_file, ignoreNULL = TRUE, {
     if (!is.integer(input$choose_logDB_file)) {
       # if input$choose_configuration_file is an integer,
       # it is just the 'click' event on the filechoose button

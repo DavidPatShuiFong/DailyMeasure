@@ -220,7 +220,7 @@ admin_result_datatable <- function(input, output, session, dM) {
       label = "Action items shown"
     )
   })
-  observeEvent(input$action_chosen, {
+  shiny::observeEvent(input$action_chosen, {
     # change the filter depending on the dropdown
     dM$filter_incoming_Action <- input$action_chosen
   })
@@ -241,7 +241,7 @@ admin_result_datatable <- function(input, output, session, dM) {
                        value = Sys.Date())
     )
   })
-  observeEvent(input$actioned_chosen, {
+  shiny::observeEvent(input$actioned_chosen, {
     if (input$actioned_chosen == "Actioned before...") {
       shinyjs::enable("actioned_date")
       dM$filter_incoming_Actioned <- as.Date(input$actioned_date)
@@ -253,13 +253,13 @@ admin_result_datatable <- function(input, output, session, dM) {
              "Actioned" = {dM$filter_incoming_Actioned <- TRUE})
     }
   })
-  observeEvent(input$actioned_date, {
+  shiny::observeEvent(input$actioned_date, {
     if (input$actioned_chosen == "Actioned before...") {
       dM$filter_incoming_Actioned <- as.Date(input$actioned_date)
     }
   })
 
-  observeEvent(input$ignorePast_appt, ignoreNULL = FALSE, {
+  shiny::observeEvent(input$ignorePast_appt, ignoreNULL = FALSE, {
     # if selected, will filter out appointments older than current date
     dM$filter_incoming_ignorePast <- ("Ignore Past Appointments" %in% input$ignorePast_appt)
   })

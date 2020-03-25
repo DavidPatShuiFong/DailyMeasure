@@ -46,8 +46,10 @@ DailyMeasureUI <- function() {
                    shinydashboard::menuItemOutput("BillingsMenu"),
                    shinydashboard::menuItemOutput("CDMMenu"),
                    shinydashboard::menuItemOutput("PIPqimMenu"),
-                   # dynamically created Billigs, CDM, PIP quality improvement menu items. could be blank!
-                   # will be blank unless dMeasureQIM module/package is available
+                   shinydashboard::menuItemOutput("CustomMenu"),
+                   # dynamically created Billings, CDM, PIP quality improvement and Custom
+                   # menu items. could be blank!
+                   # e.g. will be blank unless dMeasureQIM module/package is available
                    shinydashboard::menuItem("Conditions",
                                             tabName = "conditions",
                                             icon = shiny::icon("fingerprint")),

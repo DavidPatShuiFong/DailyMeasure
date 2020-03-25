@@ -66,6 +66,10 @@ DailyMeasureServer <- function(input, output, session) {
     # needs both modules!
     dMCDM <- dMeasureCDM::dMeasureCDM$new(dM, dMBillings)
   }
+  Custommodule <- requireNamespace('dMeasureCustom', quietly = TRUE)
+  if (Custommodule) {
+    dMCustom <- dMeasureCustom::dMeasureCustom$new(dM)
+  }
 
   # read config files
 
@@ -317,6 +321,15 @@ DailyMeasureServer <- function(input, output, session) {
                        )))
     # chronic disease management table
     cdm_table_results <- callModule(cdm_datatable, "cdm_dt", dMCDM)
+  }
+
+  if (Custommodule == TRUE) {
+    output$CustomMenu <- shinydashboard::renderMenu({
+      dMCustom$shinydashboardmenuItem()
+    }) # if CDMmodule or Billingsmodule is FALSE, then output$CDMMenu will be left undefined
+    shinytabItems <- dMCustom$dMshinytabItems()
+    # chronic disease management table
+    custom_table_results <- callModule(dMCustom$cdm_datatable(), "custom_dt", dMCustom)
   }
 
   # Conditions

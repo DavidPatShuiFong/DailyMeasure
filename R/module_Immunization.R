@@ -21,7 +21,13 @@ vax_datatableUI <- function(id) {
                       labelWidth = "12em",
                       width = "20em")
       ),
-      shiny::column(2, offset = 5, # note that total 'column' width = 12
+      shiny::column(2, offset = 2,
+                    shinyWidgets::pickerInput(
+                      inputId = ns("appointment_contact_view"),
+                      choices = c("Appointment view", "Contact view"),
+                      choicesOpt = list(icon = c("fa fa-calendar-alt", "fa fa-handshake")))
+      ),
+      shiny::column(2, offset = 1, # note that total 'column' width = 12
                     shiny::uiOutput(ns("vax_item_choice"))
       )
     ),
@@ -65,7 +71,7 @@ vax_datatable <- function(input, output, session, dM) {
   vax_list <- shiny::eventReactive(
     c(dM$appointments_listR(),
       input$vax_chosen,
-      input$printcopy_view), ignoreInit = TRUE, {
+      input$printcopy_view), ignoreInit = FALSE, {
         shiny::validate(
           shiny::need(dM$appointments_listR(),
                       "No appointments in chosen range"),
@@ -83,10 +89,6 @@ vax_datatable <- function(input, output, session, dM) {
       })
 
   styled_vax_list <- shiny::reactive({
-    shiny::validate(
-      shiny::need(dM$appointments_listR(),
-                  "No appointments in selected range")
-    )
     dummy <- vax_list()
 
     if (input$printcopy_view == TRUE) {
@@ -107,7 +109,85 @@ vax_datatable <- function(input, output, session, dM) {
     }
   })
 
+  #-------------------------------------------------
+  # contact vaccination list
+
+  vax_contact_list <- shiny::eventReactive(
+    c(dM$contact_count_listR(),
+      input$vax_chosen,
+      input$printcopy_view), ignoreInit = FALSE, {
+        shiny::validate(
+          shiny::need(dM$contact_count_listR(),
+                      "No contacts in chosen range"),
+          shiny::need(nrow(dM$contact_count_listR()) > 0,
+                      "No contacts in chosen range")
+        )
+
+        vlist <- dM$list_vax(intID = dM$contact_count_listR() %>>%
+                               dplyr::pull(InternalID),
+                             lazy = TRUE,
+                             vaxtag = !input$printcopy_view,
+                             vaxtag_print = input$printcopy_view,
+                             chosen = input$vax_chosen) %>>%
+          dplyr::collect()
+        return(vlist)
+
+      })
+
+  styled_vax_contact_list <- shiny::reactive({
+    intID <- vax_contact_list() %>>% dplyr::pull(InternalID)
+
+    if (input$printcopy_view == TRUE) {
+      # printable/copyable view
+      datatable_styled(vax_contact_list() %>>%
+                         dplyr::left_join(dM$db$patients %>>%
+                                            dplyr::filter(InternalID %in% intID) %>>%
+                                            dplyr::select(InternalID, ExternalID, DOB,
+                                                          Firstname, Surname,
+                                                          HomePhone, MobilePhone) %>>%
+                                            dplyr::collect() %>>%
+                                            dplyr::mutate(DOB = as.Date(DOB), Date = Sys.Date()) %>>%
+                                            # initially Date is a dttm (POSIXt) object,
+                                            # which makes the subsequent calc_age very slow,
+                                            # and throws up warnings
+                                            dplyr::mutate(Age = dMeasure::calc_age(DOB, Date),
+                                                          Patient = paste(Firstname, Surname)),
+                                          by = "InternalID") %>>%
+                         dplyr::select(Patient, ExternalID, DOB, Age,
+                                       HomePhone, MobilePhone, vaxtag_print),
+                       colnames = c('Vaccination' = 'vaxtag_print'))
+    } else {
+      # fomantic/semantic tag view
+      datatable_styled(vax_contact_list() %>>%
+                         dplyr::left_join(dM$db$patients %>>%
+                                            dplyr::filter(InternalID %in% intID) %>>%
+                                            dplyr::select(InternalID, ExternalID, DOB,
+                                                          Firstname, Surname,
+                                                          HomePhone, MobilePhone) %>>%
+                                            dplyr::collect() %>>%
+                                            dplyr::mutate(DOB = as.Date(DOB), Date = Sys.Date()) %>>%
+                                            # initially Date is a dttm (POSIXt) object,
+                                            # which makes the subsequent calc_age very slow,
+                                            # and throws up warnings
+                                            dplyr::mutate(Age = dMeasure::calc_age(DOB, Date),
+                                                          Patient = paste(Firstname, Surname)),
+                                          by = "InternalID") %>>%
+                         dplyr::select(Patient, ExternalID, DOB, Age,
+                                       HomePhone, MobilePhone, vaxtag),
+                       escape = c(7),
+                       copyHtml5 = NULL, printButton = NULL,
+                       downloadButton = NULL, # no copy/print buttons
+                       colnames = c('Vaccination' = 'vaxtag'))
+    }
+  })
+
+  #----------------------------------------------------
+
   output$vax_table <- DT::renderDT({
-    styled_vax_list()
+    if (input$appointment_contact_view == "Appointment view") {
+      styled_vax_list()
+    } else {
+      styled_vax_contact_list()
+    }
   })
 }

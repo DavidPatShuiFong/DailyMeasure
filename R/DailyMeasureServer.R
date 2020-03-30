@@ -924,7 +924,8 @@ DailyMeasureServer <- function(input, output, session) {
                                        dplyr::pull(Fullname)), collapse = ", ")
     shinytoastr::toastr_warning(
       message = paste("A chosen user has no subscription for chosen date range.",
-                      "Dates changed (minimum one week old).", shiny::br(), shiny::br(),
+                      "Dates changed (one week, or three months, old).",
+                      shiny::br(), shiny::br(),
                       "Chosen users without subscription: ",
                       no_subscription),
       position = "bottom-left",

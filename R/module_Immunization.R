@@ -12,7 +12,7 @@ vax_datatableUI <- function(id) {
 
   shiny::tagList(
     shiny::fluidRow(
-      shiny::column(5,
+      shiny::column(4,
                     shinyWidgets::switchInput(
                       inputId = ns("printcopy_view"),
                       label = paste("<i class=\"fas fa-print\"></i>",
@@ -27,7 +27,7 @@ vax_datatableUI <- function(id) {
                       choices = c("Appointment view", "Contact view"),
                       choicesOpt = list(icon = c("fa fa-calendar-alt", "fa fa-handshake")))
       ),
-      shiny::column(2, offset = 1, # note that total 'column' width = 12
+      shiny::column(2, offset = 2, # note that total 'column' width = 12
                     shiny::uiOutput(ns("vax_item_choice"))
       )
     ),

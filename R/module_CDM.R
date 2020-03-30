@@ -21,7 +21,13 @@ cdm_datatableUI <- function(id) {
                       labelWidth = "12em",
                       width = "20em")
       ),
-      shiny::column(2, offset = 6, # note that total 'column' width = 12
+      shiny::column(2, offset = 2,
+                    shinyWidgets::pickerInput(
+                      inputId = ns("appointment_contact_view"),
+                      choices = c("Appointment view", "Contact view"),
+                      choicesOpt = list(icon = c("fa fa-calendar-alt", "fa fa-handshake")))
+      ),
+      shiny::column(2, offset = 2, # note that total 'column' width = 12
                     shiny::uiOutput(ns("cdm_item_choice"))
       )
     ),
@@ -49,9 +55,18 @@ cdm_datatable <- function(input, output, session, dMCDM) {
 
   # MBS (medicare benefits schedule) item numbers for CDM
   cdm_item <- data.frame(
-    code = c(721, 723, 732, 703, 705, 707, 2517, 2521, 2525, 2546, 2552, 2558, 2700, 2701, 2715, 2717),
-    name = c('GPMP', 'TCA', 'GPMP R/V', 'HA', 'HA', 'HA', 'DiabetesSIP', 'DiabetesSIP', 'DiabetesSIP',
-             'AsthmaSIP', 'AsthmaSIP', 'AsthmaSIP', 'MHCP', 'MHCP', 'MHCP', 'MHCP')
+    code = c(721, 92024, 92068, 723, 92025, 92069, 732, 92028, 92072,
+             703, 705, 707,
+             2517, 2521, 2525,
+             2546, 2552, 2558,
+             2700, 2701, 92112, 92124, 92113, 92125,
+             2715, 2717, 92116, 92128, 92117, 92129),
+    name = c('GPMP', 'GPMP', 'GPMP', 'TCA', 'TCA', 'TCA', 'GPMP R/V', 'GPMP R/v', 'GPMP R/V',
+             'HA', 'HA', 'HA',
+             'DiabetesSIP', 'DiabetesSIP', 'DiabetesSIP',
+             'AsthmaSIP', 'AsthmaSIP', 'AsthmaSIP',
+             'MHCP', 'MHCP', 'MHCP', 'MHCP', 'MHCP', 'MHCP',
+             'MHCP', 'MHCP', 'MHCP', 'MHCP', 'MHCP', 'MHCP')
   )
 
   cdm_item_names <- as.character(unique(cdm_item$name)) # de-factored
@@ -74,10 +89,11 @@ cdm_datatable <- function(input, output, session, dMCDM) {
   # filter to CDM item billed prior to (or on) the day of displayed appointments
   # only show most recent billed item in each category
 
-  appointments_billings_cdm <-
+  billings_cdm_list <-
     shiny::eventReactive(
       c(dMCDM$dM$appointments_filteredR(),
         input$cdm_chosen,
+        input$appointment_contact_view,
         input$printcopy_view), {
           shiny::validate(
             shiny::need(dMCDM$dMBillings$appointments_billingsR(),
@@ -86,13 +102,23 @@ cdm_datatable <- function(input, output, session, dMCDM) {
           # respond to appointments_filteredR, since that is what is changed
           # when clinician or dates is changed
 
-          appointments <- dMCDM$appointments_billings_cdm(
+          if (input$appointment_contact_view == "Appointment view") {
+            intID <- NULL
+          } else {
+            intID <- dMCDM$dM$contact_count_listR() %>>%
+              dplyr::pull(InternalID)
+          }
+
+          billings_cdm_list <- dMCDM$billings_cdm(
+            # called with 'appointment' method if intID = NULL,
+            # otherwise called with 'intID' defined
+            intID = intID, intID_Date = Sys.Date(),
             cdm_chosen = input$cdm_chosen,
             lazy = TRUE, # no need to re-calculate $appointments_billings
             screentag = !input$printcopy_view,
             screentag_print = input$printcopy_view)
 
-          return(appointments)
+          return(billings_cdm_list)
         })
 
   ### create tag-styled datatable (or 'printable' datatable)
@@ -102,31 +128,66 @@ cdm_datatable <- function(input, output, session, dMCDM) {
       shiny::need(dMCDM$dM$appointments_filtered_timeR(),
                   "No appointments in selected range")
     )
-    if (!is.null(appointments_billings_cdm()) &
+    if (!is.null(billings_cdm_list()) &
         !is.null(dMCDM$dM$appointments_filtered_timeR())) {
-      if (input$printcopy_view == TRUE) {
-        # printable/copyable view
-        datatable_styled(dMCDM$dM$appointments_filtered_timeR() %>>%
-                           dplyr::inner_join(appointments_billings_cdm(),
-                                             by = c('InternalID', 'AppointmentDate',
-                                                    'AppointmentTime', 'Provider')) %>>%
-                           dplyr::select(Patient, AppointmentDate, AppointmentTime,
-                                         Provider, cdm_print),
-                         colnames = c('Patient', 'Appointment Date', 'Appointment Time',
-                                      'Provider', 'CDM items'))
-      } else {
-        # fomantic/semantic tag view
-        datatable_styled(dMCDM$dM$appointments_filtered_timeR() %>>%
-                           dplyr::inner_join(appointments_billings_cdm(),
-                                             by = c('InternalID', 'AppointmentDate',
-                                                    'AppointmentTime', 'Provider')) %>>%
-                           dplyr::select(Patient, AppointmentDate,
-                                         AppointmentTime, Provider, cdm),
-                         colnames = c('Patient', 'Appointment Date', 'Appointment Time',
-                                      'Provider', 'CDM items'),
-                         printButton = NULL, copyHtml5 = NULL,
-                         downloadButton = NULL,  # no copy/print buttons
-                         escape = c(5)) # only interpret HTML for last column
+      if (input$appointment_contact_view == "Appointment view") {
+        cdm_list <- dMCDM$dM$appointments_filtered_timeR() %>>%
+          dplyr::inner_join(billings_cdm_list(),
+                            by = c('InternalID', 'AppointmentDate',
+                                   'AppointmentTime', 'Provider'))
+        if (input$printcopy_view == TRUE) {
+          # printable/copyable view
+          datatable_styled(cdm_list %>>%
+                             dplyr::select(Patient, AppointmentDate, AppointmentTime,
+                                           Provider, cdm_print),
+                           colnames = c('Patient', 'Appointment Date', 'Appointment Time',
+                                        'Provider', 'CDM items'))
+        } else {
+          # fomantic/semantic tag view
+          datatable_styled(cdm_list %>>%
+                             dplyr::select(Patient, AppointmentDate, AppointmentTime,
+                                           Provider, cdm),
+                           colnames = c('Patient', 'Appointment Date', 'Appointment Time',
+                                        'Provider', 'CDM items'),
+                           printButton = NULL, copyHtml5 = NULL,
+                           downloadButton = NULL,  # no copy/print buttons
+                           escape = c(5)) # only interpret HTML for last column
+        }
+      } else { # 'Contact view'
+        intID <- billings_cdm_list() %>>%
+          dplyr::pull(InternalID)
+        cdm_list <- billings_cdm_list() %>>%
+          dplyr::left_join(dMCDM$dM$db$patients %>>% # attach names etc.
+                             dplyr::filter(InternalID %in% c(intID, -1)) %>>%
+                             dplyr::select(InternalID, ExternalID, DOB,
+                                           Firstname, Surname,
+                                           HomePhone, MobilePhone) %>>%
+                             dplyr::collect() %>>%
+                             dplyr::mutate(DOB = as.Date(DOB), Date = Sys.Date()) %>>%
+                             # initially Date is a dttm (POSIXt) object,
+                             # which makes the subsequent calc_age very slow,
+                             # and throws up warnings
+                             dplyr::mutate(Age = dMeasure::calc_age(DOB, Date),
+                                           Patient = paste(Firstname, Surname)),
+                           by = "InternalID")
+        if (input$printcopy_view == TRUE) {
+          # printable/copyable view
+          datatable_styled(cdm_list %>>%
+                             dplyr::select(Patient, ExternalID, DOB, Age,
+                                           HomePhone, MobilePhone, cdm_print),
+                           colnames = c('Patient', 'ExternalID', 'DOB', 'Age',
+                                        'Home Phone', 'Mobile Phone', 'CDM items'))
+        } else {
+          # fomantic/semantic tag view
+          datatable_styled(cdm_list %>>%
+                             dplyr::select(Patient, ExternalID, DOB, Age,
+                                           HomePhone, MobilePhone, cdm),
+                           colnames = c('Patient', 'ExternalID', 'DOB', 'Age',
+                                        'Home Phone', 'Mobile Phone', 'CDM items'),
+                           printButton = NULL, copyHtml5 = NULL,
+                           downloadButton = NULL,  # no copy/print buttons
+                           escape = c(7)) # only interpret HTML for last column
+        }
       }
     }
   })

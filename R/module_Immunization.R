@@ -27,7 +27,17 @@ vax_datatableUI <- function(id) {
                       choices = c("Appointment view", "Contact view"),
                       choicesOpt = list(icon = c("fa fa-calendar-alt", "fa fa-handshake")))
       ),
-      shiny::column(2, offset = 2, # note that total 'column' width = 12
+      shiny::column(2, offset = 0,
+                    shinyWidgets::checkboxGroupButtons(
+                      inputId = ns("include_uptodate"),
+                      choiceNames = c("Include up-to-date"),
+                      choiceValues = c(1),
+                      selected = 1,
+                      status = "primary",
+                      checkIcon = list(yes = icon("ok", lib = "glyphicon"),
+                                       no = icon("remove", lib = "glyphicon"))
+                    )),
+      shiny::column(2, offset = 0, # note that total 'column' width = 12
                     shiny::uiOutput(ns("vax_item_choice"))
       )
     ),
@@ -71,7 +81,8 @@ vax_datatable <- function(input, output, session, dM) {
   vax_list <- shiny::eventReactive(
     c(dM$appointments_listR(),
       input$vax_chosen,
-      input$printcopy_view), ignoreInit = FALSE, {
+      input$include_uptodate,
+      input$printcopy_view), ignoreInit = FALSE, ignoreNULL = FALSE, {
         shiny::validate(
           shiny::need(dM$appointments_listR(),
                       "No appointments in chosen range"),
@@ -80,6 +91,7 @@ vax_datatable <- function(input, output, session, dM) {
         )
 
         vlist <- dM$list_vax(lazy = TRUE,
+                             include_uptodate = !is.null(input$include_uptodate),
                              vaxtag = !input$printcopy_view,
                              vaxtag_print = input$printcopy_view,
                              chosen = input$vax_chosen) %>>%
@@ -115,7 +127,8 @@ vax_datatable <- function(input, output, session, dM) {
   vax_contact_list <- shiny::eventReactive(
     c(dM$contact_count_listR(),
       input$vax_chosen,
-      input$printcopy_view), ignoreInit = FALSE, {
+      input$include_uptodate,
+      input$printcopy_view), ignoreInit = FALSE, ignoreNULL = FALSE, {
         shiny::validate(
           shiny::need(dM$contact_count_listR(),
                       "No contacts in chosen range"),
@@ -125,6 +138,7 @@ vax_datatable <- function(input, output, session, dM) {
 
         vlist <- dM$list_vax(intID = dM$contact_count_listR() %>>%
                                dplyr::pull(InternalID),
+                             include_uptodate = !is.null(input$include_uptodate),
                              lazy = TRUE,
                              vaxtag = !input$printcopy_view,
                              vaxtag_print = input$printcopy_view,
@@ -135,7 +149,7 @@ vax_datatable <- function(input, output, session, dM) {
       })
 
   styled_vax_contact_list <- shiny::reactive({
-    intID <- vax_contact_list() %>>% dplyr::pull(InternalID)
+    intID <- vax_contact_list() %>>% dplyr::pull(InternalID) %>>% c(-1)
 
     if (input$printcopy_view == TRUE) {
       # printable/copyable view

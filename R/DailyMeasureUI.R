@@ -21,13 +21,26 @@ DailyMeasureUI <- function() {
         icon = icon("heartbeat"),
         shiny::div(style = "display:inline-block",
                    shiny::HTML('<p style = "font-family:Verdana">  GP&thinsp;stat!</p>'))),
-      shinydashboardPlus::dropdownBlock(
-        title = "Help",
-        id = "tutorials",
-        icon = "graduation-cap",
-        badgeStatus = NULL, # no 'number' to indicate number of contents
-        shiny::actionButton("guide_overview", "Overview")
-      ),
+      left_menu = shiny::tagList(
+        shinydashboardPlus::dropdownBlock(
+          shiny::flowLayout(cellArgs = list(
+            style = "min-width: 11em; width: auto; height: auto;
+            border: 0px; padding: 0px; margin: 0px;"
+          ),
+          shiny::actionButton("guide_overview", "Overview",
+                              icon = icon("map-marked-alt", lib = "font-awesome"),
+                              width = "9em"),
+          shiny::conditionalPanel(
+            condition = 'input.sidebartabs == "appointments"',
+            shiny::actionButton("appointments_overview", "Appointments",
+                                icon = icon("calendar-check", lib = "font-awesome"),
+                                width = "9em")
+          )),
+          id = "tutorials",
+          title = "Help",
+          icon = "graduation-cap",
+          badgeStatus = NULL # no 'number' to indicate number of contents
+        )),
       shinydashboardPlus::userOutput("user")
     ),
     sidebar = shinydashboard::dashboardSidebar(

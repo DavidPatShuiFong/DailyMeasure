@@ -22,11 +22,8 @@ DailyMeasureUI <- function() {
         shiny::div(style = "display:inline-block",
                    shiny::HTML('<p style = "font-family:Verdana">  GP&thinsp;stat!</p>'))),
       left_menu = shiny::tagList(
-        shinydashboardPlus::dropdownBlock(
-          shiny::flowLayout(cellArgs = list(
-            style = "min-width: 11em; width: auto; height: auto;
-            border: 0px; padding: 0px; margin: 0px;"
-          ),
+        shinyWidgets::dropdownButton(
+          shiny::tags$h3("Introductory tutorials"),
           shiny::actionButton("guide_overview", "Overview",
                               icon = icon("map-marked-alt", lib = "font-awesome"),
                               width = "9em"),
@@ -34,13 +31,12 @@ DailyMeasureUI <- function() {
             condition = 'input.sidebartabs == "appointments"',
             shiny::actionButton("appointments_overview", "Appointments",
                                 icon = icon("calendar-check", lib = "font-awesome"),
-                                width = "9em")
-          )),
-          id = "tutorials",
-          title = "Help",
-          icon = "graduation-cap",
-          badgeStatus = NULL # no 'number' to indicate number of contents
-        )),
+                                width = "9em")),
+          circle = TRUE, status = "info", size = "sm",
+          icon = shiny::div(id = "graduation-cap-icon", shiny::icon("graduation-cap")), width = "300px",
+          tooltip = shinyWidgets::tooltipOptions(title = "Tutorials"),
+          inputId = "tutorials")
+      ),
       shinydashboardPlus::userOutput("user")
     ),
     sidebar = shinydashboard::dashboardSidebar(
@@ -199,10 +195,12 @@ DailyMeasureUI <- function() {
       )
     ),
     title = "Daily Measure",
+
     body = shinydashboard::dashboardBody(
       shinyWidgets::useSweetAlert(),
       shinytoastr::useToastr(),
       shinyjs::useShinyjs(),
+      shinyEffects::setPulse(id = "graduation-cap-icon", duration = 1, iteration = 50),
       tags$head(
         # stylesheets from fomantic.ui (a fork of semantic.ui)
         # Note that this is a specially edited version of semantic.css that is provided with fomantic

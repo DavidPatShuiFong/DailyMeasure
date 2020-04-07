@@ -14,6 +14,7 @@ sessionCount <- reactiveValues(count = 0) # initially no sessions opened
 #' @include calculation_definitions.R
 #' @include datatables_definitions.R
 #' @include utils-pipe.R
+#' @include introduction.R
 #'
 #' needed for simple encode/decode
 #' @export
@@ -77,39 +78,39 @@ DailyMeasureServer <- function(input, output, session) {
 
   shiny::observeEvent(dM$configuration_file_pathR(),
                       ignoreNULL = TRUE, {
-    dM$open_configuration_db()
-    # connects to SQLite configuration database, using either DBI or pool
-    # generates the SQLite configuration database if needed
-    # and updates old SQLite configuration databases with necessary fields
-    dM$read_configuration_db()
-    # reads server definitions, location definitions, user attributes etc..
-    if (dM$config_db$is_open()) {
-      newdb <- dM$BPdatabaseChoice_new()
-      if (newdb != dM$BPdatabaseChoice) {
-        shinytoastr::toastr_info(
-          "Opening link to Best Practice", closeButton = TRUE,
-          position = "bottom-left", title = "Best Practice database")
-        opened_base <- dM$open_emr_db()
-        if (opened_base == "None") {
-          shinytoastr::toastr_error(
-            "Error opening Best Practice database",
-            closeButton = TRUE, position = "bottom-left",
-            timeOut = 10000) # stays open ten seconds
-        } else {
-          shinytoastr::toastr_success(
-            "Linking to Best Practice database successful!",
-            closeButton = TRUE,
-            position = "bottom-left",
-            title = "Best Practice database")
-        }
-      }
-    } else {
-      shinytoastr::toastr_error(
-        "Error opening configuration file",
-        closeButton = TRUE, position = "bottom-left",
-        timeOut = 10000) # stays open ten seconds
-    }
-  })
+                        dM$open_configuration_db()
+                        # connects to SQLite configuration database, using either DBI or pool
+                        # generates the SQLite configuration database if needed
+                        # and updates old SQLite configuration databases with necessary fields
+                        dM$read_configuration_db()
+                        # reads server definitions, location definitions, user attributes etc..
+                        if (dM$config_db$is_open()) {
+                          newdb <- dM$BPdatabaseChoice_new()
+                          if (newdb != dM$BPdatabaseChoice) {
+                            shinytoastr::toastr_info(
+                              "Opening link to Best Practice", closeButton = TRUE,
+                              position = "bottom-left", title = "Best Practice database")
+                            opened_base <- dM$open_emr_db()
+                            if (opened_base == "None") {
+                              shinytoastr::toastr_error(
+                                "Error opening Best Practice database",
+                                closeButton = TRUE, position = "bottom-left",
+                                timeOut = 10000) # stays open ten seconds
+                            } else {
+                              shinytoastr::toastr_success(
+                                "Linking to Best Practice database successful!",
+                                closeButton = TRUE,
+                                position = "bottom-left",
+                                title = "Best Practice database")
+                            }
+                          }
+                        } else {
+                          shinytoastr::toastr_error(
+                            "Error opening configuration file",
+                            closeButton = TRUE, position = "bottom-left",
+                            timeOut = 10000) # stays open ten seconds
+                        }
+                      })
   invisible(dM$configuration_file_path)
   # this will also set $configuration_file_pathR
 
@@ -265,7 +266,9 @@ DailyMeasureServer <- function(input, output, session) {
     c(list(shinydashboard::tabItem(
       tabName = "appointments",
       fluidRow(column(width = 12, align = "center", h2("Appointments"))),
-      fluidRow(column(width = 12, appointments_datatableUI("appointments_dt")))
+      fluidRow(column(width = 12, shiny::div(
+        id = "appointments_datatable_wrapper", # for rintrojs
+        appointments_datatableUI("appointments_dt"))))
     )),
     list(shinydashboard::tabItem(
       tabName = "immunization",
@@ -747,97 +750,25 @@ DailyMeasureServer <- function(input, output, session) {
 
   ###### Guides ###############################################################
 
-  steps_overview_df <-
-    data.frame(element = as.character(NA),
-               intro = c(paste(shiny::tags$h4("GPstat! introduction"),
-                               shiny::br(),
-                               "A 'near-future' tool to opportunistically find opportunities",
-                               "for screening and chronic disease management.")))
-  steps_overview_df <-
-    rbind(steps_overview_df,
-          data.frame(element = "#sidebarMenu-wrapper",
-                     intro = "Main menu"))
-  steps_overview_df <-
-    rbind(steps_overview_df,
-          data.frame(element = "#sidebarMenu-wrapper",
-                     intro = paste(shiny::tags$h5(shiny::icon("calendar-check"),
-                                                  " Appointments"),
-                                   shiny::br(),
-                                   "List of appointments with currently selected",
-                                   "provider(s) and selected date range.")))
-  steps_overview_df <-
-    rbind(steps_overview_df,
-          data.frame(element = "#rightsidebar-appointment-wrapper",
-                     intro = paste(shiny::tags$h5(shiny::icon("users"),
-                                                  " Appointments"),
-                                   shiny::br(),
-                                   "Choose providers who will be seen in",
-                                   "appointments lists.")))
-  steps_overview_df <-
-    rbind(steps_overview_df,
-          data.frame(element = "#rightsidebar-date-wrapper",
-                     intro = paste(shiny::tags$h5(shiny::icon("calendar-alt"),
-                                                  " Date selection"),
-                                   shiny::br(),
-                                   "Choose date range seen in",
-                                   "appointments lists.")))
-  steps_overview_df <-
-    rbind(steps_overview_df,
-          data.frame(element = "#sidebarMenu-wrapper",
-                     intro = paste(shiny::tags$h5(shiny::icon("syringe"),
-                                                  " Immunization"),
-                                   shiny::br(),
-                                   "Immunization opportunities in currently list of",
-                                   "appointments.")))
-  steps_overview_df <-
-    rbind(steps_overview_df,
-          data.frame(element = "#sidebarMenu-wrapper",
-                     intro = paste(shiny::tags$h5(shiny::icon("x-ray"),
-                                                  " Cancer screening"),
-                                   shiny::br(),
-                                   "Cancer screening opportunities in current list of",
-                                   "of appointments.")))
-  steps_overview_df <-
-    rbind(steps_overview_df,
-          data.frame(element = "#sidebarMenu-wrapper",
-                     intro = paste(shiny::tags$h5(shiny::icon("fingerprint"),
-                                                  " Conditions"),
-                                   shiny::br(),
-                                   "Condition-specific review e.g. post-natal.")))
-  steps_overview_df <-
-    rbind(steps_overview_df,
-          data.frame(element = "#sidebarMenu-wrapper",
-                     intro = paste(shiny::tags$h5(shiny::icon("microscope"),
-                                                  " Administration"),
-                                   shiny::br(),
-                                   "Allergy, family history recording. Result management.")))
-  steps_overview_df <-
-    rbind(steps_overview_df,
-          data.frame(element = "#sidebarMenu-wrapper",
-                     intro = paste(shiny::tags$h5(shiny::icon("wrench"),
-                                                  " Configuration"),
-                                   shiny::br(),
-                                   "Best Practice server configuration.",
-                                   "Configuration file location.",
-                                   "User and subscription management. Log files.")))
-  steps_overview_df <-
-    rbind(steps_overview_df,
-          data.frame(element = "#sidebarMenu-wrapper",
-                     intro = paste(shiny::tags$h5(shiny::icon("info"),
-                                                  " About"),
-                                   shiny::br(),
-                                   "Video tutorials and other documentation.",
-                                   "Privacy statement. Licenses. Credits")))
-
-  steps_overview <- reactive(steps_overview_df)
-
   shiny::observeEvent(input$guide_overview, {
     shinyjs::addClass(selector = "body", class = "control-sidebar-open")
     # above opens the right side-bar
     # see https://stackoverflow.com/questions/
     #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
-    rintrojs::introjs(session, options = list(steps = steps_overview(),
-                                              showStepNumbers = FALSE),
+    rintrojs::introjs(session, options = list(steps = steps_overview_df(),
+                                              showStepNumbers = FALSE,
+                                              skipLabel = "Quit"),
+                      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
+  })
+
+  shiny::observeEvent(input$appointments_overview, {
+    shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+    # above opens the right side-bar
+    # see https://stackoverflow.com/questions/
+    #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
+    rintrojs::introjs(session, options = list(steps = steps_appointment_df(),
+                                              showStepNumbers = FALSE,
+                                              skipLabel = "Quit"),
                       events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
   })
 
@@ -914,22 +845,22 @@ DailyMeasureServer <- function(input, output, session) {
 
   shiny::observeEvent(dM$check_subscription_datechange_trigR(),
                       ignoreInit = TRUE, {
-    # warning generated if dates have been changed as
-    # the result of subscription check
-    no_subscription <- paste(setdiff(dM$clinicians,
-                                     dM$UserFullConfig %>>%
-                                       dplyr::filter(Fullname %in% dM$clinicians &
-                                                       !is.na(LicenseDate) &
-                                                       LicenseDate >= Sys.Date()) %>>%
-                                       dplyr::pull(Fullname)), collapse = ", ")
-    shinytoastr::toastr_warning(
-      message = paste("A chosen user has no subscription for chosen date range.",
-                      "Dates changed (one week, or three months, old).",
-                      shiny::br(), shiny::br(),
-                      "Chosen users without subscription: ",
-                      no_subscription),
-      position = "bottom-left",
-      closeButton = TRUE,
-      timeOut = 0) # keep open until closed
-  })
+                        # warning generated if dates have been changed as
+                        # the result of subscription check
+                        no_subscription <- paste(setdiff(dM$clinicians,
+                                                         dM$UserFullConfig %>>%
+                                                           dplyr::filter(Fullname %in% dM$clinicians &
+                                                                           !is.na(LicenseDate) &
+                                                                           LicenseDate >= Sys.Date()) %>>%
+                                                           dplyr::pull(Fullname)), collapse = ", ")
+                        shinytoastr::toastr_warning(
+                          message = paste("A chosen user has no subscription for chosen date range.",
+                                          "Dates changed (one week, or three months, old).",
+                                          shiny::br(), shiny::br(),
+                                          "Chosen users without subscription: ",
+                                          no_subscription),
+                          position = "bottom-left",
+                          closeButton = TRUE,
+                          timeOut = 0) # keep open until closed
+                      })
 }

@@ -140,6 +140,9 @@ https://cran.r-project.org/web/packages/shinycssloaders/
 pool (optional package, referenced through dbConnection which is MIT licensed)
 https://cran.r-project.org/web/packages/pool/
 
+emo (emoticons)
+https://github.com/hadley/emo
+
 GNU Affero General Public License (AGPL v3)
 ===========================================
 

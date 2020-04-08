@@ -161,52 +161,54 @@ DailyMeasureUI <- function() {
           shiny::icon("handshake"),
           value = "rightsidebar-contact",
           shiny::br(), shiny::h4("Contact details"), shiny::br(),
-          shiny::wellPanel(
-            shinyWidgets::pickerInput(
-              inputId = "contact_type",
-              label = "Contact types",
-              choices = c("Appointments", "Visits", "Services"),
-              selected = c("Services"),
-              options = list(style = "btn-primary",
-                             `actions-box` = TRUE),
-              multiple = TRUE
-            ),
-            shinyWidgets::sliderTextInput(
-              inputId = "min_contact",
-              label = "Minimum number of contacts",
-              choices = c(1:10),
-              grid = TRUE,
-              selected = 1
-            )
-          ),
-          shiny::wellPanel(
-            shinyWidgets::pickerInput(
-              inputId = "appointment_status",
-              label = "Appointment status shown",
-              choices = c("Booked", "Waiting", "With doctor",
-                          "At billing", "Invoiced", "Completed"),
-              selected = c("With doctor", "At billing", "Invoiced", "Completed"),
-              # all 'completed' choices initially selected
-              options = list(style = "btn-primary",
-                             `actions-box` = TRUE),
-              multiple = TRUE),
-            shinyWidgets::pickerInput(
-              inputId = "visit_type",
-              label = "Visit types shown",
-              choices = c("Surgery", "Home", "Non Visit", "Hospital",
-                          "RACF", "Telephone",
-                          "SMS", "Email", "Locum Service", "Out of Office",
-                          "Other", "Hostel",
-                          "Telehealth"),
-              selected = c("Surgery", "Home", "Hospital",
-                           "RACF", "Locum Service", "Out of Office",
-                           "Hostel", "Telehealth"),
-              # consult choices initially selected
-              options = list(style = "btn-primary",
-                             `actions-box` = TRUE),
-              multiple = TRUE
-            )
-          )
+          shiny::div(id = "contact_type-wrapper",
+                     shiny::wellPanel(
+                       shinyWidgets::pickerInput(
+                         inputId = "contact_type",
+                         label = "Contact types",
+                         choices = c("Appointments", "Visits", "Services"),
+                         selected = c("Services"),
+                         options = list(style = "btn-primary",
+                                        `actions-box` = TRUE),
+                         multiple = TRUE
+                       ),
+                       shinyWidgets::sliderTextInput(
+                         inputId = "min_contact",
+                         label = "Minimum number of contacts",
+                         choices = c(1:10),
+                         grid = TRUE,
+                         selected = 1
+                       )
+                     )),
+          shiny::div(id = "appointment_visit-wrapper",
+                     shiny::wellPanel(
+                       shinyWidgets::pickerInput(
+                         inputId = "appointment_status",
+                         label = "Appointment status shown",
+                         choices = c("Booked", "Waiting", "With doctor",
+                                     "At billing", "Invoiced", "Completed"),
+                         selected = c("With doctor", "At billing", "Invoiced", "Completed"),
+                         # all 'completed' choices initially selected
+                         options = list(style = "btn-primary",
+                                        `actions-box` = TRUE),
+                         multiple = TRUE),
+                       shinyWidgets::pickerInput(
+                         inputId = "visit_type",
+                         label = "Visit types shown",
+                         choices = c("Surgery", "Home", "Non Visit", "Hospital",
+                                     "RACF", "Telephone",
+                                     "SMS", "Email", "Locum Service", "Out of Office",
+                                     "Other", "Hostel",
+                                     "Telehealth"),
+                         selected = c("Surgery", "Home", "Hospital",
+                                      "RACF", "Locum Service", "Out of Office",
+                                      "Hostel", "Telehealth"),
+                         # consult choices initially selected
+                         options = list(style = "btn-primary",
+                                        `actions-box` = TRUE),
+                         multiple = TRUE
+                       )
+                     ))
         )
       )
     ),

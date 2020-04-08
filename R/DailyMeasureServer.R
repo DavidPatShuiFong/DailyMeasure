@@ -273,7 +273,9 @@ DailyMeasureServer <- function(input, output, session) {
     list(shinydashboard::tabItem(
       tabName = "immunization",
       fluidRow(column(width = 12, align = "center", h2("Immunization"))),
-      fluidRow(column(width = 12, vax_datatableUI("vax_dt")))
+      fluidRow(column(width = 12, shiny::div(
+        id = "immunization_datatable_wrapper", # for rintrojs
+        vax_datatableUI("vax_dt"))))
     )),
     list(shinydashboard::tabItem(
       tabName = "cancerscreen",
@@ -767,6 +769,17 @@ DailyMeasureServer <- function(input, output, session) {
     # see https://stackoverflow.com/questions/
     #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
     rintrojs::introjs(session, options = list(steps = steps_appointment_df(),
+                                              showStepNumbers = FALSE,
+                                              skipLabel = "Quit"),
+                      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
+  })
+
+  shiny::observeEvent(input$immunization_overview, {
+    shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+    # above opens the right side-bar
+    # see https://stackoverflow.com/questions/
+    #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
+    rintrojs::introjs(session, options = list(steps = steps_immunization_df(),
                                               showStepNumbers = FALSE,
                                               skipLabel = "Quit"),
                       events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))

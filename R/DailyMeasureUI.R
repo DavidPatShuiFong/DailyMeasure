@@ -42,6 +42,11 @@ DailyMeasureUI <- function() {
                                    condition = 'input.sidebartabs == "appointments"',
                                    shiny::actionButton("appointments_overview", "Appointments",
                                                        icon = icon("calendar-check", lib = "font-awesome"),
+                                                       width = "9em")),
+                                 shiny::conditionalPanel(
+                                   condition = 'input.sidebartabs == "immunization"',
+                                   shiny::actionButton("immunization_overview", "Immunization",
+                                                       icon = icon("syringe", lib = "font-awesome"),
                                                        width = "9em")))),
           circle = TRUE, status = "info", size = "sm",
           icon = shiny::div(id = "graduation-cap-icon", shiny::icon("graduation-cap")), width = "300px",

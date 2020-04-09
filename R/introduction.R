@@ -1,19 +1,24 @@
 # steps for rintrojs
 
-steps_choose_provider_date_df <- function() {
+#' rintrojs steps for choosing provider and date
+#'
+#' @title steps_choose_clinician_date_df
+#' @description returns a dataframe of rintrojs steps
+#' @export
+steps_choose_clinician_date_df <- function() {
 
   steps_df <-
     data.frame(element = "#rightsidebar-appointment-wrapper",
                intro = paste(shiny::tags$h5(shiny::icon("users"),
                                             " Appointments"),
                              shiny::br(),
-                             "Choose providers who will be seen in",
-                             "appointments lists.",
+                             "Choose clinicians who will be seen in",
+                             "appointment or contact lists.",
                              shiny::br(), shiny::br(),
-                             "Provider list can be restricted by",
+                             "Clinician list can be restricted by",
                              "practice location.",
                              shiny::br(), shiny::br(),
-                             "Providers can be",
+                             "Clinicians can be",
                              "assigned practice location(s) in",
                              shiny::icon("wrench"),
                              "Configuration - User Settings and Permissions.",
@@ -31,6 +36,11 @@ steps_choose_provider_date_df <- function() {
   return(steps_df)
 }
 
+#' rintrojs steps for choosing contact specificatioin
+#'
+#' @title steps_choose_contact_details_df
+#' @description returns a dataframe of rintrojs steps
+#' @export
 steps_choose_contact_details_df <- function() {
   steps_df <- data.frame(element = "#contact_type-wrapper",
                          intro = paste(shiny::tags$h5(shiny::icon("handshake"),
@@ -88,6 +98,116 @@ steps_choose_contact_details_df <- function() {
   return(steps_df)
 }
 
+#' rintrojs steps for describing datatable view helpers
+#'
+#' @title steps_datatable_helpers
+#' @description returns a dataframe of rintrojs steps
+#'
+#' steps for a typical datatable display which includes
+#' 1. column visibility
+#' 2. print/copy view
+#' 3. Copy button (only print/copy view)
+#' 4. Download/export button (only print/copy view)
+#' 5. search dialog
+#'
+#' @param element_name name of the highlighted table element (with 'extra' print/copy view toggle)
+#' @export
+steps_datatable_helpers <- function(element_name) {
+
+  steps_df <- data.frame(element = element_name,
+                         intro = c(paste(shiny::tags$h4("Column visibility"),
+                                         shiny::br(),
+                                         "You can show/hide columns!", shiny::br(), shiny::br(),
+                                         "Click the 'Column visibility'", shiny::br(),
+                                         "button at the bottom-right", shiny::br(),
+                                         "of this table view.", shiny::br(), shiny::br(),
+                                         "You can even try it now",
+                                         emo::ji("smile"), "!")),
+                         position = "auto") %>>%
+    rbind(data.frame(element = element_name,
+                     intro = c(paste(shiny::tags$h4("Print and Copy View"),
+                                     shiny::br(),
+                                     shiny::icon("print"), shiny::icon("copy"), shiny::br(),
+                                     "Top-left of the table view.",
+                                     shiny::br(), shiny::br(),
+                                     "Enables copying, printing and", shiny::br(),
+                                     "download/export", shiny::br(),
+                                     "to Excel/PDF/'CSV'.", shiny::br(), shiny::br(),
+                                     "Copy/Print/Download buttons", shiny::br(),
+                                     "will be visible at the bottom-", shiny::br(),
+                                     "right if 'Print and Copy'", shiny::br(),
+                                     "is turned ON.", shiny::br(), shiny::br(),
+                                     "You can even try it now",
+                                     emo::ji("smile"), "!")),
+                     position = "auto")) %>>%
+    rbind(data.frame(element = element_name,
+                     intro = c(paste(shiny::tags$h4("Copy"),
+                                     shiny::br(),
+                                     shiny::tags$em("(", shiny::icon("print"), shiny::icon("copy"),
+                                                    "Print and Copy view only)"),
+                                     shiny::br(), shiny::br(),
+                                     "You can copy the table", shiny::br(),
+                                     "into the clipboard.", shiny::br(), shiny::br(),
+                                     "Click the 'Copy'", shiny::br(),
+                                     "button at the bottom-right", shiny::br(),
+                                     "of this table view.", shiny::br(), shiny::br(),
+                                     "You can try it now",
+                                     emo::ji("smile"), "!",
+                                     shiny::br(), shiny::br(),
+                                     shiny::tags$em("(", shiny::icon("print"), shiny::icon("copy"),
+                                                    "Print and Copy view only)"))),
+                     position = "auto")) %>>%
+    rbind(data.frame(element = element_name,
+                     intro = c(paste(shiny::tags$h4("Print"),
+                                     shiny::br(),
+                                     shiny::tags$em("(", shiny::icon("print"), shiny::icon("copy"),
+                                                    "Print and Copy view only)"),
+                                     shiny::br(), shiny::br(),
+                                     "You can print the table.", shiny::br(), shiny::br(),
+                                     "Click the 'Print'", shiny::br(),
+                                     "button at the bottom-right", shiny::br(),
+                                     "of this table view.", shiny::br(), shiny::br(),
+                                     "You can try it now",
+                                     emo::ji("smile"), "!",
+                                     shiny::br(), shiny::br(),
+                                     shiny::tags$em("(", shiny::icon("print"), shiny::icon("copy"),
+                                                    "Print and Copy view only)"))),
+                     position = "auto")) %>>%
+    rbind(data.frame(element = element_name,
+                     intro = c(paste(shiny::tags$h4("Download/Export"),
+                                     shiny::br(),
+                                     shiny::tags$em("(", shiny::icon("print"), shiny::icon("copy"),
+                                                    "Print and Copy view only)"),
+                                     shiny::br(), shiny::br(),
+                                     "You can download the table", shiny::br(),
+                                     "to Excel, PDF or 'CSV'.", shiny::br(), shiny::br(),
+                                     "Click the 'Download'", shiny::br(),
+                                     "button at the bottom-right", shiny::br(),
+                                     "of this table view.", shiny::br(), shiny::br(),
+                                     "Note that 'Column Visibility'", shiny::br(),
+                                     "changes which columns are", shiny::br(),
+                                     "downloaded/exported.", shiny::br(), shiny::br(),
+                                     "You can try it now",
+                                     emo::ji("smile"), "!",
+                                     shiny::br(), shiny::br(),
+                                     shiny::tags$em("(", shiny::icon("print"), shiny::icon("copy"),
+                                                    "Print and Copy view only)"))),
+                     position = "auto")) %>>%
+    rbind(data.frame(element = element_name,
+                     intro = c(paste(shiny::tags$h4("Search"),
+                                     shiny::br(),
+                                     "You can search the table", shiny::br(),
+                                     "for names, numbers etc..", shiny::br(),shiny::br(),
+                                     "Use the 'Search'", shiny::br(),
+                                     "dialog at the top-right", shiny::br(),
+                                     "of this table view.", shiny::br(), shiny::br(),
+                                     "You can try it now",
+                                     emo::ji("smile"), "!")),
+                     position = "auto"))
+
+  return(steps_df)
+}
+
 steps_appointment_df <- function() {
   steps_df <-
     data.frame(element = as.character(NA),
@@ -96,7 +216,7 @@ steps_appointment_df <- function() {
                                "View appointment list/status for chosen clinicians and dates.")),
                position = "auto",
                stringsAsFactors = FALSE) %>>%
-    rbind(steps_choose_provider_date_df()) %>>%
+    rbind(steps_choose_clinician_date_df()) %>>%
     rbind(data.frame(element = "#appointments_datatable_wrapper",
                      intro = c(paste(shiny::tags$h4("Appointments view"),
                                      shiny::br(),
@@ -181,7 +301,7 @@ steps_immunization_df <- function() {
                                "or historical Contacts", shiny::icon("handshake"), ".")),
                position = "auto",
                stringsAsFactors = FALSE) %>>%
-    rbind(steps_choose_provider_date_df()) %>>%
+    rbind(steps_choose_clinician_date_df()) %>>%
     rbind(data.frame(element = "#immunization_datatable_wrapper",
                      intro = c(paste(shiny::tags$h4("Immunizations view"),
                                      shiny::br(),
@@ -201,96 +321,7 @@ steps_immunization_df <- function() {
                                      shiny::strong("ExternalID"), "(Patient ID), and ",
                                      shiny::strong("telephone contact details"))),
                      position = "auto")) %>>%
-    rbind(data.frame(element = "#immunization_datatable_wrapper",
-                     intro = c(paste(shiny::tags$h4("Column visibility"),
-                                     shiny::br(),
-                                     "You can show/hide columns!", shiny::br(), shiny::br(),
-                                     "Click the 'Column visibility'", shiny::br(),
-                                     "button at the bottom-right", shiny::br(),
-                                     "of this table view.", shiny::br(), shiny::br(),
-                                     "You can even try it now",
-                                     emo::ji("smile"), "!")),
-                     position = "auto")) %>>%
-    rbind(data.frame(element = "#immunization_datatable_wrapper",
-                     intro = c(paste(shiny::tags$h4("Print and Copy View"),
-                                     shiny::br(),
-                                     shiny::icon("print"), shiny::icon("copy"), shiny::br(),
-                                     "Top-left of the table view.",
-                                     shiny::br(), shiny::br(),
-                                     "Enables copying, printing and", shiny::br(),
-                                     "download/export", shiny::br(),
-                                     "to Excel/PDF/'CSV'.", shiny::br(), shiny::br(),
-                                     "Copy/Print/Download buttons", shiny::br(),
-                                     "will be visible at the bottom-", shiny::br(),
-                                     "right if 'Print and Copy'", shiny::br(),
-                                     "is turned ON.", shiny::br(), shiny::br(),
-                                     "You can even try it now",
-                                     emo::ji("smile"), "!")),
-                     position = "auto")) %>>%
-    rbind(data.frame(element = "#immunization_datatable_wrapper",
-                     intro = c(paste(shiny::tags$h4("Copy"),
-                                     shiny::br(),
-                                     shiny::tags$em("(", shiny::icon("print"), shiny::icon("copy"),
-                                                    "Print and Copy view only)"),
-                                     shiny::br(), shiny::br(),
-                                     "You can copy the table", shiny::br(),
-                                     "into the clipboard.", shiny::br(), shiny::br(),
-                                     "Click the 'Copy'", shiny::br(),
-                                     "button at the bottom-right", shiny::br(),
-                                     "of this table view.", shiny::br(), shiny::br(),
-                                     "You can try it now",
-                                     emo::ji("smile"), "!",
-                                     shiny::br(), shiny::br(),
-                                     shiny::tags$em("(", shiny::icon("print"), shiny::icon("copy"),
-                                                    "Print and Copy view only)"))),
-                     position = "auto")) %>>%
-    rbind(data.frame(element = "#immunization_datatable_wrapper",
-                     intro = c(paste(shiny::tags$h4("Print"),
-                                     shiny::br(),
-                                     shiny::tags$em("(", shiny::icon("print"), shiny::icon("copy"),
-                                                    "Print and Copy view only)"),
-                                     shiny::br(), shiny::br(),
-                                     "You can print the table.", shiny::br(), shiny::br(),
-                                     "Click the 'Print'", shiny::br(),
-                                     "button at the bottom-right", shiny::br(),
-                                     "of this table view.", shiny::br(), shiny::br(),
-                                     "You can try it now",
-                                     emo::ji("smile"), "!",
-                                     shiny::br(), shiny::br(),
-                                     shiny::tags$em("(", shiny::icon("print"), shiny::icon("copy"),
-                                                    "Print and Copy view only)"))),
-                     position = "auto")) %>>%
-    rbind(data.frame(element = "#immunization_datatable_wrapper",
-                     intro = c(paste(shiny::tags$h4("Download/Export"),
-                                     shiny::br(),
-                                     shiny::tags$em("(", shiny::icon("print"), shiny::icon("copy"),
-                                                    "Print and Copy view only)"),
-                                     shiny::br(), shiny::br(),
-                                     "You can download the table", shiny::br(),
-                                     "to Excel, PDF or 'CSV'.", shiny::br(), shiny::br(),
-                                     "Click the 'Download'", shiny::br(),
-                                     "button at the bottom-right", shiny::br(),
-                                     "of this table view.", shiny::br(), shiny::br(),
-                                     "Note that 'Column Visibility'", shiny::br(),
-                                     "changes which columns are", shiny::br(),
-                                     "downloaded/exported.", shiny::br(), shiny::br(),
-                                     "You can try it now",
-                                     emo::ji("smile"), "!",
-                                     shiny::br(), shiny::br(),
-                                     shiny::tags$em("(", shiny::icon("print"), shiny::icon("copy"),
-                                                    "Print and Copy view only)"))),
-                     position = "auto")) %>>%
-    rbind(data.frame(element = "#immunization_datatable_wrapper",
-                     intro = c(paste(shiny::tags$h4("Search"),
-                                     shiny::br(),
-                                     "You can search the table", shiny::br(),
-                                     "for names, numbers etc..", shiny::br(),shiny::br(),
-                                     "Use the 'Search'", shiny::br(),
-                                     "dialog at the top-right", shiny::br(),
-                                     "of this table view.", shiny::br(), shiny::br(),
-                                     "You can try it now",
-                                     emo::ji("smile"), "!")),
-                     position = "auto")) %>>%
+    rbind(steps_datatable_helpers("#immunization_datatable_wrapper")) %>>%
     rbind(data.frame(element = "#immunization_datatable_wrapper",
                      intro = c(paste(shiny::tags$h4("Vaccination items shown"),
                                      shiny::br(),
@@ -342,6 +373,49 @@ steps_immunization_df <- function() {
   return(steps_df)
 }
 
+steps_cancerscreen_df <- function() {
+  steps_df <-
+    data.frame(element = as.character(NA),
+               intro = c(paste(shiny::tags$h4("GPstat! Cancer screening"),
+                               shiny::br(),
+                               "View cancer screening opportunities for chosen clinicians and dates.",
+                               shiny::br(), shiny::br(),
+                               "Immunization opportunities can be",
+                               "viewed for (usually future)",
+                               "Appointments.")),
+               position = "auto",
+               stringsAsFactors = FALSE) %>>%
+    rbind(steps_choose_clinician_date_df()) %>>%
+    rbind(data.frame(element = "#cancerscreen_datatable_wrapper",
+                     intro = c(paste(shiny::tags$h4("Cancer screening view"),
+                                     shiny::br(),
+                                     "List of cancer screening opportunities,",
+                                     "according to currently selected clinicians and dates.",
+                                     shiny::br(), shiny::br(),
+                                     "By default shows : ", shiny::strong("Patient"), "(name),",
+                                     shiny::strong("DOB/Age"), " and ",
+                                     shiny::strong("Screening"), " list.",
+                                     shiny::br(), shiny::br(),
+                                     "Also",
+                                     "shows Appointment details e.g.", shiny::strong("AppointmentTime"),
+                                     "and", shiny::strong("Provider"), " (clinician).")),
+                     position = "auto")) %>>%
+    rbind(steps_datatable_helpers("#cancerscreen_datatable_wrapper")) %>>%
+    rbind(data.frame(element = "#cancerscreen_datatable_wrapper",
+                     intro = c(paste(shiny::tags$h4("Cancer screen items shown"),
+                                     shiny::br(),
+                                     shiny::icon("gear"), shiny::br(),
+                                     "Top-right of the table view.",
+                                     shiny::br(), shiny::br(),
+                                     "Choose cancer screening items to display.",
+                                     shiny::br(), shiny::br(),
+                                     "You can try it now",
+                                     emo::ji("smile"), "!")),
+                     position = "auto"))
+
+  return(steps_df)
+}
+
 steps_overview_df <- function() {
   steps_df <-
     data.frame(element = as.character(NA),
@@ -360,7 +434,7 @@ steps_overview_df <- function() {
                                    "List of appointments with currently selected",
                                    "provider(s) and selected date range."),
                      position = "auto")) %>>%
-    rbind(steps_choose_provider_date_df()) %>>%
+    rbind(steps_choose_clinician_date_df()) %>>%
     rbind(data.frame(element = "#sidebarMenu-wrapper",
                      intro = paste(shiny::tags$h5(shiny::icon("syringe"),
                                                   " Immunization"),

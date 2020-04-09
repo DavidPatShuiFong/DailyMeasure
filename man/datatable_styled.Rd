@@ -13,10 +13,10 @@ datatable_styled(
   copyHtml5 = list(extend = "copyHtml5", exportOptions = list(columns = ":visible")),
   printButton = list(extend = "print", exportOptions = list(columns = ":visible")),
   downloadButton = list(extend = "collection", buttons = list(list(extend = "csvHtml5",
-    exportOptions = list(columns = ":visible"), filename = "DailyMeasure"), list(extend =
-    "excel", exportOptions = list(columns = ":visible"), filename = "DailyMeasure"),
-    list(extend = "pdf", exportOptions = list(columns = ":visible"), filename =
-    "DailyMeasure")), text = "Download", collectionLayout = "fixed"),
+    exportOptions = list(columns = ":visible"), filename = "GPstat"), list(extend =
+    "excel", exportOptions = list(columns = ":visible"), filename = "GPstat"), list(extend
+    = "pdf", exportOptions = list(columns = ":visible"), filename = "GPstat")), text =
+    "Download", collectionLayout = "fixed"),
   drawCallback = DT::JS(semantic_popupJS),
   `responsive-resize` = DT::JS(semantic_popupJS),
  

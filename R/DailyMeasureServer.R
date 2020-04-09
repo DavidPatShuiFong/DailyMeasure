@@ -280,7 +280,9 @@ DailyMeasureServer <- function(input, output, session) {
     list(shinydashboard::tabItem(
       tabName = "cancerscreen",
       fluidRow(column(width = 12, align = "center", h2("Cancer screening"))),
-      fluidRow(column(width = 12, cancerscreen_datatableUI("cancerscreen_dt")))
+      fluidRow(column(width = 12, shiny::div(
+        id = "cancerscreen_datatable_wrapper",
+        cancerscreen_datatableUI("cancerscreen_dt"))))
     )))
 
   # no PIP Quality Improvement Measure, billings, or CDM tabs, these are inserted dynamically
@@ -305,7 +307,9 @@ DailyMeasureServer <- function(input, output, session) {
                        list(shinydashboard::tabItem(
                          tabName = "billings",
                          fluidRow(column(width = 12, align = "center", h2("Billings"))),
-                         fluidRow(column(width = 12, billings_datatableUI("billings_dt")))
+                         fluidRow(column(width = 12, shiny::div(
+                           id = "billings_datatable_wrapper",
+                           billings_datatableUI("billings_dt"))))
                        )))
     # call the module to generate the table
     callModule(billings_datatable, "billings_dt", dMBillings)
@@ -321,8 +325,9 @@ DailyMeasureServer <- function(input, output, session) {
                          tabName = "cdm",
                          shiny::fluidRow(column(width = 12, align = "center",
                                                 h2("Chronic Disease Management items"))),
-                         shiny::fluidRow(column(width = 12,
-                                                cdm_datatableUI("cdm_dt")))
+                         shiny::fluidRow(column(width = 12, shiny::div(
+                           id = "cdm_datatable_wrapper",
+                           cdm_datatableUI("cdm_dt"))))
                        )))
     # chronic disease management table
     cdm_table_results <- callModule(cdm_datatable, "cdm_dt", dMCDM)
@@ -780,6 +785,38 @@ DailyMeasureServer <- function(input, output, session) {
     # see https://stackoverflow.com/questions/
     #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
     rintrojs::introjs(session, options = list(steps = steps_immunization_df(),
+                                              showStepNumbers = FALSE,
+                                              skipLabel = "Quit"),
+                      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
+  })
+
+  shiny::observeEvent(input$cancerscreen_overview, {
+    shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+    # above opens the right side-bar
+    # see https://stackoverflow.com/questions/
+    #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
+    rintrojs::introjs(session, options = list(steps = steps_cancerscreen_df(),
+                                              showStepNumbers = FALSE,
+                                              skipLabel = "Quit"),
+                      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
+  })
+
+  shiny::observeEvent(input$billings_overview, {
+    shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+    # above opens the right side-bar
+    # see https://stackoverflow.com/questions/
+    #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
+    rintrojs::introjs(session, options = list(steps = dMeasureBillings::steps_introduction_df("#billings_datatable_wrapper"),
+                                              showStepNumbers = FALSE,
+                                              skipLabel = "Quit"),
+                      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
+  })
+  shiny::observeEvent(input$cdm_overview, {
+    shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+    # above opens the right side-bar
+    # see https://stackoverflow.com/questions/
+    #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
+    rintrojs::introjs(session, options = list(steps = dMeasureCDM::steps_introduction_df("#cdm_datatable_wrapper"),
                                               showStepNumbers = FALSE,
                                               skipLabel = "Quit"),
                       events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))

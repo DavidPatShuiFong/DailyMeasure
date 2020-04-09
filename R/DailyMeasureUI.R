@@ -47,7 +47,22 @@ DailyMeasureUI <- function() {
                                    condition = 'input.sidebartabs == "immunization"',
                                    shiny::actionButton("immunization_overview", "Immunization",
                                                        icon = icon("syringe", lib = "font-awesome"),
-                                                       width = "9em")))),
+                                                       width = "9em")),
+                                 shiny::conditionalPanel(
+                                   condition = 'input.sidebartabs == "cancerscreen"',
+                                   shiny::actionButton("cancerscreen_overview", "Cancer screening",
+                                                       icon = icon("x-ray", lib = "font-awesome"),
+                                                       width = "12em")),
+                                 shiny::conditionalPanel(
+                                   condition = 'input.sidebartabs == "billings"',
+                                   shiny::actionButton("billings_overview", "Billings",
+                                                       icon = icon("receipt", lib = "font-awesome"),
+                                                       width = "9em")),
+                                 shiny::conditionalPanel(
+                                   condition = 'input.sidebartabs == "cdm"',
+                                   shiny::actionButton("cdm_overview", "Chronic Disease",
+                                                       icon = icon("file-medical-alt", lib = "font-awesome"),
+                                                       width = "12em")))),
           circle = TRUE, status = "info", size = "sm",
           icon = shiny::div(id = "graduation-cap-icon", shiny::icon("graduation-cap")), width = "300px",
           tooltip = shinyWidgets::tooltipOptions(title = "Tutorials"),

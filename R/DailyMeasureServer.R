@@ -375,8 +375,7 @@ DailyMeasureServer <- function(input, output, session) {
                          tabName = "qimAppt",
                          shiny::fluidRow(column(width = 12, align = "center",
                                                 h2("Quality Improvement Measure Appointment View"))),
-                         shiny::fluidRow(column(width = 12,
-                                                qim_UI("qimAppt")))
+                         shiny::fluidRow(column(width = 12, qim_UI("qimAppt")))
                        ))
     )
     qim_results_rept <- callModule(qim, "qimRept", dMQIMrept, contact = TRUE) # 'report' view
@@ -413,7 +412,8 @@ DailyMeasureServer <- function(input, output, session) {
   shinytabItems <- c(shinytabItems,
                      list(shinydashboard::tabItem(
                        tabName = "conditions",
-                       fluidRow(column(width = 12, conditions_UI("conditions_dt")))
+                       shiny::fluidRow(column(width = 12,
+                                       conditions_UI("conditions_dt")))
                      )),
                      list(shinydashboard::tabItem(
                        tabName = "administration",
@@ -821,6 +821,62 @@ DailyMeasureServer <- function(input, output, session) {
                                               skipLabel = "Quit"),
                       events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
   })
+  shiny::observeEvent(input$conditions_overview, {
+    shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+    # above opens the right side-bar
+    # see https://stackoverflow.com/questions/
+    #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
+    rintrojs::introjs(session, options = list(steps =
+                                                steps_conditions_df(
+                                                  eval(parse(text =
+                                                               paste0("input$`",
+                                                                      shiny::NS("conditions_dt")
+                                                                      ("tab_conditions"),
+                                                                      "`")))),
+                                              showStepNumbers = FALSE,
+                                              skipLabel = "Quit"),
+                      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
+  })
+  shiny::observeEvent(input$qimRept_overview, {
+    shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+    # above opens the right side-bar
+    # see https://stackoverflow.com/questions/
+    #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
+    rintrojs::introjs(session, options = list(steps =
+                                                dMeasureQIM::steps_introduction_df(
+                                                  paste0("#",
+                                                         shiny::NS("qimRept")
+                                                         ("qim_datatable_wrapper")),
+                                                  eval(parse(text =
+                                                               paste0("input$`",
+                                                                      shiny::NS("qimRept")
+                                                                      ("tab_qim"),
+                                                                      "`"))),
+                                                  appointment_view = FALSE),
+                                              showStepNumbers = FALSE,
+                                              skipLabel = "Quit"),
+                      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
+  })
+  shiny::observeEvent(input$qimAppt_overview, {
+    shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+    # above opens the right side-bar
+    # see https://stackoverflow.com/questions/
+    #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
+    rintrojs::introjs(session, options = list(steps =
+                                                dMeasureQIM::steps_introduction_df(
+                                                  paste0("#",
+                                                         shiny::NS("qimAppt")
+                                                         ("qim_datatable_wrapper")),
+                                                  eval(parse(text =
+                                                               paste0("input$`",
+                                                                      shiny::NS("qimAppt")
+                                                                      ("tab_qim"),
+                                                                      "`"))),
+                                                  appointment_view = TRUE),
+                                              showStepNumbers = FALSE,
+                                              skipLabel = "Quit"),
+                      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
+  })
 
   ###### Render user information on top-right header ##########################
   output$user <- shinydashboardPlus::renderUser({
@@ -905,7 +961,7 @@ DailyMeasureServer <- function(input, output, session) {
                                                            dplyr::pull(Fullname)), collapse = ", ")
                         shinytoastr::toastr_warning(
                           message = paste("A chosen user has no subscription for chosen date range.",
-                                          "Dates changed (one week, or three months, old).",
+                                          "Dates changed (at least one week to four months, old).",
                                           shiny::br(), shiny::br(),
                                           "Chosen users without subscription: ",
                                           no_subscription),

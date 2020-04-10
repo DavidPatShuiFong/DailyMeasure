@@ -12,7 +12,7 @@ conditions_UI <- function(id) {
 
   shiny::tagList(
     shinydashboard::tabBox(
-      id = "tab_conditions",
+      id = ns("tab_conditions"),
       title = "Conditions",
       width = 12,
       height = "85vh",
@@ -20,7 +20,8 @@ conditions_UI <- function(id) {
         title = "Post-natal",
         width = 12,
         shiny::br(),
-        conditions_postnatal_datatableUI(ns("post_natal"))
+        shiny::div(id = "postnatal_datatable_wrapper",
+                   conditions_postnatal_datatableUI(ns("post_natal")))
       )
     )
   )

@@ -6,6 +6,9 @@
 \usage{
 steps_choose_clinician_date_df()
 }
+\value{
+a dataframe of rintrojs steps
+}
 \description{
 returns a dataframe of rintrojs steps
 }

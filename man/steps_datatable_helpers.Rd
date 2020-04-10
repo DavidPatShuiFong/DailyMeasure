@@ -4,10 +4,15 @@
 \alias{steps_datatable_helpers}
 \title{steps_datatable_helpers}
 \usage{
-steps_datatable_helpers(element_name)
+steps_datatable_helpers(element_name, print_copy_view = TRUE)
 }
 \arguments{
 \item{element_name}{name of the highlighted table element (with 'extra' print/copy view toggle)}
+
+\item{print_copy_view}{include 'Print and Copy View' instructions (not all datatables have this)}
+}
+\value{
+returns a datatable of rintrojs steps
 }
 \description{
 returns a dataframe of rintrojs steps

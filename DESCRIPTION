@@ -1,7 +1,7 @@
 Package: DailyMeasure
 Type: Package
 Title: Case-finds from patient appointment list
-Version: 1.5.2
+Version: 1.5.7
 Author: David Fong
 Maintainer: David Fong <vkelim@bigpond.com>
 Description: R Shiny application looking through Electronic Medical Record's (EMR)
@@ -34,6 +34,8 @@ Imports:
     jsonlite,
     sodium,
     R6,
+    rintrojs,
+    emo,
     dbConnection,
     dMeasure
 Suggests:
@@ -55,6 +57,7 @@ ImportComments:
   install with devtools::install_github('DavidPatShuiFong/dbConnection')
 Collate: 
     'DailyMeasure.R'
+    'introduction.R'
     'utils-pipe.R'
     'datatables_definitions.R'
     'calculation_definitions.R'

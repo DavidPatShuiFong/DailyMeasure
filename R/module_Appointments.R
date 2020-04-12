@@ -39,15 +39,17 @@ appointments_datatable <- function(input, output, session, dM) {
   # fomantic/semantic UI definitions not required
 
   # appointment list
-  output$appointments_dt <- DT::renderDT({datatable_styled(
-    dM$appointments_filtered_timeR() %>>%
-      dplyr::select(Patient, AppointmentDate, AppointmentTime, Provider, Status))
-  },
-  server = FALSE)
-
+  # output$appointments_dt <- DT::renderDT({datatable_styled(
+  #   dM$appointments_filtered_timeR() %>>%
+  #     dplyr::select(Patient, AppointmentDate, AppointmentTime, Provider, Status))
+  # },
+  # server = FALSE)
 
   styled_appointments_list <- shiny::reactive({
-
+    shiny::validate(
+      shiny::need(dM$appointments_filtered_timeR(),
+                  "No appointments in selected range")
+    )
     datatable_styled(dM$appointments_filtered_timeR() %>>%
                        dplyr::select(Patient, AppointmentDate, AppointmentTime,
                                      Provider, Status))

@@ -14,14 +14,19 @@ sessionCount <- reactiveValues(count = 0) # initially no sessions opened
 #' @include calculation_definitions.R
 #' @include datatables_definitions.R
 #' @include utils-pipe.R
+#' @include introduction.R
 #'
 #' needed for simple encode/decode
+#' @export
 DailyMeasureServer <- function(input, output, session) {
 
+  if (!exists(".bcdyz.option")) {
+    .bcdyz.option <<- list(demonstration = FALSE)
+  }
   print(.bcdyz.option) # this can be passed from a calling function shiny::runApp()
 
-  isolate(sessionCount$count <- sessionCount$count + 1)
-  print(paste("Session Count:", isolate(sessionCount$count)))
+  shiny::isolate(sessionCount$count <- sessionCount$count + 1)
+  print(paste("Session Count:", shiny::isolate(sessionCount$count)))
 
   # IMPORTANT!
   # this is needed to terminate the R process when the
@@ -62,38 +67,50 @@ DailyMeasureServer <- function(input, output, session) {
     # needs both modules!
     dMCDM <- dMeasureCDM::dMeasureCDM$new(dM, dMBillings)
   }
+  Custommodule <- requireNamespace('dMeasureCustom', quietly = TRUE)
+  if (Custommodule) {
+    dMCustom <- dMeasureCustom::dMeasureCustom$new(dM)
+  }
 
   # read config files
 
   ##### Configuration file ######################################################
 
-  observeEvent(dM$configuration_file_pathR(), ignoreNULL = TRUE, {
-    dM$open_configuration_db()
-    # connects to SQLite configuration database, using either DBI or pool
-    # generates the SQLite configuration database if needed
-    # and updates old SQLite configuration databases with necessary fields
-    dM$read_configuration_db()
-    # reads server definitions, location definitions, user attributes etc..
-    newdb <- dM$BPdatabaseChoice_new()
-    if (newdb != dM$BPdatabaseChoice) {
-      shinytoastr::toastr_info(
-        "Opening link to Best Practice", closeButton = TRUE,
-        position = "bottom-left", title = "Best Practice database")
-      opened_base <- dM$open_emr_db()
-      if (opened_base == "None") {
-        shinytoastr::toastr_error(
-          "Error opening Best Practice database",
-          closeButton = TRUE, position = "bottom-left",
-          timeOut = 10000) # stays open ten seconds
-      } else {
-        shinytoastr::toastr_success(
-          "Linking to Best Practice database successful!",
-          closeButton = TRUE,
-          position = "bottom-left",
-          title = "Best Practice database")
-      }
-    }
-  })
+  shiny::observeEvent(dM$configuration_file_pathR(),
+                      ignoreNULL = TRUE, {
+                        dM$open_configuration_db()
+                        # connects to SQLite configuration database, using either DBI or pool
+                        # generates the SQLite configuration database if needed
+                        # and updates old SQLite configuration databases with necessary fields
+                        dM$read_configuration_db()
+                        # reads server definitions, location definitions, user attributes etc..
+                        if (dM$config_db$is_open()) {
+                          newdb <- dM$BPdatabaseChoice_new()
+                          if (newdb != dM$BPdatabaseChoice) {
+                            shinytoastr::toastr_info(
+                              "Opening link to Best Practice", closeButton = TRUE,
+                              position = "bottom-left", title = "Best Practice database")
+                            opened_base <- dM$open_emr_db()
+                            if (opened_base == "None") {
+                              shinytoastr::toastr_error(
+                                "Error opening Best Practice database",
+                                closeButton = TRUE, position = "bottom-left",
+                                timeOut = 10000) # stays open ten seconds
+                            } else {
+                              shinytoastr::toastr_success(
+                                "Linking to Best Practice database successful!",
+                                closeButton = TRUE,
+                                position = "bottom-left",
+                                title = "Best Practice database")
+                            }
+                          }
+                        } else {
+                          shinytoastr::toastr_error(
+                            "Error opening configuration file",
+                            closeButton = TRUE, position = "bottom-left",
+                            timeOut = 10000) # stays open ten seconds
+                        }
+                      })
   invisible(dM$configuration_file_path)
   # this will also set $configuration_file_pathR
 
@@ -249,17 +266,23 @@ DailyMeasureServer <- function(input, output, session) {
     c(list(shinydashboard::tabItem(
       tabName = "appointments",
       fluidRow(column(width = 12, align = "center", h2("Appointments"))),
-      fluidRow(column(width = 12, appointments_datatableUI("appointments_dt")))
+      fluidRow(column(width = 12, shiny::div(
+        id = "appointments_datatable_wrapper", # for rintrojs
+        appointments_datatableUI("appointments_dt"))))
     )),
     list(shinydashboard::tabItem(
       tabName = "immunization",
       fluidRow(column(width = 12, align = "center", h2("Immunization"))),
-      fluidRow(column(width = 12, vax_datatableUI("vax_dt")))
+      fluidRow(column(width = 12, shiny::div(
+        id = "immunization_datatable_wrapper", # for rintrojs
+        vax_datatableUI("vax_dt"))))
     )),
     list(shinydashboard::tabItem(
       tabName = "cancerscreen",
       fluidRow(column(width = 12, align = "center", h2("Cancer screening"))),
-      fluidRow(column(width = 12, cancerscreen_datatableUI("cancerscreen_dt")))
+      fluidRow(column(width = 12, shiny::div(
+        id = "cancerscreen_datatable_wrapper",
+        cancerscreen_datatableUI("cancerscreen_dt"))))
     )))
 
   # no PIP Quality Improvement Measure, billings, or CDM tabs, these are inserted dynamically
@@ -284,7 +307,9 @@ DailyMeasureServer <- function(input, output, session) {
                        list(shinydashboard::tabItem(
                          tabName = "billings",
                          fluidRow(column(width = 12, align = "center", h2("Billings"))),
-                         fluidRow(column(width = 12, billings_datatableUI("billings_dt")))
+                         fluidRow(column(width = 12, shiny::div(
+                           id = "billings_datatable_wrapper",
+                           billings_datatableUI("billings_dt"))))
                        )))
     # call the module to generate the table
     callModule(billings_datatable, "billings_dt", dMBillings)
@@ -300,11 +325,22 @@ DailyMeasureServer <- function(input, output, session) {
                          tabName = "cdm",
                          shiny::fluidRow(column(width = 12, align = "center",
                                                 h2("Chronic Disease Management items"))),
-                         shiny::fluidRow(column(width = 12,
-                                                cdm_datatableUI("cdm_dt")))
+                         shiny::fluidRow(column(width = 12, shiny::div(
+                           id = "cdm_datatable_wrapper",
+                           cdm_datatableUI("cdm_dt"))))
                        )))
     # chronic disease management table
     cdm_table_results <- callModule(cdm_datatable, "cdm_dt", dMCDM)
+  }
+
+  if (Custommodule == TRUE) {
+    output$CustomMenu <- shinydashboard::renderMenu({
+      dMeasureCustom::shinydashboardmenuItem()
+    }) # if CDMmodule or Billingsmodule is FALSE, then output$CDMMenu will be left undefined
+    shinytabItems <- c(shinytabItems, dMeasureCustom::dMeasureShinytabItems())
+    # chronic disease management table
+    custom_table_results <- callModule(dMeasureCustom::datatableServer,
+                                       "custom_dt", dMCustom)
   }
 
   # Conditions
@@ -339,8 +375,7 @@ DailyMeasureServer <- function(input, output, session) {
                          tabName = "qimAppt",
                          shiny::fluidRow(column(width = 12, align = "center",
                                                 h2("Quality Improvement Measure Appointment View"))),
-                         shiny::fluidRow(column(width = 12,
-                                                qim_UI("qimAppt")))
+                         shiny::fluidRow(column(width = 12, qim_UI("qimAppt")))
                        ))
     )
     qim_results_rept <- callModule(qim, "qimRept", dMQIMrept, contact = TRUE) # 'report' view
@@ -377,7 +412,8 @@ DailyMeasureServer <- function(input, output, session) {
   shinytabItems <- c(shinytabItems,
                      list(shinydashboard::tabItem(
                        tabName = "conditions",
-                       fluidRow(column(width = 12, conditions_UI("conditions_dt")))
+                       shiny::fluidRow(column(width = 12,
+                                       conditions_UI("conditions_dt")))
                      )),
                      list(shinydashboard::tabItem(
                        tabName = "administration",
@@ -509,7 +545,7 @@ DailyMeasureServer <- function(input, output, session) {
     hidden = TRUE # the default is that configuration files have '.' hidden prefix
   )
 
-  observeEvent(input$choose_configuration_file, ignoreNULL = TRUE, {
+  shiny::observeEvent(input$choose_configuration_file, ignoreNULL = TRUE, {
     if (!is.integer(input$choose_configuration_file)) {
       # if input$choose_configuration_file is an integer,
       # it is just the 'click' event on the filechoose button
@@ -533,7 +569,7 @@ DailyMeasureServer <- function(input, output, session) {
     hidden = TRUE
   )
 
-  observeEvent(input$create_configuration_file, ignoreNULL = TRUE, {
+  shiny::observeEvent(input$create_configuration_file, ignoreNULL = TRUE, {
     if (!is.integer(input$create_configuration_file)) {
       # if input$choose_configuration_file is an integer,
       # it is just the 'click' event on the filechoose button
@@ -719,6 +755,129 @@ DailyMeasureServer <- function(input, output, session) {
     }
   })
 
+  ###### Guides ###############################################################
+
+  shiny::observeEvent(input$guide_overview, {
+    shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+    # above opens the right side-bar
+    # see https://stackoverflow.com/questions/
+    #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
+    rintrojs::introjs(session, options = list(steps = steps_overview_df(),
+                                              showStepNumbers = FALSE,
+                                              skipLabel = "Quit"),
+                      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
+  })
+
+  shiny::observeEvent(input$appointments_overview, {
+    shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+    # above opens the right side-bar
+    # see https://stackoverflow.com/questions/
+    #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
+    rintrojs::introjs(session, options = list(steps = steps_appointment_df(),
+                                              showStepNumbers = FALSE,
+                                              skipLabel = "Quit"),
+                      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
+  })
+
+  shiny::observeEvent(input$immunization_overview, {
+    shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+    # above opens the right side-bar
+    # see https://stackoverflow.com/questions/
+    #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
+    rintrojs::introjs(session, options = list(steps = steps_immunization_df(),
+                                              showStepNumbers = FALSE,
+                                              skipLabel = "Quit"),
+                      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
+  })
+
+  shiny::observeEvent(input$cancerscreen_overview, {
+    shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+    # above opens the right side-bar
+    # see https://stackoverflow.com/questions/
+    #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
+    rintrojs::introjs(session, options = list(steps = steps_cancerscreen_df(),
+                                              showStepNumbers = FALSE,
+                                              skipLabel = "Quit"),
+                      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
+  })
+
+  shiny::observeEvent(input$billings_overview, {
+    shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+    # above opens the right side-bar
+    # see https://stackoverflow.com/questions/
+    #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
+    rintrojs::introjs(session, options = list(steps = dMeasureBillings::steps_introduction_df("#billings_datatable_wrapper"),
+                                              showStepNumbers = FALSE,
+                                              skipLabel = "Quit"),
+                      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
+  })
+  shiny::observeEvent(input$cdm_overview, {
+    shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+    # above opens the right side-bar
+    # see https://stackoverflow.com/questions/
+    #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
+    rintrojs::introjs(session, options = list(steps = dMeasureCDM::steps_introduction_df("#cdm_datatable_wrapper"),
+                                              showStepNumbers = FALSE,
+                                              skipLabel = "Quit"),
+                      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
+  })
+  shiny::observeEvent(input$conditions_overview, {
+    shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+    # above opens the right side-bar
+    # see https://stackoverflow.com/questions/
+    #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
+    rintrojs::introjs(session, options = list(steps =
+                                                steps_conditions_df(
+                                                  eval(parse(text =
+                                                               paste0("input$`",
+                                                                      shiny::NS("conditions_dt")
+                                                                      ("tab_conditions"),
+                                                                      "`")))),
+                                              showStepNumbers = FALSE,
+                                              skipLabel = "Quit"),
+                      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
+  })
+  shiny::observeEvent(input$qimRept_overview, {
+    shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+    # above opens the right side-bar
+    # see https://stackoverflow.com/questions/
+    #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
+    rintrojs::introjs(session, options = list(steps =
+                                                dMeasureQIM::steps_introduction_df(
+                                                  paste0("#",
+                                                         shiny::NS("qimRept")
+                                                         ("qim_datatable_wrapper")),
+                                                  eval(parse(text =
+                                                               paste0("input$`",
+                                                                      shiny::NS("qimRept")
+                                                                      ("tab_qim"),
+                                                                      "`"))),
+                                                  appointment_view = FALSE),
+                                              showStepNumbers = FALSE,
+                                              skipLabel = "Quit"),
+                      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
+  })
+  shiny::observeEvent(input$qimAppt_overview, {
+    shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+    # above opens the right side-bar
+    # see https://stackoverflow.com/questions/
+    #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
+    rintrojs::introjs(session, options = list(steps =
+                                                dMeasureQIM::steps_introduction_df(
+                                                  paste0("#",
+                                                         shiny::NS("qimAppt")
+                                                         ("qim_datatable_wrapper")),
+                                                  eval(parse(text =
+                                                               paste0("input$`",
+                                                                      shiny::NS("qimAppt")
+                                                                      ("tab_qim"),
+                                                                      "`"))),
+                                                  appointment_view = TRUE),
+                                              showStepNumbers = FALSE,
+                                              skipLabel = "Quit"),
+                      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)")))
+  })
+
   ###### Render user information on top-right header ##########################
   output$user <- shinydashboardPlus::renderUser({
     shinydashboardPlus::dashboardUser(
@@ -790,14 +949,24 @@ DailyMeasureServer <- function(input, output, session) {
     )
   })
 
-  shiny::observeEvent(dM$check_subscription_datechange_trigR(), ignoreInit = TRUE, {
-    # warning generated if dates have been changed as
-    # the result of subscription check
-    shinytoastr::toastr_warning(
-      message = paste("A chosen user has no subscription for chosen date range.",
-                      "Dates changed (minimum one week old)."),
-      position = "bottom-left",
-      closeButton = TRUE,
-      timeOut = 0) # keep open until closed
-  })
+  shiny::observeEvent(dM$check_subscription_datechange_trigR(),
+                      ignoreInit = TRUE, {
+                        # warning generated if dates have been changed as
+                        # the result of subscription check
+                        no_subscription <- paste(setdiff(dM$clinicians,
+                                                         dM$UserFullConfig %>>%
+                                                           dplyr::filter(Fullname %in% dM$clinicians &
+                                                                           !is.na(LicenseDate) &
+                                                                           LicenseDate >= Sys.Date()) %>>%
+                                                           dplyr::pull(Fullname)), collapse = ", ")
+                        shinytoastr::toastr_warning(
+                          message = paste("A chosen user has no subscription for chosen date range.",
+                                          "Dates changed (at least one week to four months, old).",
+                                          shiny::br(), shiny::br(),
+                                          "Chosen users without subscription: ",
+                                          no_subscription),
+                          position = "bottom-left",
+                          closeButton = TRUE,
+                          timeOut = 0) # keep open until closed
+                      })
 }

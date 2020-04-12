@@ -12,7 +12,7 @@ conditions_UI <- function(id) {
 
   shiny::tagList(
     shinydashboard::tabBox(
-      id = "tab_conditions",
+      id = ns("tab_conditions"),
       title = "Conditions",
       width = 12,
       height = "85vh",
@@ -20,7 +20,8 @@ conditions_UI <- function(id) {
         title = "Post-natal",
         width = 12,
         shiny::br(),
-        conditions_postnatal_datatableUI(ns("post_natal"))
+        shiny::div(id = "postnatal_datatable_wrapper",
+                   conditions_postnatal_datatableUI(ns("post_natal")))
       )
     )
   )
@@ -184,6 +185,7 @@ conditions_postnatal_datatable <- function(input, output, session, dM) {
         dM$visit_typeR()), ignoreInit = FALSE, {
           # respond to appointments_listR()
           # when clinician or dates is changed
+          shiny::req(dM$appointments_listR())
 
           today <- Sys.Date()
           search_back <- today - (280 + 30 + input$days_postnatal[2])
@@ -261,19 +263,18 @@ conditions_postnatal_datatable <- function(input, output, session, dM) {
 
   ### create tag-styled datatable (or 'printable' datatable)
   postnatal_table <- shiny::reactive({
-    if (!is.null(postnatal())) {
+    shiny::req(!is.null(postnatal()))
 
-      d <- postnatal() %>>%
-        dplyr::mutate(Outcome = as.character(pregnancy_outcome_levels[OutcomeCode + 1])) %>>%
-        # converts OutcomeCode to strings
-        # need to add one because OutComesCode starts at zero, but the levels start at one!
-        dplyr::rename(RecordNo = ExternalID) %>>%
-        dplyr::select(Name, DOB, RecordNo, EDCbyDate, EDCbyScan, EndDate, Outcome, AppointmentDate, AppointmentTime, Status, Provider)
+    d <- postnatal() %>>%
+      dplyr::mutate(Outcome = as.character(pregnancy_outcome_levels[OutcomeCode + 1])) %>>%
+      # converts OutcomeCode to strings
+      # need to add one because OutComesCode starts at zero, but the levels start at one!
+      dplyr::rename(RecordNo = ExternalID) %>>%
+      dplyr::select(Name, DOB, RecordNo, EDCbyDate, EDCbyScan, EndDate, Outcome, AppointmentDate, AppointmentTime, Status, Provider)
 
-      datatable_styled(d,
-                       extensions = c("Buttons", "Scroller"),
-                       scrollX = TRUE) # don't collapse columns
-    }
+    datatable_styled(d,
+                     extensions = c("Buttons", "Scroller"),
+                     scrollX = TRUE) # don't collapse columns
   })
 
   output$postnatal_table <- DT::renderDT({

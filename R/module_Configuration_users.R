@@ -159,7 +159,7 @@ userconfig_enableRestrictions <- function (input, out, session, dM) {
 
   shiny::observeEvent(dM$config_db_trigR(), {
     # if configuration pool has been initialized
-    validate(
+    shiny::validate(
       need(dM$UserRestrictions(), "No restriction list")
     )
     for (restriction in unlist(dM$restrictionTypes_df$id, use.names = FALSE)) {
@@ -451,29 +451,31 @@ userconfig_datatable <- function(input, output, session, dM) {
   # columns viewed in DTedit when adding/editing/removing user config
 
   # depends on modularized version of DTedit
-  userconfig_edited <-
-    callModule(DTedit::dtedit, "userconfigs",
-               thedataframe = dM$UserConfigLicenseR, # pass a ReactiveVal
-               view.cols = userconfig_dt_viewcols, # no need to show 'id' in future
-               edit.cols = userconfig_dt_editcols,
-               # edit.label.cols = ,
-               show.copy = FALSE,
-               input.types = c(Fullname = 'selectInputReactive',
-                               Attributes = 'selectInputMultiple',
-                               AuthIdentity = 'textInput',
-                               Location = 'selectInputMultipleReactive',
-                               License = 'textInput'),
-               input.choices = c(Location = 'LocationNames',
-                                 Fullname = 'Fullname',
-                                 Attributes = list(dM$user_attribute_types)),
-               input.choices.reactive = list(Fullname = usernames,
-                                             # usernames was defined in this function
-                                             # userconfig_datatable
-                                             # $location_groupR does not include 'None'
-                                             LocationNames = dM$location_groupR),
-               callback.update = userconfig.update.callback,
-               callback.insert = userconfig.insert.callback,
-               callback.delete = userconfig.delete.callback)
+  shiny::observeEvent(dM$UserConfigLicenseR(), ignoreNULL = TRUE, once = TRUE, {
+    userconfig_edited <-
+      callModule(DTedit::dtedit, "userconfigs",
+                 thedataframe = dM$UserConfigLicenseR, # pass a ReactiveVal
+                 view.cols = userconfig_dt_viewcols, # no need to show 'id' in future
+                 edit.cols = userconfig_dt_editcols,
+                 # edit.label.cols = ,
+                 show.copy = FALSE,
+                 input.types = c(Fullname = 'selectInputReactive',
+                                 Attributes = 'selectInputMultiple',
+                                 AuthIdentity = 'textInput',
+                                 Location = 'selectInputMultipleReactive',
+                                 License = 'textInput'),
+                 input.choices = c(Location = 'LocationNames',
+                                   Fullname = 'Fullname',
+                                   Attributes = list(dM$user_attribute_types)),
+                 input.choices.reactive = list(Fullname = usernames,
+                                               # usernames was defined in this function
+                                               # userconfig_datatable
+                                               # $location_groupR does not include 'None'
+                                               LocationNames = dM$location_groupR),
+                 callback.update = userconfig.update.callback,
+                 callback.insert = userconfig.insert.callback,
+                 callback.delete = userconfig.delete.callback)
+  })
 
   shiny::observeEvent(userconfig_list_change(), {
     invisible(dM$UserConfig)

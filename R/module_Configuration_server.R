@@ -41,6 +41,10 @@ servers_datatableUI <- function(id) {
                    "This will usually be 'BPSPatients'.",
                    "The samples database is 'BPSSamples'",
                    shiny::br(),
+                   shiny::tags$h4("Driver"),
+                   "Microsoft SQL database driver.",
+                   "'SQL Server' is usually available.",
+                   shiny::br(),
                    shiny::tags$h4("UserID"),
                    "This should always be 'bpsrawdata'.",
                    shiny::br(),
@@ -173,6 +177,7 @@ servers_datatable <- function(input, output, session, dM) {
     # this is a kludge, it is the same logic as used in dM$server.insert
     # another possibility could be to copy back from dM
     # e.g. data <- dM$BPdatabase
+    data[row,]$dbPassword <- dMeasure::simple_encode(data[row,]$dbPassword)
 
     servers_list_change(servers_list_change() + 1)
     # this value returned by module
@@ -182,11 +187,20 @@ servers_datatable <- function(input, output, session, dM) {
   servers.update.callback <- function(data, olddata, row) {
     # change (update) a server description
 
+    if (!is.na(data[row,]$dbPassword) && # is.na shouldn't happen...
+        data[row,]$dbPassword == olddata[row,]$dbPassword) {
+      data[row,]$dbPassword <- dMeasure::simple_decode(data[row,]$dbPassword)
+      # the password was not changed, but the 'old password' was encrypted!
+      # need to decrypt before re-encrypting
+    }
+
     tryCatch(dM$server.update(data[row,]),
              error = function(e) stop(e))
     # possible errors include the server is currently being used
     # or proposed name is same as another definition
     # $server.update will write to the SQLite configuration
+
+    data[row,]$dbPassword <- dMeasure::simple_encode(data[row,]$dbPassword)
 
     servers_list_change(servers_list_change() + 1) # this value returned by module
 
@@ -205,28 +219,38 @@ servers_datatable <- function(input, output, session, dM) {
     return(data[-c(row),])
   }
 
-  servers_dt_viewcols <- c("id", "Name", "Address", "Database", "UserID")
+  servers_dt_viewcols <- c("id", "Name", "Address", "Database", "Driver", "UserID")
   # columns viewed in DTedit when adding/editing/removing servers
   # 'id' is likely not necessary for end-users
-  servers_dt_editcols <- c("Name", "Address", "Database", "UserID", "dbPassword")
+  servers_dt_editcols <- c("Name", "Address", "Database", "Driver", "UserID", "dbPassword")
+
+  server_driver_choices <- c(unique(unlist(odbc::odbcListDrivers()$name)))
+  # it is not possible to add an "" empty-string option, which means currently
+  # a 'default' choice cannot be chosen (although the 'default' of 'SQL Server' if
+  # the string is empty is recognized by dMeasure)
 
   # depends on modularized version of DTedit
-  servers_edited <- callModule(DTedit::dtedit, "servers",
-                               thedataframe = dM$BPdatabaseR, # pass a ReactiveVal
-                               view.cols = servers_dt_viewcols, # no need to show 'id' in future
-                               edit.cols = servers_dt_editcols,
-                               input.types = c(Name = 'textInput', Address = 'textInput',
-                                               Database = 'textInput', UserID = 'textInput',
-                                               dbPassword = 'passwordInput'),
-                               callback.update = servers.update.callback,
-                               callback.insert = servers.insert.callback,
-                               callback.delete = servers.delete.callback,
-                               # only show new/copy/delete/update if not demonstration mode
-                               show.delete = .bcdyz.option$demonstration == FALSE,
-                               show.update = .bcdyz.option$demonstration == FALSE,
-                               show.insert = .bcdyz.option$demonstration == FALSE,
-                               show.copy = .bcdyz.option$demonstration == FALSE
-  )
+  shiny::observeEvent(dM$BPdatabaseR(), ignoreNULL = TRUE, once = TRUE, {
+    servers_edited <- callModule(DTedit::dtedit, "servers",
+                                 thedataframe = dM$BPdatabaseR, # pass a ReactiveVal
+                                 view.cols = servers_dt_viewcols, # no need to show 'id' in future
+                                 edit.cols = servers_dt_editcols,
+                                 input.types = c(Name = 'textInput', Address = 'textInput',
+                                                 Database = 'textInput', Driver = 'selectInput',
+                                                 UserID = 'textInput', dbPassword = 'passwordInput'),
+                                 input.choices = list(Driver = server_driver_choices),
+                                 # a valid choice for Driver is "", which is the 'default'
+                                 # e.g. 'SQL Server'
+                                 callback.update = servers.update.callback,
+                                 callback.insert = servers.insert.callback,
+                                 callback.delete = servers.delete.callback,
+                                 # only show new/copy/delete/update if not demonstration mode
+                                 show.delete = .bcdyz.option$demonstration == FALSE,
+                                 show.update = .bcdyz.option$demonstration == FALSE,
+                                 show.insert = .bcdyz.option$demonstration == FALSE,
+                                 show.copy = .bcdyz.option$demonstration == FALSE
+    )
+  })
 
   return(list(
     count = reactive({servers_list_change()})

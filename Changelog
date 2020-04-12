@@ -2,6 +2,67 @@ GP stat! (c) David Fong, 2019
 
 front-end to DailyMeasure package
 
+Version 1.5.7, 8th April 2020
+=============================
+
+New
+
+* Walkthrough (introduction) for appointments
+* Walkthrough (introduction) for immunizations
+* Walkthrouhg (introduction) for cancer screening
+* Walkthrough (introduction) for billings
+* Walkthrough (introduction) for CDM
+* Walkthrough (introduction) for Conditions - Post-natal
+* Walkthrough (introduction) for Quality Improvement Measures
+
+Fix
+
+* fix to Javascript errors when displaying frisk/friskHI in qim_cvdRisk
+* fix Javascript error when displaying an empty table in QIM active (report)
+
+Version 1.5.6, 1st April 2020
+=============================
+
+New
+
+* 'Contact' option for CDM - list CDM opportunities by past contact
+* 'include up-to-date' option for immunizatin/vaccination
+
+
+Version 1.5.5, 30th March 2020
+==============================
+
+New
+
+* 'Contact' option for Immunization - list immunizations opportunities by past contact
+
+Version 1.5.4, 25th March 2020
+==============================
+
+New
+
+* Custom tab
+
+Version 1.5.3, 7th March 2020
+=============================
+
+New
+
+* if date changed because of no subscription, the list of user without subscription
+  is shown in the alert
+* introductory walkthrough with 'rintrojs'
+* can choose Database Server Driver
+* changes to allow shinyapps.io deployment
+   app.R dependencies.R
+   DailyMeasureUI and DailyMeasureServer are now exported objects
+
+
+Improvements & Fixes
+
+* server database password is 'maintained' (if not modified) during server description edit
+  bug fixed where sometimes database password was not useable until after restart
+* warning if configuration database could not be successfully opened
+
 Version 1.5.2, 20th February 2020
 =================================
 

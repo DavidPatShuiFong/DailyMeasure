@@ -15,6 +15,10 @@ New
 * Walkthrough (introduction) for Conditions - Post-natal
 * Walkthrough (introduction) for Quality Improvement Measures
 
+Change
+
+* Updated video demonstration of features
+
 Fix
 
 * fix to Javascript errors when displaying frisk/friskHI in qim_cvdRisk
@@ -164,7 +168,7 @@ Version 1.3.3, 21st September 2019
 
 Modularization
 
-* dMeasureQIM (quality improvement measures), dMeasureBillings (Billigns) and
+* dMeasureQIM (quality improvement measures), dMeasureBillings (Billings) and
   dMeasureCDM (chronic disease management) are now an optional modules/packages.
   changes to UI and server to allow dynamic creation of tabItems and sidebarMenu
 

@@ -65,7 +65,7 @@ about_documentation_UI <- function(id) {
                              "Video demonstration of installation and configuration (Youtube)"),
                     shiny::br(), shiny::br(),
                     shiny::h2("Usage"),
-                    shiny::a(href = "https://youtu.be/4zuYG4uU4-4",
+                    shiny::a(href = "https://youtu.be/mTJzcycPkRU",
                              target = "_blank",
                              "Video demonstration of features (Youtube)"), shiny::br(),
                     shiny::a(href = "http://rpubs.com/DavidFong/dMeasure",

@@ -391,8 +391,22 @@ conditions_postnatal_datatable <- function(input, output, session, dM) {
 conditions_asthma_datatable <- function(input, output, session, dM) {
   ns <- session$ns
 
+  # list_asthma
+  # contact - contact system (if TRUE) or appointment system (if FALSE)
+  # date_from, date_to - by default, is the dM$date_a and dM$date_b
+  # clinicians - by default, is dM$clinicians
+  # min_contact, min_date - used for the 'contact' system
+  # contact_type - used for the 'contact' system
+  # ignoreOld - not used yet!
+  # lazy - lazy evaluation?
+  #
+  # returns a dataframe
+  #  structure of dataframe depends on whether 'contact' or 'appointment' system
+  #  in both cases, the columns includes :
+  #    Patient, InternalID, DOB, RecordNo, FluvaxName, FluvaxDate
+  #  in the case of 'appointment' system, also includes appointment details
   list_asthma <- function(
-    contact = FALSE, # contact (if TRUE) or appointment system (if FALSE)
+    contact = FALSE,
     date_from = NA,
     date_to = NA,
     clinicians = NA,
@@ -453,22 +467,27 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
           )
         }
         asthma_list <- dM$contact_asthma_list %>>%
-          dplyr::select(-c(Count, Latest)) # don't need these fields
-        asthmaID <- asthma_list %>>% dplyr::pull(InternalID) %>>%
+          dplyr::select(Patient, InternalID) # don't need these fields
+        asthmaID <- asthma_list %>>%
+          dplyr::pull(InternalID) %>>%
           c(-1) # make sure not empty vector, which is bad for SQL filter
       } else {
         if (!lazy) {
-          dM$filter_appointments()
+          dM$list_appointments(lazy = FALSE)
         }
-        asthmaID <- c(dM$asthma_list(), -1)
-        asthma_list <- dM$db$patients %>>%
-          dplyr::filter(InternalID %in% asthmaID) %>>%
-          dplyr::select(Firstname, Surname, InternalID) %>>%
-          dplyr::collect() %>>%
-          dplyr::mutate(Patient = paste(Firstname, Surname)) %>>%
-          dplyr::select(Patient, InternalID)
-        # derived from self$appointments_filtered
+        asthma_list <- dM$appointments_list %>>%
+          dplyr::select(Patient, InternalID, AppointmentDate, AppointmentTime, Provider)
+        asthmaID <- asthma_list %>>%
+          dplyr::pull(InternalID) %>>%
+          c(-1)
       }
+
+      asthma_list <- asthma_list %>>%
+        dplyr::left_join(dM$db$patients %>>%
+            dplyr::filter(InternalID %in% asthmaID) %>>%
+            dplyr::select(InternalID, DOB, RecordNo) %>>%
+            dplyr::mutate(DOB = as.Date(DOB)),
+          by = "InternalID", copy = TRUE)
 
       fluvaxList <- dM$influenzaVax_obs(asthmaID,
         date_from = ifelse(ignoreOld,
@@ -479,22 +498,12 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
         # calculate date_from as fifteen months before date_to
         date_to = date_to
       )
-      # returns InternalID, FluVaxName, FluvaxDate
+      # returns InternalID, FluvaxName, FluvaxDate
 
       detailed_asthma_list <- asthma_list %>>%
         dplyr::left_join(fluvaxList,
           by = "InternalID",
           copy = TRUE
-        ) %>>%
-        dplyr::left_join(dM$db$patients %>>%
-            dplyr::filter(InternalID %in% asthmaID) %>>%
-            dplyr::select(InternalID, DOB, RecordNo),
-          by = "InternalID",
-          copy = TRUE
-        ) %>>%
-        dplyr::select(
-          Patient, InternalID, RecordNo,
-          FluvaxDate, FluvaxName
         )
 
       if (dM$Log) {
@@ -520,20 +529,8 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
         shiny::req(dM$appointments_listR())
 
         asthma_list <- list_asthma(
-          contact = input$appointment_contact_view == "Contact view"
+          contact = (input$appointment_contact_view == "Contact view")
         )
-
-        if (input$appointment_contact_view == "Appointment view") {
-          asthmaID <- asthma_list %>>% dplyr::pull(InternalID)
-
-          patientAppointments <- dM$appointments_listR() %>>%
-            # accept defaults for $date_a, $date_b and $clinicians
-            dplyr::filter(InternalID %in% asthmaID) %>>%
-            dplyr::select(-Patient) # we don't need the name
-
-          asthma_list <- asthma_list %>>%
-            dplyr::left_join(patientAppointments, by = "InternalID", copy = TRUE)
-        }
 
         asthma_list <- asthma_list %>>%
           dplyr::select(-c(InternalID)) %>>% # we don't need the internalID now

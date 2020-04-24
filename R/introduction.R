@@ -532,6 +532,22 @@ steps_cancerscreen_df <- function() {
         emo::ji("smile"), "!"
       )),
       position = "auto"
+    )) %>>%
+    rbind(data.frame(
+      element = "#cancerscreen_datatable_wrapper",
+      intro = c(paste(
+        shiny::tags$h4("Include up-to-date"),
+        shiny::br(),
+        "Top of the table view.",
+        shiny::br(), shiny::br(),
+        "Include cancer screening which are",
+        "'up-to-date' i.e. done previously",
+        "within the recommended timeframe.",
+        shiny::br(), shiny::br(),
+        "You can try it now",
+        emo::ji("smile"), "!"
+      )),
+      position = "auto"
     ))
 
   return(steps_df)

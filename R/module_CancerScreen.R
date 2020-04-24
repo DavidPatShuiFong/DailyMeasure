@@ -27,7 +27,21 @@ cancerscreen_datatableUI <- function(id) {
         )
       ),
       shiny::column(2,
-        offset = 5, # note that total 'column' width = 12
+        offset = 3,
+        shinyWidgets::checkboxGroupButtons(
+          inputId = ns("include_uptodate"),
+          choiceNames = c("Include up-to-date"),
+          choiceValues = c(1),
+          selected = 1,
+          status = "primary",
+          checkIcon = list(
+            yes = icon("ok", lib = "glyphicon"),
+            no = icon("remove", lib = "glyphicon")
+          )
+        )
+      ),
+      shiny::column(2,
+        offset = 0, # note that total 'column' width = 12
         uiOutput(ns("cancerscreen_choice"))
       )
     ),
@@ -91,6 +105,7 @@ cancerscreen_datatable <- function(input, output, session, dM) {
         screenlist,
         dM$list_fobt(
           appointments_list = dM$appointments_listR(),
+          include_uptodate = (!is.null(input$include_uptodate)),
           screentag = TRUE, screentag_print = TRUE
         )
       )
@@ -102,6 +117,7 @@ cancerscreen_datatable <- function(input, output, session, dM) {
         screenlist,
         dM$list_cst(
           appointments_list = dM$appointments_listR(),
+          include_uptodate = (!is.null(input$include_uptodate)),
           screentag = TRUE, screentag_print = TRUE
         )
       )
@@ -113,6 +129,7 @@ cancerscreen_datatable <- function(input, output, session, dM) {
         screenlist,
         dM$list_mammogram(
           appointments_list = dM$appointments_listR(),
+          include_uptodate = (!is.null(input$include_uptodate)),
           screentag = TRUE, screentag_print = TRUE
         )
       )

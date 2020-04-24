@@ -370,7 +370,7 @@ conditions_postnatal_datatable <- function(input, output, session, dM) {
   output$postnatal_table <- DT::renderDT({
     postnatal_table()
   },
-    server = TRUE
+  server = TRUE
   )
 }
 
@@ -397,7 +397,9 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
   # clinicians - by default, is dM$clinicians
   # min_contact, min_date - used for the 'contact' system
   # contact_type - used for the 'contact' system
-  # ignoreOld - not used yet!
+  # ignoreOld - ignore old administrations (>15 months from date_to).
+  #  by default, FALSE
+  # include_uptodate - remove uptodate vaccinations?
   # lazy - lazy evaluation?
   #
   # returns a dataframe
@@ -414,6 +416,7 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
     min_date = NA,
     contact_type = NA,
     ignoreOld = FALSE,
+    include_uptodate = TRUE,
     lazy = FALSE) {
     if (is.na(date_from)) {
       date_from <- dM$date_a
@@ -475,19 +478,21 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
         if (!lazy) {
           dM$list_appointments(lazy = FALSE)
         }
-        asthma_list <- dM$appointments_list %>>%
+        asthma_appt <- dM$appointments_list %>>%
           dplyr::select(Patient, InternalID, AppointmentDate, AppointmentTime, Provider)
-        asthmaID <- asthma_list %>>%
-          dplyr::pull(InternalID) %>>%
+        asthmaID <- dM$asthma_list(asthma_appt) %>>%
           c(-1)
+        asthma_list <- asthma_appt %>>%
+          dplyr::filter(InternalID %in% asthmaID)
       }
 
       asthma_list <- asthma_list %>>%
         dplyr::left_join(dM$db$patients %>>%
-            dplyr::filter(InternalID %in% asthmaID) %>>%
-            dplyr::select(InternalID, DOB, RecordNo) %>>%
-            dplyr::mutate(DOB = as.Date(DOB)),
-          by = "InternalID", copy = TRUE)
+          dplyr::filter(InternalID %in% asthmaID) %>>%
+          dplyr::select(InternalID, DOB, RecordNo) %>>%
+          dplyr::mutate(DOB = as.Date(DOB)),
+        by = "InternalID", copy = TRUE
+        )
 
       fluvaxList <- dM$influenzaVax_obs(asthmaID,
         date_from = ifelse(ignoreOld,
@@ -506,17 +511,38 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
           copy = TRUE
         )
 
+      if (!include_uptodate) {
+        if (contact) {
+          detailed_asthma_list <- detailed_asthma_list %>>%
+            dplyr::filter(is.na(FluvaxDate) |
+              FluvaxDate == as.Date(-Inf, origin = "1970-01-01") |
+              format(FluvaxDate, "%Y") != format(date_to, "%Y"))
+          # remove entries which are 'up-to-date'!
+          # anyone who has had a flu vax  in the same year as end of contact period
+          # (and so has a valid 'GivenDate') is 'up-to-date'!
+        } else { # appointment method
+          detailed_asthma_list <- detailed_asthma_list %>>%
+            dplyr::filter(is.na(FluvaxDate) |
+              FluvaxDate == as.Date(-Inf, origin = "1970-01-01") |
+              format(FluvaxDate, "%Y") != format(AppointmentDate, "%Y"))
+          # remove entries which are 'up-to-date'!
+          # anyone who has had a flu vax  in the same year as appointment date
+          # (and so has a valid 'GivenDate') is 'up-to-date'!
+        }
+      }
+
       if (dM$Log) {
         dM$config_db$duration_log_db(log_id)
       }
-
     }
     return(detailed_asthma_list)
   }
 
   asthma <-
     shiny::eventReactive(
-      c(input$appointment_contact_view,
+      c(
+        input$appointment_contact_view,
+        input$include_uptodate,
         dM$cliniciansR(), dM$appointments_listR(),
         dM$date_aR(), dM$date_bR(),
         dM$contact_typeR(),
@@ -529,7 +555,8 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
         shiny::req(dM$appointments_listR())
 
         asthma_list <- list_asthma(
-          contact = (input$appointment_contact_view == "Contact view")
+          contact = (input$appointment_contact_view == "Contact view"),
+          include_uptodate = (!is.null(input$include_uptodate))
         )
 
         asthma_list <- asthma_list %>>%
@@ -553,6 +580,6 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
   output$asthma_table <- DT::renderDT({
     asthma_table()
   },
-    server = TRUE
+  server = TRUE
   )
 }

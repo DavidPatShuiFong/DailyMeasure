@@ -24,7 +24,66 @@ conditions_UI <- function(id) {
           id = "postnatal_datatable_wrapper",
           conditions_postnatal_datatableUI(ns("post_natal"))
         )
+      ),
+      shiny::tabPanel(
+        title = "Asthma",
+        width = 12,
+        shiny::br(),
+        shiny::div(
+          id = "asthma_datatable_wrapper",
+          conditions_asthma_datatableUI(ns("asthma"))
+        )
       )
+    )
+  )
+}
+
+conditions_asthma_datatableUI <- function(id) {
+  ns <- shiny::NS(id)
+
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(
+        4,
+        shinyWidgets::switchInput(
+          inputId = ns("printcopy_view"),
+          label = paste(
+            "<i class=\"fas fa-print\"></i>",
+            "<i class=\"far fa-copy\"></i>",
+            " Print and Copy View"
+          ),
+          labelWidth = "12em",
+          width = "20em"
+        )
+      ),
+      shiny::column(2,
+        offset = 2,
+        shinyWidgets::pickerInput(
+          inputId = ns("appointment_contact_view"),
+          choices = c("Appointment view", "Contact view"),
+          choicesOpt = list(icon = c("fa fa-calendar-alt", "fa fa-handshake"))
+        )
+      ),
+      shiny::column(2,
+        offset = 0,
+        shinyWidgets::checkboxGroupButtons(
+          inputId = ns("include_uptodate"),
+          choiceNames = c("Include up-to-date"),
+          choiceValues = c(1),
+          selected = 1,
+          status = "primary",
+          checkIcon = list(
+            yes = icon("ok", lib = "glyphicon"),
+            no = icon("remove", lib = "glyphicon")
+          )
+        )
+      )
+    ),
+    shinycssloaders::withSpinner(
+      DT::DTOutput(ns("asthma_table")),
+      type = 8,
+      hide.element.when.recalculating = FALSE,
+      proxy.height = NULL
     )
   )
 }
@@ -169,6 +228,7 @@ conditions <- function(input, output, session, dM) {
 
   # data quality
   callModule(conditions_postnatal_datatable, "post_natal", dM)
+  callModule(conditions_asthma_datatable, "asthma", dM)
 }
 
 #' condition post-natal - server
@@ -310,6 +370,192 @@ conditions_postnatal_datatable <- function(input, output, session, dM) {
   output$postnatal_table <- DT::renderDT({
     postnatal_table()
   },
-  server = TRUE
+    server = TRUE
+  )
+}
+
+#' condition asthma - server
+#'
+#' search for asthma patients.
+#'
+#' Attached to appointments within the defined appointment search period.
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param dM dMeasure R6 object
+#'  access to appointments lists, visits, user interface elements
+#'  and post-natal status database
+#'
+#' @return none
+conditions_asthma_datatable <- function(input, output, session, dM) {
+  ns <- session$ns
+
+  list_asthma <- function(
+    contact = FALSE, # contact (if TRUE) or appointment system (if FALSE)
+    date_from = NA,
+    date_to = NA,
+    clinicians = NA,
+    min_contact = NA,
+    min_date = NA,
+    contact_type = NA,
+    ignoreOld = FALSE,
+    lazy = FALSE) {
+    if (is.na(date_from)) {
+      date_from <- dM$date_a
+    }
+    if (is.na(date_to)) {
+      date_to <- dM$date_b
+    }
+    if (length(clinicians) == 1 && is.na(clinicians)) {
+      # sometimes clinicians is a list, in which case it cannot be a single NA!
+      # 'if' is not vectorized so will only read the first element of the list
+      # but if clinicians is a single NA, then read $clinicians
+      clinicians <- dM$clinicians
+    }
+    if (is.na(min_contact)) {
+      min_contact <- dM$contact_min
+    }
+    if (is.na(min_date)) {
+      min_date <- dM$contact_minDate
+    }
+
+    # no additional clinician filtering based on privileges or user restrictions
+
+    if (all(is.na(clinicians)) || length(clinicians) == 0) {
+      clinicians <- c("") # dplyr::filter does not work on zero-length list()
+    }
+
+    detailed_asthma_list <- data.frame(
+      Patient = character(),
+      InternalID = character(),
+      RecordNo = character(),
+      FluvaxDate = as.Date(numeric(), origin = "1970-01-01"),
+      FluvaxName = character()
+    ) # empty data.frame
+
+    if (dM$emr_db$is_open()) {
+      # only if EMR database is open
+      if (dM$Log) {
+        log_id <- self$dM$config_db$write_log_db(
+          query = "asthma_condition",
+          data = list(date_from, date_to, clinicians)
+        )
+      }
+
+      if (contact) {
+        if (!lazy) {
+          dM$list_contact_asthma(
+            date_from, date_to, clinicians,
+            min_contact, min_date,
+            contact_type,
+            lazy
+          )
+        }
+        asthma_list <- dM$contact_asthma_list %>>%
+          dplyr::select(-c(Count, Latest)) # don't need these fields
+        asthmaID <- asthma_list %>>% dplyr::pull(InternalID) %>>%
+          c(-1) # make sure not empty vector, which is bad for SQL filter
+      } else {
+        if (!lazy) {
+          dM$filter_appointments()
+        }
+        asthmaID <- c(dM$asthma_list(), -1)
+        asthma_list <- dM$db$patients %>>%
+          dplyr::filter(InternalID %in% asthmaID) %>>%
+          dplyr::select(Firstname, Surname, InternalID) %>>%
+          dplyr::collect() %>>%
+          dplyr::mutate(Patient = paste(Firstname, Surname)) %>>%
+          dplyr::select(Patient, InternalID)
+        # derived from self$appointments_filtered
+      }
+
+      fluvaxList <- dM$influenzaVax_obs(asthmaID,
+        date_from = ifelse(ignoreOld,
+          NA,
+          as.Date(-Inf, origin = "1970-01-01")
+        ),
+        # if ignoreOld, then influenza_vax will (given NA)
+        # calculate date_from as fifteen months before date_to
+        date_to = date_to
+      )
+      # returns InternalID, FluVaxName, FluvaxDate
+
+      detailed_asthma_list <- asthma_list %>>%
+        dplyr::left_join(fluvaxList,
+          by = "InternalID",
+          copy = TRUE
+        ) %>>%
+        dplyr::left_join(dM$db$patients %>>%
+            dplyr::filter(InternalID %in% asthmaID) %>>%
+            dplyr::select(InternalID, DOB, RecordNo),
+          by = "InternalID",
+          copy = TRUE
+        ) %>>%
+        dplyr::select(
+          Patient, InternalID, RecordNo,
+          FluvaxDate, FluvaxName
+        )
+
+      if (dM$Log) {
+        dM$config_db$duration_log_db(log_id)
+      }
+
+    }
+    return(detailed_asthma_list)
+  }
+
+  asthma <-
+    shiny::eventReactive(
+      c(input$appointment_contact_view,
+        dM$cliniciansR(), dM$appointments_listR(),
+        dM$date_aR(), dM$date_bR(),
+        dM$contact_typeR(),
+        dM$contact_minR(),
+        dM$contact_minDateR()
+      ),
+      ignoreInit = FALSE, {
+        # respond to appointments_listR()
+        # when clinician or dates is changed
+        shiny::req(dM$appointments_listR())
+
+        asthma_list <- list_asthma(
+          contact = input$appointment_contact_view == "Contact view"
+        )
+
+        if (input$appointment_contact_view == "Appointment view") {
+          asthmaID <- asthma_list %>>% dplyr::pull(InternalID)
+
+          patientAppointments <- dM$appointments_listR() %>>%
+            # accept defaults for $date_a, $date_b and $clinicians
+            dplyr::filter(InternalID %in% asthmaID) %>>%
+            dplyr::select(-Patient) # we don't need the name
+
+          asthma_list <- asthma_list %>>%
+            dplyr::left_join(patientAppointments, by = "InternalID", copy = TRUE)
+        }
+
+        asthma_list <- asthma_list %>>%
+          dplyr::select(-c(InternalID)) %>>% # we don't need the internalID now
+          dplyr::collect()
+
+        return(asthma_list)
+      }
+    )
+
+  ### create tag-styled datatable (or 'printable' datatable)
+  asthma_table <- shiny::reactive({
+    shiny::req(!is.null(asthma()))
+
+    datatable_styled(asthma(),
+      extensions = c("Buttons", "Scroller"),
+      scrollX = TRUE
+    ) # don't collapse columns
+  })
+
+  output$asthma_table <- DT::renderDT({
+    asthma_table()
+  },
+    server = TRUE
   )
 }

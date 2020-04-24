@@ -5,11 +5,13 @@ calc_age <- function(birthDate, refDate = Sys.Date()) {
   # Create an interval between the date of birth and the enrollment date;
   # note that arguments can be vectors, so needto use mapply
 
-  period <- mapply(function(x, y)
-    (length(seq.Date(min(x, y), max(x, y), by = "year")) - 1 ) *
-      ifelse(y > x, 1, -1),
+  period <- mapply(
+    function(x, y)
+      (length(seq.Date(min(x, y), max(x, y), by = "year")) - 1) *
+        ifelse(y > x, 1, -1),
     # note that seq.Date can't handle 'negative' periods
-    birthDate, refDate)
+    birthDate, refDate
+  )
 
   return(period)
 }
@@ -19,11 +21,13 @@ calc_age_months <- function(birthDate, refDate = Sys.Date()) {
   # Create an interval between the date of birth and the enrollment date;
   # note that arguments can be vectors, so need to use mapply
 
-  period <- mapply(function(x, y)
-    (length(seq.Date(min(x, y), max(x, y), by = "month")) - 1) *
-      ifelse(y > x, 1, -1),
+  period <- mapply(
+    function(x, y)
+      (length(seq.Date(min(x, y), max(x, y), by = "month")) - 1) *
+        ifelse(y > x, 1, -1),
     # note that seq.Date can't handle 'negative' periods
-    birthDate, refDate)
+    birthDate, refDate
+  )
 
   return(period)
 }
@@ -42,43 +46,61 @@ interval <- function(date_a, date_b, unit = "none") {
 
   interval <- list()
 
-  interval$year <- mapply(function(x, y)
-    ifelse(!is.na(min(x, y)),
-           ifelse(min(x,y) == -Inf,
-                  infinity_years,
-                  (length(seq.Date(min(x, y), max(x, y), by = "year")) - 1) *
-                    ifelse(y > x, 1, -1)),
-           NA),
+  interval$year <- mapply(
+    function(x, y)
+      ifelse(!is.na(min(x, y)),
+        ifelse(min(x, y) == -Inf,
+          infinity_years,
+          (length(seq.Date(min(x, y), max(x, y), by = "year")) - 1) *
+            ifelse(y > x, 1, -1)
+        ),
+        NA
+      ),
     # note that seq.Date can't handle 'negative' periods
-    date_a, date_b)
+    date_a, date_b
+  )
 
-  interval$month <- mapply(function(x, y, z)
-    ifelse(!is.na(min(x, y)),
-           (ifelse(min(x,y) == -Inf,
-                   0,
-                   length(seq.Date(tail(seq.Date(min(x, y), length.out = abs(z) + 1, by = "year"), 1),
-                                   # 'reduces' difference between dates by 'year' difference
-                                   max(x,y), by = "month")) -1 ) *
-              ifelse(y > x, 1, -1)),
-           NA),
-    date_a, date_b, interval$year)
+  interval$month <- mapply(
+    function(x, y, z)
+      ifelse(!is.na(min(x, y)),
+        (ifelse(min(x, y) == -Inf,
+          0,
+          length(seq.Date(tail(seq.Date(min(x, y), length.out = abs(z) + 1, by = "year"), 1),
+            # 'reduces' difference between dates by 'year' difference
+            max(x, y),
+            by = "month"
+          )) - 1
+        ) *
+          ifelse(y > x, 1, -1)),
+        NA
+      ),
+    date_a, date_b, interval$year
+  )
 
-  interval$day <- mapply(function(x, y, z, zz)
-    ifelse(!is.na(min(x, y)),
-           (ifelse(min(x,y) == -Inf,
-                   0,
-                   length(seq.Date(tail(seq.Date(tail(seq.Date(min(x, y),
-                                                               length.out = abs(z) + 1,
-                                                               by = "year"), 1),
-                                                 length.out = abs(zz) + 1, by = "month"), 1),
-                                   # 'reduces' difference between dates by 'year' difference
-                                   max(x,y), by = "day")) -1 ) *
-              ifelse(y > x, 1, -1)),
-           NA),
-    date_a, date_b, interval$year, interval$month)
+  interval$day <- mapply(
+    function(x, y, z, zz)
+      ifelse(!is.na(min(x, y)),
+        (ifelse(min(x, y) == -Inf,
+          0,
+          length(seq.Date(tail(seq.Date(tail(seq.Date(min(x, y),
+            length.out = abs(z) + 1,
+            by = "year"
+          ), 1),
+          length.out = abs(zz) + 1, by = "month"
+          ), 1),
+          # 'reduces' difference between dates by 'year' difference
+          max(x, y),
+          by = "day"
+          )) - 1
+        ) *
+          ifelse(y > x, 1, -1)),
+        NA
+      ),
+    date_a, date_b, interval$year, interval$month
+  )
 
   if (unit == "month") {
-    interval$month <- interval$month + interval$year*12
+    interval$month <- interval$month + interval$year * 12
     interval$year <- replicate(length(interval$month), 0)
   }
 
@@ -91,7 +113,7 @@ hrmin <- function(t) {
   # t : value in seconds
   # returns 24-hour time of form '14:15' (hh:mm)
 
-  format(as.POSIXct('1900-1-1') + t, '%H:%M')
+  format(as.POSIXct("1900-1-1") + t, "%H:%M")
 }
 
 # code for encoding/decoding. not 'very' secret
@@ -109,14 +131,14 @@ hrmin <- function(t) {
 #' @param nonce a non-secret unique data value used to randomize the cipher
 #'
 #' @return - the encrypted text
-simple_encode <- function (msg, key = NULL, nonce = NULL) {
+simple_encode <- function(msg, key = NULL, nonce = NULL) {
   if (is.null(nonce)) {
     # non-secret unique data 'nonce' used to randomize the cipher
     nonce <- sodium::hex2bin("89:63:73:bc:dc:eb:98:14:59:ce:17:4f:6e:0a:75:15:83:0c:36:00:f2:6e:f7:07")
     # the 24 bytes of hexadecimal digits created by paste0(random(24), collapse = ":")
   }
   if (is.null(key)) {
-    if (nchar(Sys.getenv("DailyMeasure_Value2"))>0) {
+    if (nchar(Sys.getenv("DailyMeasure_Value2")) > 0) {
       # if not set then the number of characters will be zero
       key <- Sys.getenv("DailyMeasure_value2")
       # this can be set in .Renviron
@@ -126,7 +148,8 @@ simple_encode <- function (msg, key = NULL, nonce = NULL) {
   }
   key <- sodium::hash(charToRaw(key))
   return(jsonlite::base64_enc(
-    sodium::data_encrypt(charToRaw(msg), key, nonce)))
+    sodium::data_encrypt(charToRaw(msg), key, nonce)
+  ))
 }
 
 #' Simple decoder
@@ -148,7 +171,7 @@ simple_decode <- function(msg, key = NULL, nonce = NULL) {
     # the 24 bytes of hexadecimal digits created by paste0(random(24), collapse = ":")
   }
   if (is.null(key)) {
-    if (nchar(Sys.getenv("DailyMeasure_Value2"))>0) {
+    if (nchar(Sys.getenv("DailyMeasure_Value2")) > 0) {
       # if not set then the number of characters will be zero
       key <- Sys.getenv("DailyMeasure_value2")
       # this can be set in .Renviron
@@ -159,8 +182,8 @@ simple_decode <- function(msg, key = NULL, nonce = NULL) {
   }
   key <- sodium::hash(charToRaw(key))
   return(rawToChar(sodium::data_decrypt(
-    jsonlite::base64_dec(msg),key, nonce)
-  ))
+    jsonlite::base64_dec(msg), key, nonce
+  )))
 }
 
 #' Simple tagger
@@ -175,7 +198,7 @@ simple_decode <- function(msg, key = NULL, nonce = NULL) {
 #' @return - the hash
 simple_tag <- function(msg, key = NULL) {
   if (is.null(key)) {
-    if (nchar(Sys.getenv("DailyMeasure_Value3"))>0) {
+    if (nchar(Sys.getenv("DailyMeasure_Value3")) > 0) {
       # if not set then the number of characters will be zero
       key <- Sys.getenv("DailyMeasure_value3")
       # this can be set in .Renviron
@@ -204,7 +227,7 @@ simple_tag <- function(msg, key = NULL) {
 #' @return - TRUE if matching, FALSE otherwise
 simple_tag_compare <- function(msg, tag, key = NULL) {
   if (is.null(key)) {
-    if (nchar(Sys.getenv("DailyMeasure_Value3"))>0) {
+    if (nchar(Sys.getenv("DailyMeasure_Value3")) > 0) {
       # if not set then the number of characters will be zero
       key <- Sys.getenv("DailyMeasure_value3")
       # this can be set in .Renviron
@@ -246,10 +269,14 @@ setPassword <- function(newpassword, UserConfig, LoggedInUser, config_db) {
 
   newUserConfig <-
     UserConfig() %>>%
-    dplyr::mutate(Password =
-                    dplyr::replace(Password,
-                                   LoggedInUser()$Fullname == Fullname,
-                                   newpassword))
+    dplyr::mutate(
+      Password =
+        dplyr::replace(
+          Password,
+          LoggedInUser()$Fullname == Fullname,
+          newpassword
+        )
+    )
   UserConfig(newUserConfig) # replace password with empty string
 
   query <- "UPDATE Users SET Password = ? WHERE id = ?"

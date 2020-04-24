@@ -12,28 +12,35 @@ billings_datatableUI <- function(id) {
 
   shiny::tagList(
     shiny::fluidRow(
-      shiny::column(4,
-                    shinyWidgets::switchInput(
-                      inputId = ns("printcopy_view"),
-                      label = paste("<i class=\"fas fa-print\"></i>",
-                                    "<i class=\"far fa-copy\"></i>",
-                                    "  Print and Copy View"),
-                      labelWidth = "12em",
-                      width = "20em")
+      shiny::column(
+        4,
+        shinyWidgets::switchInput(
+          inputId = ns("printcopy_view"),
+          label = paste(
+            "<i class=\"fas fa-print\"></i>",
+            "<i class=\"far fa-copy\"></i>",
+            "  Print and Copy View"
+          ),
+          labelWidth = "12em",
+          width = "20em"
+        )
       ),
-      shiny::column(3, offset = 5, # note that total 'column' width = 12
-                    shinyWidgets::switchInput(
-                      inputId = ns("allbillings_view"),
-                      label = paste("Show all day's billings"),
-                      labelWidth = "12em",
-                      width = "20em")
+      shiny::column(3,
+        offset = 5, # note that total 'column' width = 12
+        shinyWidgets::switchInput(
+          inputId = ns("allbillings_view"),
+          label = paste("Show all day's billings"),
+          labelWidth = "12em",
+          width = "20em"
+        )
       )
     ),
     shinycssloaders::withSpinner(
       DT::DTOutput(ns("billings_table")),
       type = 8,
       hide.element.when.recalculating = FALSE,
-      proxy.height = NULL)
+      proxy.height = NULL
+    )
   )
 }
 
@@ -55,21 +62,30 @@ billings_datatable <- function(input, output, session, dMBillings) {
   ns <- session$ns
 
   billings_list <- shiny::eventReactive(
-    c(dMBillings$billings_listR(),
-      input$printcopy_view), {
-        shiny::validate(
-          shiny::need(dMBillings$billings_listR(),
-                      "No appointments in chosen range"),
-          shiny::need(nrow(dMBillings$billings_listR()) > 0,
-                      "No appointments in chosen range")
+    c(
+      dMBillings$billings_listR(),
+      input$printcopy_view
+    ), {
+      shiny::validate(
+        shiny::need(
+          dMBillings$billings_listR(),
+          "No appointments in chosen range"
+        ),
+        shiny::need(
+          nrow(dMBillings$billings_listR()) > 0,
+          "No appointments in chosen range"
         )
+      )
 
-        billingslist <- dMBillings$list_billings(lazy = TRUE,
-                                                 screentag = !input$printcopy_view,
-                                                 screentag_print = input$printcopy_view)
+      billingslist <- dMBillings$list_billings(
+        lazy = TRUE,
+        screentag = !input$printcopy_view,
+        screentag_print = input$printcopy_view
+      )
 
-        return(billingslist)
-      })
+      return(billingslist)
+    }
+  )
 
   shiny::observeEvent(input$allbillings_view, ignoreNULL = TRUE, {
     dMBillings$own_billings <- !input$allbillings_view
@@ -83,18 +99,24 @@ billings_datatable <- function(input, output, session, dMBillings) {
     if (input$printcopy_view == TRUE) {
       # printable/copyable view
       datatable_styled(billings_list() %>>%
-                         dplyr::select(Patient, Date, AppointmentTime, Status, VisitType,
-                                       Provider, billingtag_print),
-                       colnames = c('Billings' = 'billingtag_print'))
+        dplyr::select(
+          Patient, Date, AppointmentTime, Status, VisitType,
+          Provider, billingtag_print
+        ),
+      colnames = c("Billings" = "billingtag_print")
+      )
     } else {
       # fomantic/semantic tag view
       datatable_styled(billings_list() %>%
-                         dplyr::select(Patient, Date, AppointmentTime, Status, VisitType,
-                                       Provider, billingtag),
-                       escape = c(5),
-                       copyHtml5 = NULL, printButton = NULL, # no copy/print buttons
-                       downloadButton = NULL,
-                       colnames = c('Billings' = 'billingtag'))
+        dplyr::select(
+          Patient, Date, AppointmentTime, Status, VisitType,
+          Provider, billingtag
+        ),
+      escape = c(5),
+      copyHtml5 = NULL, printButton = NULL, # no copy/print buttons
+      downloadButton = NULL,
+      colnames = c("Billings" = "billingtag")
+      )
     }
   })
 

@@ -19,26 +19,28 @@
 #' @importFrom shinydashboard menuItem tabItems tabItem
 #'
 #' @export
-GPstat <- function (appmode = "chrome", launch.browser = TRUE,
-                    host = getOption("shiny.host", "127.0.0.1"), port = NULL,
-                    demonstration = FALSE, ...) {
-
+GPstat <- function(appmode = "chrome", launch.browser = TRUE,
+                   host = getOption("shiny.host", "127.0.0.1"), port = NULL,
+                   demonstration = FALSE, ...) {
   if (appmode == "chrome") {
-    launch.browser = function(shinyurl) {
+    launch.browser <- function(shinyurl) {
       shell(paste0("start chrome --app=", shinyurl))
     }
   }
 
   ##### Run the application ###########################################
-  shiny::shinyApp(ui = DailyMeasureUI(), server = DailyMeasureServer,
-                  options = list(launch.browser = launch.browser,
-                                 host = host, port = port),
-                  onStart = function() {
-                    .bcdyz.option <<- list(demonstration = demonstration) # set global
-                    # accessible as .bcdyz.option in the server
-                    # example of this is found in https://github.com/rstudio/shiny/issues/440
-                    # https://stackoverflow.com/questions/31118236/how-to-set-global-variable-values-in-the-onstart-parameter-of-shiny-application
-                  }, ...)
+  shiny::shinyApp(
+    ui = DailyMeasureUI(), server = DailyMeasureServer,
+    options = list(
+      launch.browser = launch.browser,
+      host = host, port = port
+    ),
+    onStart = function() {
+      .bcdyz.option <<- list(demonstration = demonstration) # set global
+      # accessible as .bcdyz.option in the server
+      # example of this is found in https://github.com/rstudio/shiny/issues/440
+      # https://stackoverflow.com/questions/31118236/how-to-set-global-variable-values-in-the-onstart-parameter-of-shiny-application
+    }, ...
+  )
   # shiny::runApp(app, ...) - runApp does NOT pass through unicode e.g. Chinese/Greek un-modified!
-
 }

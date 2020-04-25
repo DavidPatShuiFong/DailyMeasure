@@ -160,7 +160,7 @@ DailyMeasureServer <- function(input, output, session) {
 
   shiny::observeEvent(dM$date_bR(), {
     # change 'date_to' in response to $date_a
-    if (input$date1 != dM$date_bR()) {
+    if (input$date2 != dM$date_bR()) {
       shiny::updateDateInput(session, "date2", value = dM$date_bR())
     }
   })

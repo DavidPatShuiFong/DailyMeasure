@@ -10,6 +10,10 @@ New
 * asthma view in Conditions tab
 * 'include up-to-date' option for cancer screening
 
+Fix
+
+* fixed logic for updating 'date_to' input on right side-panel
+
 Version 1.5.7, 8th April 2020
 =============================
 

@@ -513,21 +513,45 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
           by = "InternalID",
           copy = TRUE
         )
+
+      asthmaPlanList <- dM$asthmaplan_obs(asthmaID,
+        date_from = ifelse(ignoreOld,
+          NA,
+          as.Date(-Inf, origin = "1970-01-01")
+        ),
+        # if ignoreOld, then influenza_vax will (given NA)
+        # calculate date_from as fifteen months before date_to
+        date_to = date_to
+      )
+      # returns InternalID, FluvaxName, FluvaxDate
+      # add the flu vax list to the asthma list
+      detailed_asthma_list <- detailed_asthma_list %>>%
+        dplyr::left_join(asthmaPlanList,
+          by = "InternalID",
+          copy = TRUE
+        )
+
       # then remove up-to-date items if required
+      # only remove if BOTH/ALL of vax and asthmaplan are up-to-date
       if (!include_uptodate) {
         if (contact) {
           detailed_asthma_list <- detailed_asthma_list %>>%
-            dplyr::filter(is.na(FluvaxDate) |
-              FluvaxDate == as.Date(-Inf, origin = "1970-01-01") |
-              format(FluvaxDate, "%Y") != format(date_to, "%Y"))
+            dplyr::filter(is.na(FluvaxDate) ||
+                FluvaxDate == as.Date(-Inf, origin = "1970-01-01") ||
+                format(FluvaxDate, "%Y") != format(date_to, "%Y") ||
+                is.na(PlanDate) ||
+                dMeasure::interval(PlanDate, dM$date_b)$year > 0)
           # remove entries which are 'up-to-date'!
           # anyone who has had a flu vax  in the same year as end of contact period
           # (and so has a valid 'GivenDate') is 'up-to-date'!
+          # or plan date less than one year old
         } else { # appointment method
           detailed_asthma_list <- detailed_asthma_list %>>%
-            dplyr::filter(is.na(FluvaxDate) |
-              FluvaxDate == as.Date(-Inf, origin = "1970-01-01") |
-              format(FluvaxDate, "%Y") != format(AppointmentDate, "%Y"))
+            dplyr::filter(is.na(FluvaxDate) ||
+                FluvaxDate == as.Date(-Inf, origin = "1970-01-01") ||
+                format(FluvaxDate, "%Y") != format(AppointmentDate, "%Y") ||
+                is.na(PlanDate) ||
+                dMeasure::interval(PlanDate, AppointmentDate)$year > 0)
           # remove entries which are 'up-to-date'!
           # anyone who has had a flu vax  in the same year as appointment date
           # (and so has a valid 'GivenDate') is 'up-to-date'!
@@ -610,6 +634,19 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
                 "Old"
               )
             )
+          ),
+        AsthmaPlanStatus =
+          dplyr::if_else(
+            is.na(PlanDate) |
+              (PlanDate == as.Date(-Inf, origin = "1970-01-01")),
+            "Never done", # no previous asthma plan\
+            paste0(
+              dplyr::if_else(
+                dMeasure::interval(PlanDate, ComparisonDate)$year == 0,
+                "Up-to-date", # less than twelve months
+                "Old"
+              )
+            )
           )
       ) %>>%
       dplyr::select(-c(InternalID, DeclinedFluvax, ComparisonDate)) # no longer need these
@@ -629,6 +666,18 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
                 paste0(" (Up-to-date : ", FluvaxDate, ") "),
                 FluvaxStatus == "Old" ~
                 paste0(" (DUE : ", FluvaxDate, ") ")
+              )
+            ),
+          plantag_print =
+            paste0(
+              "Asthma plan", # printable version of information
+              dplyr::case_when(
+                AsthmaPlanStatus == "Never done" ~ " (Never done)",
+                # no previous asthma plan
+                AsthmaPlanStatus == "Up-to-date" ~
+                  paste0(" (Up-to-date : ", PlanDate, ") "),
+                AsthmaPlanStatus == "Old" ~
+                  paste0(" (DUE : ", PlanDate, ") ")
               )
             )
         )
@@ -663,26 +712,57 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
                   ),
                   "</h4>"
                 )
+            ),
+          plantag =
+            dMeasure::semantic_tag(
+              paste0(" Asthma plan "),
+              colour =
+                dplyr::case_when(
+                  AsthmaPlanStatus == "Never done" ~ c("red"),
+                  # no previous asthma plan
+                  AsthmaPlanStatus == "Up-to-date" ~ c("green"),
+                  AsthmaPlanStatus == "Old" ~ c("yellow")
+                ),
+              # red if not given
+              # and green if has had the plan within year. yellow if 'old' plan
+              popuphtml =
+                paste0(
+                  "<h4>",
+                  dplyr::case_when(
+                    AsthmaPlanStatus == "Never done" ~ "Never done",
+                    # no previous asthma plan
+                    AsthmaPlanStatus == "Up-to-date" ~
+                      paste0(" Up-to-date : ", PlanDate),
+                    AsthmaPlanStatus == "Old" ~
+                      paste0(" DUE : ", PlanDate) # old
+                  ),
+                  "</h4>"
+                )
             )
         )
     }
 
     df <- df %>>%
-      dplyr::select(-c(FluvaxDate, FluvaxName, FluvaxStatus))
-    # flu vax information now incorporated into vaxtag and vaxtag_print
+      dplyr::select(-c(FluvaxDate, FluvaxName, PlanDate,
+        FluvaxStatus, AsthmaPlanStatus))
+    # flu vax and asthma plan information now incorporated
+    #  into vaxtag/vaxtag_print and plantag, plantag_print
 
     if (input$printcopy_view == TRUE) {
       datatable_styled(df,
         extensions = c("Buttons", "Scroller"),
         scrollX = TRUE,
-        colnames = c("Vaccination" = "vaxtag_print")
+        colnames = c("Vaccination" = "vaxtag_print",
+          "Asthma Plan" = "plantag_print")
       ) # don't collapse columns
     } else {
       datatable_styled(df,
         copyHtml5 = NULL, printButton = NULL,
         downloadButton = NULL, # no copy/print buttons
-        escape = c(ncol(df)), # the last column
-        colnames = c("Vaccination" = "vaxtag")
+        escape = which(colnames(df) %in% c("vaxtag", "plantag")) - 1,
+        # escape the 'tag' columns so that HTML is interpreted
+        colnames = c("Vaccination" = "vaxtag",
+          "Asthma Plan" = "plantag")
       )
     }
   })

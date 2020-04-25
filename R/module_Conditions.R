@@ -408,16 +408,16 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
   #    Patient, InternalID, DOB, RecordNo, FluvaxName, FluvaxDate
   #  in the case of 'appointment' system, also includes appointment details
   list_asthma <- function(
-    contact = FALSE,
-    date_from = NA,
-    date_to = NA,
-    clinicians = NA,
-    min_contact = NA,
-    min_date = NA,
-    contact_type = NA,
-    ignoreOld = FALSE,
-    include_uptodate = TRUE,
-    lazy = FALSE) {
+                            contact = FALSE,
+                            date_from = NA,
+                            date_to = NA,
+                            clinicians = NA,
+                            min_contact = NA,
+                            min_date = NA,
+                            contact_type = NA,
+                            ignoreOld = FALSE,
+                            include_uptodate = TRUE,
+                            lazy = FALSE) {
     if (is.na(date_from)) {
       date_from <- dM$date_a
     }
@@ -461,6 +461,7 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
       }
 
       if (contact) {
+        # contact method
         if (!lazy) {
           dM$list_contact_asthma(
             date_from, date_to, clinicians,
@@ -475,6 +476,7 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
           dplyr::pull(InternalID) %>>%
           c(-1) # make sure not empty vector, which is bad for SQL filter
       } else {
+        # appointment method
         if (!lazy) {
           dM$list_appointments(lazy = FALSE)
         }
@@ -486,6 +488,7 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
           dplyr::filter(InternalID %in% asthmaID)
       }
 
+      # add DOB, RecordNo to asthma list
       asthma_list <- asthma_list %>>%
         dplyr::left_join(dM$db$patients %>>%
           dplyr::filter(InternalID %in% asthmaID) %>>%
@@ -504,13 +507,13 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
         date_to = date_to
       )
       # returns InternalID, FluvaxName, FluvaxDate
-
+      # add the flu vax list to the asthma list
       detailed_asthma_list <- asthma_list %>>%
         dplyr::left_join(fluvaxList,
           by = "InternalID",
           copy = TRUE
         )
-
+      # then remove up-to-date items if required
       if (!include_uptodate) {
         if (contact) {
           detailed_asthma_list <- detailed_asthma_list %>>%
@@ -559,10 +562,6 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
           include_uptodate = (!is.null(input$include_uptodate))
         )
 
-        asthma_list <- asthma_list %>>%
-          dplyr::select(-c(InternalID)) %>>% # we don't need the internalID now
-          dplyr::collect()
-
         return(asthma_list)
       }
     )
@@ -571,10 +570,121 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
   asthma_table <- shiny::reactive({
     shiny::req(!is.null(asthma()))
 
-    datatable_styled(asthma(),
-      extensions = c("Buttons", "Scroller"),
-      scrollX = TRUE
-    ) # don't collapse columns
+    df <- asthma()
+
+    contact <- input$appointment_contact_view == "Contact view"
+    if (contact) {
+      df <- df %>>%
+        dplyr::mutate(ComparisonDate = dM$date_b)
+      # compare vax date to end of contact period
+    } else {
+      df <- df %>>%
+        dplyr::mutate(ComparisonDate = AppointmentDate)
+      # compare vax date to day of appointment
+    }
+
+    df <- df %>>%
+      dplyr::left_join(dM$db$preventive_health %>>%
+        # those who have been removed from the reminder system for influenza
+        dplyr::filter(ITEMID == 1) %>>%
+        dplyr::rename(DeclinedFluvax = ITEMID),
+      by = "InternalID",
+      copy = TRUE
+      ) %>>%
+      dplyr::mutate(
+        FluvaxStatus =
+          dplyr::if_else(
+            is.na(FluvaxDate) |
+              (FluvaxDate == as.Date(-Inf, origin = "1970-01-01")),
+            dplyr::if_else(
+              is.na(DeclinedFluvax),
+              "Never given", # no previous vax, not declined
+              "Removed" # removed from immunization reminders
+            ),
+            paste0(
+              dplyr::if_else(
+                format(FluvaxDate, "%Y") == format(ComparisonDate, "%Y"),
+                # this compares dates, is year same as end of contact period?
+                # https://stackoverflow.com/questions/36568070/extract-year-from-date
+                "Up-to-date",
+                "Old"
+              )
+            )
+          )
+      ) %>>%
+      dplyr::select(-c(InternalID, DeclinedFluvax, ComparisonDate)) # no longer need these
+
+    if (input$printcopy_view) {
+      df <- df %>>%
+        dplyr::mutate(
+          vaxtag_print =
+            paste0(
+              "Influenza", # printable version of information
+              dplyr::case_when(
+                FluvaxStatus == "Never given" ~ " (Never given)",
+                # no previous vax, not declined
+                FluvaxStatus == "Removed" ~
+                " (Removed from influenza immunization reminders)",
+                FluvaxStatus == "Up-to-date" ~
+                paste0(" (Up-to-date : ", FluvaxDate, ") "),
+                FluvaxStatus == "Old" ~
+                paste0(" (DUE : ", FluvaxDate, ") ")
+              )
+            )
+        )
+    } else {
+      df <- df %>>%
+        dplyr::mutate(
+          vaxtag =
+            dMeasure::semantic_tag(
+              paste0(" Influenza "),
+              colour =
+                dplyr::case_when(
+                  FluvaxStatus == "Never given" ~ c("red"),
+                  # no previous vax, not declined
+                  FluvaxStatus == "Removed" ~ c("purple"),
+                  FluvaxStatus == "Up-to-date" ~ c("green"),
+                  FluvaxStatus == "Old" ~ c("yellow")
+                ),
+              # red if not given, purple if removed from flu vax reminders
+              # and green if has had the vax this year. yellow if 'old' vax
+              popuphtml =
+                paste0(
+                  "<h4>",
+                  dplyr::case_when(
+                    FluvaxStatus == "Never given" ~ "Never given",
+                    # no previous vax, not declined
+                    FluvaxStatus == "Removed" ~
+                    "Removed from influenza immunization reminders",
+                    FluvaxStatus == "Up-to-date" ~
+                    paste0(" Up-to-date : ", FluvaxDate),
+                    FluvaxStatus == "Old" ~
+                    paste0(" DUE : ", FluvaxDate) # old
+                  ),
+                  "</h4>"
+                )
+            )
+        )
+    }
+
+    df <- df %>>%
+      dplyr::select(-c(FluvaxDate, FluvaxName, FluvaxStatus))
+    # flu vax information now incorporated into vaxtag and vaxtag_print
+
+    if (input$printcopy_view == TRUE) {
+      datatable_styled(df,
+        extensions = c("Buttons", "Scroller"),
+        scrollX = TRUE,
+        colnames = c("Vaccination" = "vaxtag_print")
+      ) # don't collapse columns
+    } else {
+      datatable_styled(df,
+        copyHtml5 = NULL, printButton = NULL,
+        downloadButton = NULL, # no copy/print buttons
+        escape = c(ncol(df)), # the last column
+        colnames = c("Vaccination" = "vaxtag")
+      )
+    }
   })
 
   output$asthma_table <- DT::renderDT({

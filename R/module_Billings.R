@@ -11,6 +11,9 @@ billings_datatableUI <- function(id) {
   ns <- shiny::NS(id)
 
   shiny::tagList(
+    tags$head(
+      tags$style(HTML("hr {border-top: 1px solid #000000;}"))
+    ), # make the horizontal rule darker!
     shiny::fluidRow(
       shiny::column(
         4,
@@ -26,11 +29,11 @@ billings_datatableUI <- function(id) {
         )
       ),
       shiny::column(2,
-        offset = 2,
+        offset = 3,
         shiny::uiOutput(ns("billing_options"))
       ),
       shiny::column(3,
-        offset = 1, # note that total 'column' width = 12
+        offset = 0, # note that total 'column' width = 12
         shinyWidgets::switchInput(
           inputId = ns("allbillings_view"),
           label = paste("Show all day's billings"),
@@ -69,26 +72,38 @@ billings_datatable <- function(input, output, session, dMBillings) {
     shinyWidgets::dropdown(
       input_id = ns("billing_options_dropdown"),
       icon = icon("gear"),
-      label = "Inclusions/Exclusions",
+      label = "Billing options",
       shinyWidgets::checkboxGroupButtons(
-        inputId = ns("billing_options_chosen"),
-        label = "Billing Options",
+        inputId = ns("billing_reminders_chosen"),
+        label = "Billing Reminders",
         choices = c("COVID-19 Bulk Billing Incentive"),
         selected = c("COVID-19 Bulk Billing Incentive"),
-        # initially all chosen, which includes choices to
-        #  'include' ATSI 35-44 years,
-        # and 'exclude'
-        #  those with known cardiovascular disease and age 75
+        status = "primary",
+        checkIcon = list(yes = icon("ok", lib = "glyphicon"))
+      ),
+      shiny::hr(),
+      shinyWidgets::checkboxGroupButtons(
+        inputId = ns("billing_types_viewed"),
+        label = "Billing types viewed",
+        choices = c("Direct 'bulk' billing", "DVA", "WorkCover", "Other"),
+        selected = c("Direct 'bulk' billing", "DVA", "WorkCover", "Other"),
         status = "primary",
         checkIcon = list(yes = icon("ok", lib = "glyphicon"))
       )
     )
   })
 
+  payerCodePrevious <- 0:8
+  # a 'semi-global' containing current billings types viewed
+  # (all of them) in input$billing_types_viewed
+  # used in 'billings_list' reactive to check if there is
+  # a change in the input
+
   billings_list <- shiny::eventReactive(
     c(
       dMBillings$billings_listR(),
-      input$printcopy_view
+      input$printcopy_view,
+      input$billing_types_viewed
     ), {
       shiny::validate(
         shiny::need(
@@ -101,11 +116,40 @@ billings_datatable <- function(input, output, session, dMBillings) {
         )
       )
 
+      payerCode <- c()
+      if ("Direct 'bulk' billing" %in% input$billing_types_viewed) {
+        payerCode <- c(payerCode, 2)
+      }
+      if ("DVA" %in% input$billing_types_viewed) {
+        payerCode <- c(payerCode, 3)
+      }
+      if ("WorkCover" %in% input$billing_types_viewed) {
+        payerCode <- c(payerCode, 4)
+      }
+      if ("Other" %in% input$billing_types_viewed) {
+        payerCode <- c(payerCode, 0, 1, 5:8)
+      }
+      if (length(payerCode) == length(payerCodePrevious) &&
+          all(payerCode == payerCodePrevious)) {
+        # need to compare length as well as each individual element
+        # as there is a possibility of 're-cycling'
+        # https://stackoverflow.com/questions/10374932/comparing-two-vectors-in-an-if-statement
+        lazy = TRUE
+        # don't need to force re-calculation of billings list
+        # as reactives have already taken care of recalculation
+      } else {
+        lazy = FALSE
+        # need to force a re-calculation of billings list
+        # as payerCode is currently not a reactive
+        payerCodePrevious <- payerCode
+      }
+
       billingslist <- dMBillings$list_billings(
-        lazy = TRUE,
+        lazy = lazy,
         screentag = !input$printcopy_view,
         screentag_print = input$printcopy_view,
-        rawbilling = TRUE
+        rawbilling = TRUE,
+        payerCode = payerCode
         # the 'raw' billings will be in the 'billings' column
       )
 
@@ -198,7 +242,7 @@ billings_datatable <- function(input, output, session, dMBillings) {
 
     billings <- billings_list()
 
-    if ("COVID-19 Bulk Billing Incentive" %in% input$billing_options_chosen) {
+    if ("COVID-19 Bulk Billing Incentive" %in% input$billing_reminders_chosen) {
       billings <- billings %>>%
         dplyr::mutate(covid19bb = mapply(
           check_for_covid19_bulkbilling,

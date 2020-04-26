@@ -499,7 +499,7 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
 
       fluvaxList <- dM$influenzaVax_obs(asthmaID,
         date_from = ifelse(ignoreOld,
-          NA,
+          as.Date(NA, origin = "1970-01-01"),
           as.Date(-Inf, origin = "1970-01-01")
         ),
         # if ignoreOld, then influenza_vax will (given NA)
@@ -516,7 +516,7 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
 
       asthmaPlanList <- dM$asthmaplan_obs(asthmaID,
         date_from = ifelse(ignoreOld,
-          NA,
+          as.Date(NA, origin = "1970-01-01"),
           as.Date(-Inf, origin = "1970-01-01")
         ),
         # if ignoreOld, then influenza_vax will (given NA)

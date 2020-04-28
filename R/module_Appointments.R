@@ -8,7 +8,6 @@
 #'
 #' @return Shiny user interface element
 appointments_datatableUI <- function(id) {
-
   ns <- shiny::NS(id)
 
   shiny::tagList(
@@ -17,7 +16,8 @@ appointments_datatableUI <- function(id) {
       DT::DTOutput(ns("appointments_table")),
       type = 8,
       hide.element.when.recalculating = FALSE,
-      proxy.height = NULL)
+      proxy.height = NULL
+    )
   )
 }
 
@@ -47,12 +47,16 @@ appointments_datatable <- function(input, output, session, dM) {
 
   styled_appointments_list <- shiny::reactive({
     shiny::validate(
-      shiny::need(dM$appointments_filtered_timeR(),
-                  "No appointments in selected range")
+      shiny::need(
+        dM$appointments_filtered_timeR(),
+        "No appointments in selected range"
+      )
     )
     datatable_styled(dM$appointments_filtered_timeR() %>>%
-                       dplyr::select(Patient, AppointmentDate, AppointmentTime,
-                                     Provider, Status))
+      dplyr::select(
+        Patient, AppointmentDate, AppointmentTime,
+        Provider, Status
+      ))
   })
 
   output$appointments_table <- DT::renderDT({

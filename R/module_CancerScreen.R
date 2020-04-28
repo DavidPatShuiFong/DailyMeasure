@@ -13,24 +13,44 @@ cancerscreen_datatableUI <- function(id) {
 
   shiny::tagList(
     shiny::fluidRow(
-      shiny::column(5,
-                    shinyWidgets::switchInput(
-                      inputId = ns("printcopy_view"),
-                      label = paste("<i class=\"fas fa-print\"></i>",
-                                    "</i><i class=\"far fa-copy\"></i>",
-                                    " Print and Copy View"),
-                      labelWidth = "12em",
-                      width = "20em")
+      shiny::column(
+        5,
+        shinyWidgets::switchInput(
+          inputId = ns("printcopy_view"),
+          label = paste(
+            "<i class=\"fas fa-print\"></i>",
+            "</i><i class=\"far fa-copy\"></i>",
+            " Print and Copy View"
+          ),
+          labelWidth = "12em",
+          width = "20em"
+        )
       ),
-      shiny::column(2, offset = 5, # note that total 'column' width = 12
-                    uiOutput(ns("cancerscreen_choice"))
+      shiny::column(2,
+        offset = 3,
+        shinyWidgets::checkboxGroupButtons(
+          inputId = ns("include_uptodate"),
+          choiceNames = c("Include up-to-date"),
+          choiceValues = c(1),
+          selected = 1,
+          status = "primary",
+          checkIcon = list(
+            yes = icon("ok", lib = "glyphicon"),
+            no = icon("remove", lib = "glyphicon")
+          )
+        )
+      ),
+      shiny::column(2,
+        offset = 0, # note that total 'column' width = 12
+        uiOutput(ns("cancerscreen_choice"))
       )
     ),
     shinycssloaders::withSpinner(
       DT::DTOutput(ns("cancerscreen_table")),
       type = 8,
       hide.element.when.recalculating = FALSE,
-      proxy.height = NULL)
+      proxy.height = NULL
+    )
   )
 }
 
@@ -47,7 +67,6 @@ cancerscreen_datatableUI <- function(id) {
 #'
 #' @return None
 cancerscreen_datatable <- function(input, output, session, dM) {
-
   ns <- session$ns
 
   # Cancer screening types
@@ -64,7 +83,8 @@ cancerscreen_datatable <- function(input, output, session, dM) {
         choices = cancerscreen_names, selected = cancerscreen_names,
         # all choices initially selected
         status = "primary",
-        checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
+        checkIcon = list(yes = icon("ok", lib = "glyphicon"))
+      ),
       icon = icon("gear"),
       label = "Cancer screening shown"
     )
@@ -80,22 +100,40 @@ cancerscreen_datatable <- function(input, output, session, dM) {
 
     screenlist <- NULL
     # Bowel cancer
-    if ("Bowel" %in% input$cancerscreen_chosen)
-    {screenlist <- rbind(screenlist,
-                         dM$list_fobt(appointments_list = dM$appointments_listR(),
-                                      screentag = TRUE, screentag_print = TRUE))}
+    if ("Bowel" %in% input$cancerscreen_chosen) {
+      screenlist <- rbind(
+        screenlist,
+        dM$list_fobt(
+          appointments_list = dM$appointments_listR(),
+          include_uptodate = (!is.null(input$include_uptodate)),
+          screentag = TRUE, screentag_print = TRUE
+        )
+      )
+    }
     # both HTML and printable versions of tags requested
     # Cervical cancer
-    if ("Cervical" %in% input$cancerscreen_chosen)
-    {screenlist <- rbind(screenlist,
-                         dM$list_cst(appointments_list = dM$appointments_listR(),
-                                     screentag = TRUE, screentag_print = TRUE))}
+    if ("Cervical" %in% input$cancerscreen_chosen) {
+      screenlist <- rbind(
+        screenlist,
+        dM$list_cst(
+          appointments_list = dM$appointments_listR(),
+          include_uptodate = (!is.null(input$include_uptodate)),
+          screentag = TRUE, screentag_print = TRUE
+        )
+      )
+    }
 
     # Breast cancer
-    if ("Breast" %in% input$cancerscreen_chosen)
-    {screenlist <- rbind(screenlist,
-                         dM$list_mammogram(appointments_list = dM$appointments_listR(),
-                                           screentag = TRUE, screentag_print = TRUE))}
+    if ("Breast" %in% input$cancerscreen_chosen) {
+      screenlist <- rbind(
+        screenlist,
+        dM$list_mammogram(
+          appointments_list = dM$appointments_listR(),
+          include_uptodate = (!is.null(input$include_uptodate)),
+          screentag = TRUE, screentag_print = TRUE
+        )
+      )
+    }
 
 
     if (is.null(screenlist)) {
@@ -103,11 +141,15 @@ cancerscreen_datatable <- function(input, output, session, dM) {
     }
 
     screenlist <- screenlist %>>%
-      dplyr::group_by(Patient, InternalID, AppointmentDate, AppointmentTime, Provider,
-                      DOB, Age) %>>%
+      dplyr::group_by(
+        Patient, InternalID, AppointmentDate, AppointmentTime, Provider,
+        DOB, Age
+      ) %>>%
       # gathers vaccination notifications on the same appointment into a single row
-      dplyr::summarise(screentag = paste(screentag, collapse = ""),
-                       screentag_print = paste(screentag_print, collapse = ", ")) %>>%
+      dplyr::summarise(
+        screentag = paste(screentag, collapse = ""),
+        screentag_print = paste(screentag_print, collapse = ", ")
+      ) %>>%
       # both HTML and printable versions of tags processed (and requested earlier)
       dplyr::ungroup()
 
@@ -116,30 +158,42 @@ cancerscreen_datatable <- function(input, output, session, dM) {
 
   styled_cancerscreen_list <- reactive({
     shiny::validate(
-      shiny::need(dM$appointments_listR(),
-                  "No appointments in selected range"),
-      shiny::need(nrow(dM$appointments_listR()) > 0,
-                  "No appointments in chosen range"),
-      shiny::need(cancerscreen_list(),
-                  "Choose at least one screening to display")
+      shiny::need(
+        dM$appointments_listR(),
+        "No appointments in selected range"
+      ),
+      shiny::need(
+        nrow(dM$appointments_listR()) > 0,
+        "No appointments in chosen range"
+      ),
+      shiny::need(
+        cancerscreen_list(),
+        "Choose at least one screening to display"
+      )
     )
     dummy <- cancerscreen_list()
 
     if (input$printcopy_view == TRUE) {
       # printable/copyable view
       datatable_styled(cancerscreen_list() %>>%
-                         dplyr::select(c('Patient', 'AppointmentDate', 'AppointmentTime',
-                                         'Provider', 'DOB', 'Age', 'screentag_print')),
-                       colnames = c('Screening' = 'screentag_print'))
+        dplyr::select(c(
+          "Patient", "AppointmentDate", "AppointmentTime",
+          "Provider", "DOB", "Age", "screentag_print"
+        )),
+      colnames = c("Screening" = "screentag_print")
+      )
     } else {
       # fomantic/semantic tag view
       datatable_styled(cancerscreen_list() %>>%
-                         dplyr::select(c('Patient', 'AppointmentDate', 'AppointmentTime',
-                                         'Provider', 'DOB', 'Age', 'screentag')),
-                       escape = c(7),
-                       copyHtml5 = NULL, printButton = NULL,
-                       downloadButton = NULL,  # no copy/print buttons
-                       colnames = c('Screening' = 'screentag'))
+        dplyr::select(c(
+          "Patient", "AppointmentDate", "AppointmentTime",
+          "Provider", "DOB", "Age", "screentag"
+        )),
+      escape = c(7),
+      copyHtml5 = NULL, printButton = NULL,
+      downloadButton = NULL, # no copy/print buttons
+      colnames = c("Screening" = "screentag")
+      )
     }
   })
 

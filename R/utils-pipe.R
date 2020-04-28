@@ -19,4 +19,3 @@ NULL
 #' @importFrom pipeR %>>%
 #' @usage lhs \%>>\% rhs
 NULL
-

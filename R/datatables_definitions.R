@@ -32,42 +32,57 @@ semantic_popupJS <- c("window.onload = function() {$('.ui.button') .popup({on: '
 #' @return DT datatable object
 #' @export
 datatable_styled <- function(data, fillContainer = TRUE,
-                             extensions = c('Buttons', 'Scroller', 'Responsive'),
-                             dom = 'frltiBp',
-                             colvis = list(extend = 'colvis',
-                                           collectionLayout = "fixed four-column"
-                                           # https://datatables.net/reference/button/collection
-                                           # another option is to force 'dropdown' to drop-up
-                                           # 'dropup' = TRUE
-                                           # because this button is at bottom of page
-                                           # 'dropup' doesn't seem to work for collection list
-                                           # below
-                                           # 'fixed' in collectionLayout 'centres' the drop-down
-                                           ),
-                             copyHtml5 = list(extend = 'copyHtml5',
-                                              exportOptions = list(columns = ':visible')),
-                             printButton = list(extend = 'print',
-                                                exportOptions = list(columns = ':visible')),
-                             downloadButton = list(extend = 'collection',
-                                                   buttons = list(
-                                                     list(extend = 'csvHtml5',
-                                                          exportOptions = list(columns = ':visible'),
-                                                          filename = 'GPstat'),
-                                                     list(extend = 'excel',
-                                                          exportOptions = list(columns = ':visible'),
-                                                          filename = 'GPstat'),
-                                                     list(extend = 'pdf',
-                                                          exportOptions = list(columns = ':visible'),
-                                                          filename = 'GPstat')),
-                                                   text = 'Download',
-                                                   collectionLayout = "fixed"),
+                             extensions = c("Buttons", "Scroller", "Responsive"),
+                             dom = "frltiBp",
+                             colvis = list(
+                               extend = "colvis",
+                               collectionLayout = "fixed four-column"
+                               # https://datatables.net/reference/button/collection
+                               # another option is to force 'dropdown' to drop-up
+                               # 'dropup' = TRUE
+                               # because this button is at bottom of page
+                               # 'dropup' doesn't seem to work for collection list
+                               # below
+                               # 'fixed' in collectionLayout 'centres' the drop-down
+                             ),
+                             copyHtml5 = list(
+                               extend = "copyHtml5",
+                               exportOptions = list(columns = ":visible")
+                             ),
+                             printButton = list(
+                               extend = "print",
+                               exportOptions = list(columns = ":visible")
+                             ),
+                             downloadButton = list(
+                               extend = "collection",
+                               buttons = list(
+                                 list(
+                                   extend = "csvHtml5",
+                                   exportOptions = list(columns = ":visible"),
+                                   filename = "GPstat"
+                                 ),
+                                 list(
+                                   extend = "excel",
+                                   exportOptions = list(columns = ":visible"),
+                                   filename = "GPstat"
+                                 ),
+                                 list(
+                                   extend = "pdf",
+                                   exportOptions = list(columns = ":visible"),
+                                   filename = "GPstat"
+                                 )
+                               ),
+                               text = "Download",
+                               collectionLayout = "fixed"
+                             ),
                              # initComplete = DT::JS(semantic_popupJS),
                              drawCallback = DT::JS(semantic_popupJS),
                              `responsive-resize` = DT::JS(semantic_popupJS),
                              `responsive-display` = DT::JS(paste(
                                "function ( e, datatable, row, showHide, update )",
                                "{console.log( 'Details for row '+row.index()+' '",
-                               "+(showHide ? 'shown' : 'hidden'))}")),
+                               "+(showHide ? 'shown' : 'hidden'))}"
+                             )),
                              # responsive-display doesn't seem to work
                              paging = FALSE,
                              scrollY = "60vh",
@@ -86,10 +101,12 @@ datatable_styled <- function(data, fillContainer = TRUE,
     }
   }
 
-  options <- list(dom = dom, buttons = buttons, drawCallback = drawCallback,
-                  paging = paging, scrollY = scrollY, deferRender = deferRender, scrollX = scrollX,
-                  fixedColumns = fixedColumns, columnDefs = columnDefs,
-                  `responsive-resize` = `responsive-resize`,
-                  `responsive-display` = `responsive-display`)
-  DT::datatable(data, fillContainer = fillContainer, extensions = extensions, options = options, ... )
+  options <- list(
+    dom = dom, buttons = buttons, drawCallback = drawCallback,
+    paging = paging, scrollY = scrollY, deferRender = deferRender, scrollX = scrollX,
+    fixedColumns = fixedColumns, columnDefs = columnDefs,
+    `responsive-resize` = `responsive-resize`,
+    `responsive-display` = `responsive-display`
+  )
+  DT::datatable(data, fillContainer = fillContainer, extensions = extensions, options = options, ...)
 }

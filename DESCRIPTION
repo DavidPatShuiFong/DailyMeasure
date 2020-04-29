@@ -36,6 +36,7 @@ Imports:
     R6,
     rintrojs,
     emo,
+    shinyjqui,
     dbConnection,
     dMeasure
 Suggests:

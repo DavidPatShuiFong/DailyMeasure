@@ -187,9 +187,12 @@ DailyMeasureUI <- function() {
             shiny::wellPanel(
               shiny::uiOutput("locationList"),
               # list of practice sites
-              shiny::actionButton("update_clinicians", "Update",
-                shiny::icon("refresh"),
-                class = "btn btn-primary"
+              shiny::div(
+                id = "update_clinicians_wrapper",
+                shiny::actionButton("update_clinicians", "Update",
+                  shiny::icon("refresh"),
+                  class = "btn btn-primary"
+                )
               ),
               # date range not activated until the 'Update' button is clicked
               shiny::helpText(
@@ -229,9 +232,13 @@ DailyMeasureUI <- function() {
                 value = Sys.Date()
               ),
               # range of dates, by default will be 'today'
-              shiny::actionButton("update_date", "Update",
-                shiny::icon("refresh"),
-                class = "btn btn-primary"
+              shiny::div(
+                id = "update_date_wrapper",
+                # wrapper needed for shinyjqui shake effect
+                shiny::actionButton("update_date", "Update",
+                  shiny::icon("refresh"),
+                  class = "btn btn-primary"
+                )
               ),
               # date range not activated until the 'Update' button is clicked
               shiny::helpText(

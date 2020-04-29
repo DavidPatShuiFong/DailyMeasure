@@ -151,6 +151,19 @@ DailyMeasureServer <- function(input, output, session) {
     shinyjs::click("update_date")
   })
 
+  shiny::observeEvent(
+    c(input$date1,
+      input$date2),
+    ignoreInit = TRUE,
+    ignoreNULL = FALSE,
+    {
+      shinyjqui::jqui_effect(
+        "#update_date_wrapper",
+        effect = "bounce",
+        options = list(distance = 1)
+      )
+    })
+
   shiny::observeEvent(dM$date_aR(), {
     # change 'date_from' in response to $date_a
     if (input$date1 != dM$date_aR()) {
@@ -238,6 +251,18 @@ DailyMeasureServer <- function(input, output, session) {
     # alter dMeasure object according to user input
     # (or perhaps 'toggle' button below)
   })
+
+  shiny::observeEvent(
+    c(input$clinicians),
+    ignoreNULL = FALSE,
+    ignoreInit = TRUE, {
+      shinyjqui::jqui_effect(
+        "#update_clinicians_wrapper",
+        effect = "bounce",
+        options = list(distance = 1)
+      )
+    }
+  )
 
   toggle_clinicians <- shiny::observeEvent(input$toggle_clinician_list, {
     if (input$toggle_clinician_list == 0) {

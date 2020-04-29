@@ -9,6 +9,8 @@ New
 
 * Download list of configured users, including 'Identifiers'
   - for subscription application purposes
+* 'bounce' reminder on update_clinicians and update_date
+  button if chosen clinicians or dates change (shinyjqui effect)
 
 Change
 

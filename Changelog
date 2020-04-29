@@ -8,6 +8,12 @@ Version 1.5.9, 29th April 2020
 Change
 
 * chosen clinician list has an 'Update' button
+* Billings view adapted to change in billings module (version 0.4.0)
+  dMeasureBillings::list_billings no longer provides print/HTML tags
+  use dMeasureBillings::tag_billings_list to add print/HTML tags
+** improvement in billings view to reduce time to change from
+   print to HTML 'button' view
+
 
 Version 1.5.8, 24th April 2020
 ==============================

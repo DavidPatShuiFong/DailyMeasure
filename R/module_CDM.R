@@ -106,6 +106,7 @@ cdm_datatable <- function(input, output, session, dMCDM) {
     shiny::eventReactive(
       c(
         dMCDM$dM$appointments_filteredR(),
+        dMCDM$dM$contact_count_listR(),
         input$cdm_chosen,
         input$appointment_contact_view,
         input$printcopy_view

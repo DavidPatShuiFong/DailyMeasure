@@ -11,6 +11,7 @@ New
   - for subscription application purposes
 * 'bounce' reminder on update_clinicians and update_date
   button if chosen clinicians or dates change (shinyjqui effect)
+* Contact filter includes date of last contact (minimum and maximum dates)
 
 Change
 

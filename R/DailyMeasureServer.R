@@ -122,21 +122,26 @@ DailyMeasureServer <- function(input, output, session) {
   # 'helper' functions for input panel
 
   # only adjust appointment view after dates are 'submitted' using 'submit' button
-  shiny::observeEvent(input$update_date, ignoreNULL = FALSE, {
-    tryCatch({
-      dM$choose_date(
-        date_from = as.Date(input$date1),
-        date_to = as.Date(input$date2)
-      ) # also update the dMeasure object
-    },
-    warning = function(w) {
-      shinytoastr::toastr_warning(
-        message = w$message,
-        position = "bottom-left"
+  shiny::observeEvent(
+    input$update_date,
+    ignoreNULL = FALSE,
+    ignoreInit = TRUE,
+    {
+      tryCatch({
+        dM$choose_date(
+          date_from = as.Date(input$date1),
+          date_to = as.Date(input$date2)
+        ) # also update the dMeasure object
+      },
+        warning = function(w) {
+          shinytoastr::toastr_warning(
+            message = w$message,
+            position = "bottom-left"
+          )
+        }
       )
     }
-    )
-  }) # initialize on first run, after that only update if 'update' button used
+  )
 
   date_today <- shiny::observeEvent(input$update_date_today, {
     # 'today' button. change date range to today, and click the 'update' button
@@ -149,6 +154,27 @@ DailyMeasureServer <- function(input, output, session) {
     # work more reliably if doubled?
     # change date range to today
     shinyjs::click("update_date")
+  })
+
+  output$daterange <- shiny::renderUI({
+    # creating during 'server' run might force the dates
+    # to actually be Sys.Date()?
+    # this might only be an issue where a server has
+    # 'pre-created' the UI on first-run
+    shiny::tagList(
+      shiny::dateInput(
+        inputId = "date1",
+        label = "From:", format = "D dd/M/yyyy",
+        min = Sys.Date() - 6000, max = Sys.Date() + 180,
+        value = Sys.Date()
+      ),
+      shiny::dateInput(
+        inputId = "date2",
+        label = "To:", format = "D dd/M/yyyy",
+        min = Sys.Date() - 6000, max = Sys.Date() + 180,
+        value = Sys.Date()
+      )
+    )
   })
 
   shiny::observeEvent(
@@ -164,19 +190,103 @@ DailyMeasureServer <- function(input, output, session) {
       )
     })
 
-  shiny::observeEvent(dM$date_aR(), {
-    # change 'date_from' in response to $date_a
-    if (input$date1 != dM$date_aR()) {
-      shiny::updateDateInput(session, "date1", value = dM$date_aR())
+  shiny::observeEvent(
+    dM$date_aR(),
+    ignoreInit = TRUE,
+    ignoreNULL = TRUE,
+    {
+      # change 'date_from' in response to $date_a
+      if (input$date1 != dM$date_aR()) {
+        shiny::updateDateInput(session, "date1", value = dM$date_aR())
+      }
     }
+  )
+
+  shiny::observeEvent(
+    dM$date_bR(),
+    ignoreInit = TRUE,
+    ignoreNULL = TRUE,
+    {
+      # change 'date_to' in response to $date_a
+      if (input$date2 != dM$date_bR()) {
+        shiny::updateDateInput(session, "date2", value = dM$date_bR())
+      }
+    }
+  )
+
+  output$last_visit <- shiny::renderUI({
+    shiny::tagList(
+      shiny::h5("Most recent contact"),
+      shiny::dateInput(
+        inputId = "min_date",
+        label = "From:", format = "D dd/M/yyyy",
+        min = Sys.Date() - 6000, max = Sys.Date() + 180,
+        value = Sys.Date() - 6000
+      ),
+      shiny::dateInput(
+        inputId = "max_date",
+        label = "To:", format = "D dd/M/yyyy",
+        min = Sys.Date() - 6000, max = Sys.Date() + 180,
+        value = Sys.Date()
+      ),
+      shiny::div(
+        id = "update_lastvisit_wrapper",
+        # wrapper needed for shinyjqui shake effect
+        shiny::actionButton("update_lastvisit", "Update",
+          shiny::icon("refresh"),
+          class = "btn btn-primary"
+        )
+      )
+    )
   })
 
-  shiny::observeEvent(dM$date_bR(), {
-    # change 'date_to' in response to $date_a
-    if (input$date2 != dM$date_bR()) {
-      shiny::updateDateInput(session, "date2", value = dM$date_bR())
+  shiny::observeEvent(
+    c(input$min_date,
+      input$max_date),
+    ignoreInit = TRUE,
+    ignoreNULL = FALSE,
+    {
+      shinyjqui::jqui_effect(
+        "#update_lastvisit_wrapper",
+        effect = "bounce",
+        options = list(distance = 1)
+      )
+    })
+
+  shiny::observeEvent(
+    dM$contact_minDateR(),
+    ignoreInit = TRUE,
+    ignoreNULL = TRUE,
+    {
+      # change 'date_from' in response to $date_a
+      if (input$min_date != dM$contact_minDateR()) {
+        shiny::updateDateInput(session, "min_date", value = dM$contact_minDateR())
+      }
     }
-  })
+  )
+
+  shiny::observeEvent(
+    dM$contact_maxDateR(),
+    ignoreInit = TRUE,
+    ignoreNULL = TRUE,
+    {
+      # change 'date_to' in response to $date_a
+      if (input$max_date != dM$contact_maxDateR()) {
+        shiny::updateDateInput(session, "max_date", value = dM$contact_maxDateR())
+      }
+    }
+  )
+
+  # only adjust appointment view after dates are 'submitted' using 'submit' button
+  shiny::observeEvent(
+    input$update_lastvisit,
+    ignoreNULL = TRUE,
+    ignoreInit = TRUE,
+    {
+      dM$contact_minDate <- input$min_date
+      dM$contact_maxDate <- input$max_date
+    }
+  )
 
   output$locationList <- shiny::renderUI({
     shiny::selectInput(

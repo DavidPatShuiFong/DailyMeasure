@@ -221,16 +221,7 @@ DailyMeasureUI <- function() {
           shiny::div(
             id = "rightsidebar-date-wrapper",
             shiny::wellPanel(
-              shiny::dateInput("date1",
-                label = "From:", format = "D dd/M/yyyy",
-                min = Sys.Date() - 6000, max = Sys.Date() + 180,
-                value = Sys.Date()
-              ),
-              shiny::dateInput("date2",
-                label = "To:", format = "D dd/M/yyyy",
-                min = Sys.Date() - 6000, max = Sys.Date() + 180,
-                value = Sys.Date()
-              ),
+              shiny::uiOutput("daterange"),
               # range of dates, by default will be 'today'
               shiny::div(
                 id = "update_date_wrapper",
@@ -324,6 +315,12 @@ DailyMeasureUI <- function() {
                 ),
                 multiple = TRUE
               )
+            )
+          ),
+          shiny::div(
+            id = "last-visit-wrapper",
+            shiny::wellPanel(
+              shiny::uiOutput("last_visit")
             )
           )
         )

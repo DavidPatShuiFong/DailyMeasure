@@ -232,7 +232,7 @@ DailyMeasureServer <- function(input, output, session) {
     )
   })
 
-  shiny::observeEvent(input$clinicians, ignoreInit = TRUE, ignoreNULL = FALSE, {
+  shiny::observeEvent(input$update_clinicians, ignoreInit = TRUE, ignoreNULL = FALSE, {
     # cannot ignoreNULL because sometimes an empty list will be chosen
     dM$choose_clinicians(choices = input$clinicians)
     # alter dMeasure object according to user input

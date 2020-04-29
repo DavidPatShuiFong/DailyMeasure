@@ -187,6 +187,15 @@ DailyMeasureUI <- function() {
             shiny::wellPanel(
               shiny::uiOutput("locationList"),
               # list of practice sites
+              shiny::actionButton("update_clinicians", "Update",
+                shiny::icon("refresh"),
+                class = "btn btn-primary"
+              ),
+              # date range not activated until the 'Update' button is clicked
+              shiny::helpText(
+                "After adjusting the chosen clinician list, click the 'Update' button",
+                "to update the view."
+              ),
               shiny::uiOutput("clinicianList"),
               # list of clinicians at the currently chosen practice site
               shiny::tags$div(
@@ -227,7 +236,7 @@ DailyMeasureUI <- function() {
               # date range not activated until the 'Update' button is clicked
               shiny::helpText(
                 "After adjusting the date range, click the 'Update' button",
-                "to adjust the viewed appointment date range"
+                "to update the viewed date range"
               ),
               shiny::tags$div(
                 title = "View today's appointments",

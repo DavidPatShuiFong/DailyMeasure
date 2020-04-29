@@ -21,6 +21,10 @@ steps_choose_clinician_date_df <- function() {
         "Choose clinicians who will be seen in",
         "appointment or contact lists.",
         shiny::br(), shiny::br(),
+        "Don't forget",
+        "to click the ", shiny::icon("refresh"), "Update button",
+        "after choosing the clinicians to update the view!",
+        shiny::br(), shiny::br(),
         "Clinician list can be restricted by",
         "practice location.",
         shiny::br(), shiny::br(),
@@ -43,7 +47,12 @@ steps_choose_clinician_date_df <- function() {
           " Date selection"
         ),
         shiny::br(),
-        "Choose date range."
+        "Choose date range.",
+        shiny::br(), shiny::br(),
+        "Don't forget",
+        "to click the ", shiny::icon("refresh"), "Update button",
+        "after choosing the date range to update the view!"
+
       ),
       position = "left"
     ))

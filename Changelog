@@ -5,6 +5,11 @@ front-end to DailyMeasure package
 Version 1.5.9, 29th April 2020
 ==============================
 
+New
+
+* Download list of configured users, including 'Identifiers'
+  - for subscription application purposes
+
 Change
 
 * chosen clinician list has an 'Update' button

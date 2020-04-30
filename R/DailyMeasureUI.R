@@ -187,6 +187,18 @@ DailyMeasureUI <- function() {
             shiny::wellPanel(
               shiny::uiOutput("locationList"),
               # list of practice sites
+              shiny::div(
+                id = "update_clinicians_wrapper",
+                shiny::actionButton("update_clinicians", "Update",
+                  shiny::icon("refresh"),
+                  class = "btn btn-primary"
+                )
+              ),
+              # date range not activated until the 'Update' button is clicked
+              shiny::helpText(
+                "After adjusting the chosen clinician list, click the 'Update' button",
+                "to update the view."
+              ),
               shiny::uiOutput("clinicianList"),
               # list of clinicians at the currently chosen practice site
               shiny::tags$div(
@@ -209,25 +221,20 @@ DailyMeasureUI <- function() {
           shiny::div(
             id = "rightsidebar-date-wrapper",
             shiny::wellPanel(
-              shiny::dateInput("date1",
-                label = "From:", format = "D dd/M/yyyy",
-                min = Sys.Date() - 6000, max = Sys.Date() + 180,
-                value = Sys.Date()
-              ),
-              shiny::dateInput("date2",
-                label = "To:", format = "D dd/M/yyyy",
-                min = Sys.Date() - 6000, max = Sys.Date() + 180,
-                value = Sys.Date()
-              ),
+              shiny::uiOutput("daterange"),
               # range of dates, by default will be 'today'
-              shiny::actionButton("update_date", "Update",
-                shiny::icon("refresh"),
-                class = "btn btn-primary"
+              shiny::div(
+                id = "update_date_wrapper",
+                # wrapper needed for shinyjqui shake effect
+                shiny::actionButton("update_date", "Update",
+                  shiny::icon("refresh"),
+                  class = "btn btn-primary"
+                )
               ),
               # date range not activated until the 'Update' button is clicked
               shiny::helpText(
                 "After adjusting the date range, click the 'Update' button",
-                "to adjust the viewed appointment date range"
+                "to update the viewed date range"
               ),
               shiny::tags$div(
                 title = "View today's appointments",
@@ -308,6 +315,12 @@ DailyMeasureUI <- function() {
                 ),
                 multiple = TRUE
               )
+            )
+          ),
+          shiny::div(
+            id = "last-visit-wrapper",
+            shiny::wellPanel(
+              shiny::uiOutput("last_visit")
             )
           )
         )

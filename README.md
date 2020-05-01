@@ -25,8 +25,11 @@ GPstat! interrogates the appointment book, searching for ‘near-future’ oppor
 #### Videos and other documentation
 
 [Video demonstration (Youtube)](https://youtu.be/mTJzcycPkRU)
+
 [Installation video (Youtube)](https://youtu.be/stfFmX114CY)
+
 [Installation documentation (in words)](https://rpubs.com/DavidFong/GPstatInstall)
+
 Very technical [backend documentation (dMeasure)](https://rpubs.com/DavidFong/dMeasure)
 
 The ‘bpsrawdata’ database access password（as used by ‘BPbrowser’) is required to configure GPstat! (this is described in the Youtube installation video).
@@ -34,12 +37,14 @@ The ‘bpsrawdata’ database access password（as used by ‘BPbrowser’) is r
 #### Live demonstrations (using sample database):
 
 [Live demonstration server 1](http://vkelim.dsmynas.com/)
+
 [Live demonstration server 2](http://vkelim.3322.org/)
 
 ![GPstat! screenshot 3](https://photos.smugmug.com/Office/Eltham/i-XZbCQ66/0/ea215232/O/gpstat_cdm.jpg)
 
 #### Download links
 [OneDrive link v 1.5.9.0.9.8](https://unimelbcloud-my.sharepoint.com/:u:/g/personal/dfong1_unimelb_edu_au/Ea7am4XN7JpPvgsW_JcITfIBjXaABQE98Y6yK0WPaSbSrA?e=WthdEd)
+
 [Google Drive link v 1.5.9.0.9.8](https://drive.google.com/file/d/1a9bS7VdbQ1NIT39rir06MX_99fgrl2rF/view?usp=sharing)
 
 #### Recent changelog

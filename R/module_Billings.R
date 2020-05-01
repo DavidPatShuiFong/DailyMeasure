@@ -175,7 +175,7 @@ billings_datatable <- function(input, output, session, dMBillings) {
       # wasn't billed, so can't add a bulk-billing incentive!
     }
 
-    if (any(c(10990, 10991, 10981, 10982) %in% MBSItem)) {
+    if (any(c(10990, 10991, 10992, 10981, 10982) %in% MBSItem)) {
       return(as.character(NA))
       # already charged a bulk-billing incentive
     }

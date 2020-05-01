@@ -144,6 +144,27 @@ steps_choose_contact_details_df <- function() {
         "'Telephone', but does include 'Telehealth'."
       ),
       position = "left"
+    )) %>>%
+    rbind(data.frame(
+      element = "#last_visit-wrapper",
+      intro = paste(
+        shiny::tags$h5(
+          shiny::icon("handshake"),
+          " Most recent contact"
+        ),
+        shiny::br(),
+        "The date of the most recent contact can be restricted to a date range.",
+        shiny::br(), shiny::br(),
+        "By default, the range is very broad, from more than ten years in the past",
+        "up to the current day.",
+        shiny::br(), shiny::br(),
+        "The date of the most recent contact can be restricted to, for example,",
+        "the past three months.",
+        shiny::br(), shiny::br(),
+        "Or changed to, for example,", shiny::tags$em("more"), "than three months",
+        "ago."
+      ),
+      position = "left"
     ))
   return(steps_df)
 }

@@ -318,7 +318,7 @@ DailyMeasureUI <- function() {
             )
           ),
           shiny::div(
-            id = "last-visit-wrapper",
+            id = "last_visit-wrapper",
             shiny::wellPanel(
               shiny::uiOutput("last_visit")
             )

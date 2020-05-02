@@ -37,6 +37,7 @@ Imports:
     rintrojs,
     emo,
     shinyjqui,
+    data.table,
     dbConnection,
     dMeasure
 Suggests:

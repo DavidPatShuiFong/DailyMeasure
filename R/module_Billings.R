@@ -154,11 +154,9 @@ billings_datatable <- function(input, output, session, dMBillings) {
       )
 
       if ("COVID-19 Bulk Billing Incentive" %in% input$billing_reminders_chosen) {
+        covid19bb <- check_for_covid19_bulkbilling(billingslist)
         billingslist <- billingslist %>>%
-          dplyr::mutate(covid19bb = mapply(
-            check_for_covid19_bulkbilling,
-            InternalID, DOB, Date, Age, MBSItem
-          ))
+          dplyr::mutate(covid19bb = covid19bb)
       }
 
       return(billingslist)
@@ -169,8 +167,141 @@ billings_datatable <- function(input, output, session, dMBillings) {
     dMBillings$own_billings <- !input$allbillings_view
   })
 
-  check_for_covid19_bulkbilling <- function(InternalID, DOB, Date, Age, MBSItem) {
-    if (is.null(MBSItem)) {
+  check_for_covid19_bulkbilling <- function(dt) {
+    # checks for possibility of COVID-19 bulk-billing incentive
+    # expects data.frame, but quickly converts to data.table
+    # InternalID, DOB, Date, Age, MBSItem
+
+    # executes substantially faster than previous mapply version
+    # 2 seconds compared to 32 seconds on a sample database search
+
+    dt <- data.table::as.data.table(dt)
+
+    dt[,covid19bb := "None"] # 'none' by default
+    dt[is.na(MBSItem), covid19bb:= NA]
+    # if no MBSItems charged, can't charge a bulk-billing incentive payment!
+
+    f <- function(x) {any(c(10990, 10991, 10992, 10981, 10982) %in% x)}
+    dt[covid19bb == "None" & mapply(f, MBSItem),
+      # forced to use mapply! unable to search directly %in% list items
+      # during testing, this cost about 30% of total execution time!
+      covid19bb := NA]
+    # not yet set to 'NA' and
+    # already charged a bulk-billing incentive
+    # if already charged a bulk-billing incentive item number, can't charge another
+
+    dt[covid19bb == "None" & Age >= 70,
+      covid19bb := "Age 70+"]
+
+    intID_date <- dt[Age >= 50 & covid19bb == "None", # age >= 50 and not yet 'assigned'
+      c("InternalID", "Date")] # choose InternalID and Date columns
+    atsi_list <- dMBillings$dM$atsi_list(intID_date)
+    dt[InternalID %in% atsi_list & covid19bb == "None",
+      # only if InternalID in atsi_list AND not already assigned (e.g. to 'NA')
+      covid19bb := "ATSI 50+"]
+    # data.table accepts empty vector for atsi_list!
+
+    pregnant_list <- dMBillings$dM$pregnant_list(
+      dt[covid19bb == "None", c("InternalID", "Date")]
+    )
+    dt[InternalID %in% pregnant_list & covid19bb == "None", covid19bb := "Pregnant"]
+
+    postnatal_list <- dMBillings$dM$postnatal_list(
+      dt[covid19bb == "None", c("InternalID", "Date")],
+      include_edc = TRUE, # 'guess' delivery of no known result
+      days_min = 0, days_max = 365,
+      outcome = c(0, 1)   # unknown result or live birth
+    ) %>>% dplyr::pull(InternalID)
+    # $postnatal_list returns a dataframe, not a vector
+    dt[InternalID %in% postnatal_list & covid19bb == "None",
+      covid19bb := "Mother of child less than 12 months"]
+
+    diabetes_list <- dMBillings$dM$diabetes_list(
+      dt[covid19bb == "None", c("InternalID", "Date")]
+    )
+    dt[InternalID %in% diabetes_list & covid19bb == "None",
+      covid19bb := "Diabetes"]
+
+    asthma_list <- dMBillings$dM$asthma_list(
+      dt[covid19bb == "None", c("InternalID", "Date")]
+    )
+    dt[InternalID %in% asthma_list & covid19bb == "None",
+      covid19bb := "Asthma"]
+
+    hiv_list <- dMBillings$dM$hiv_list(
+      dt[covid19bb == "None", c("InternalID", "Date")]
+    )
+    dt[InternalID %in% hiv_list & covid19bb == "None",
+      covid19bb := "HIV"]
+
+    malignancy_list <- dMBillings$dM$malignancy_list(
+      dt[covid19bb == "None", c("InternalID", "Date")]
+    )
+    dt[InternalID %in% malignancy_list & covid19bb == "None",
+      covid19bb := "Malignancy"]
+
+    haemoglobinopathy_list <- dMBillings$dM$haemoglobinopathy_list(
+      dt[covid19bb == "None", c("InternalID", "Date")]
+    )
+    dt[InternalID %in% haemoglobinopathy_list & covid19bb == "None",
+      covid19bb := "Haemoglobinopathy"]
+
+    asplenic_list <- dMBillings$dM$asplenic_list(
+      dt[covid19bb == "None", c("InternalID", "Date")]
+    )
+    dt[InternalID %in% asplenic_list & covid19bb == "None",
+      covid19bb := "Asplenia"]
+
+    transplant_list <- dMBillings$dM$transplant_list(
+      dt[covid19bb == "None", c("InternalID", "Date")]
+    )
+    dt[InternalID %in% transplant_list & covid19bb == "None",
+      covid19bb := "Transplant recipient"]
+
+    cardiacdisease_list <- dMBillings$dM$cardiacdisease_list(
+      dt[covid19bb == "None", c("InternalID", "Date")]
+    )
+    dt[InternalID %in% cardiacdisease_list & covid19bb == "None",
+      covid19bb := "Heart disease"]
+
+    chroniclungdisease_list <- dMBillings$dM$chroniclungdisease_list(
+      dt[covid19bb == "None", c("InternalID", "Date")]
+    )
+    dt[InternalID %in% chroniclungdisease_list & covid19bb == "None",
+      covid19bb := "Chronic lung disease"]
+
+    chronicliverdisease_list <- dMBillings$dM$chronicliverdisease_list(
+      dt[covid19bb == "None", c("InternalID", "Date")]
+    )
+    dt[InternalID %in% chronicliverdisease_list & covid19bb == "None",
+      covid19bb := "Chronic liver disease"]
+
+    neurologic_list <- dMBillings$dM$neurologic_list(
+      dt[covid19bb == "None", c("InternalID", "Date")]
+    )
+    dt[InternalID %in% neurologic_list & covid19bb == "None",
+      covid19bb := "Neurological disease"]
+
+    chronicrenaldisease_list <- dMBillings$dM$chronicrenaldisease_list(
+      dt[covid19bb == "None", c("InternalID", "Date")]
+    )
+    dt[InternalID %in% chronicrenaldisease_list & covid19bb == "None",
+      covid19bb := "Chronic renal disease"]
+
+    bmi30_list <- dMBillings$dM$bmi30_list(
+      dt[covid19bb == "None", c("InternalID", "Date")]
+    )
+    dt[InternalID %in% bmi30_list & covid19bb == "None",
+      covid19bb := "BMI>30"]
+
+    dt[covid19bb == "None", covid19bb := NA] # still nothing found!
+
+    return(dt %>>% dplyr::pull(covid19bb))
+  }
+
+  check_for_covid19_bulkbilling_old <- function(InternalID, DOB, Date, Age, MBSItem) {
+    # mapply version, checks line by line ...
+    if (is.na(MBSItem)) {
       return(as.character(NA))
       # wasn't billed, so can't add a bulk-billing incentive!
     }
@@ -180,11 +311,11 @@ billings_datatable <- function(input, output, session, dMBillings) {
       # already charged a bulk-billing incentive
     }
 
-    if (Age >= 70) {
+    if (!is.na(Age) && Age >= 70) {
       return("Age 70+")
     }
     intID_Date <- data.frame(InternalID = InternalID, Date = Date)
-    if (Age >= 50 &&
+    if (!is.na(Age) && Age >= 50 &&
       length(dMBillings$dM$atsi_list(intID_Date))) {
       return("ATSI 50+")
     }

@@ -167,7 +167,7 @@ billings_datatable <- function(input, output, session, dMBillings) {
     dMBillings$own_billings <- !input$allbillings_view
   })
 
-  check_for_covid19_bulkbilling <- function(dt) {
+  check_for_covid19_bulkbilling <- function(df) {
     # checks for possibility of COVID-19 bulk-billing incentive
     # expects data.frame, but quickly converts to data.table
     # InternalID, DOB, Date, Age, MBSItem
@@ -175,126 +175,220 @@ billings_datatable <- function(input, output, session, dMBillings) {
     # executes substantially faster than previous mapply version
     # 2 seconds compared to 32 seconds on a sample database search
 
-    dt <- data.table::as.data.table(dt)
+    dt <- data.table::as.data.table(data.table::copy(df))
 
-    dt[,covid19bb := "None"] # 'none' by default
-    dt[is.na(MBSItem), covid19bb:= NA]
+    dt[, covid19bb := ""] # 'none' by default
+    dt[is.na(MBSItem), covid19bb := NA]
     # if no MBSItems charged, can't charge a bulk-billing incentive payment!
 
-    f <- function(x) {any(c(10990, 10991, 10992, 10981, 10982) %in% x)}
-    dt[covid19bb == "None" & mapply(f, MBSItem),
+    f <- function(x) {
+      any(c(10990, 10991, 10992, 10981, 10982) %in% x)
+    }
+    dt[
+      !is.na(covid19bb) & mapply(f, MBSItem),
       # forced to use mapply! unable to search directly %in% list items
       # during testing, this cost about 30% of total execution time!
-      covid19bb := NA]
+      covid19bb := NA
+    ]
     # not yet set to 'NA' and
     # already charged a bulk-billing incentive
     # if already charged a bulk-billing incentive item number, can't charge another
 
-    dt[covid19bb == "None" & Age >= 70,
-      covid19bb := "Age 70+"]
+    dt[
+      !is.na(covid19bb) & Age >= 70,
+      covid19bb := dMeasure::paste2(
+        # paste2, with 'na.rm = TRUE', will remove the empty string ""
+        covid19bb, "Age 70+",
+        sep = ", ", na.rm = TRUE
+      )
+    ]
 
-    intID_date <- dt[Age >= 50 & covid19bb == "None", # age >= 50 and not yet 'assigned'
-      c("InternalID", "Date")] # choose InternalID and Date columns
+    intID_date <- dt[
+      Age >= 50 & !is.na(covid19bb), # age >= 50 and not yet 'assigned'
+      c("InternalID", "Date")
+    ] # choose InternalID and Date columns
     atsi_list <- dMBillings$dM$atsi_list(intID_date)
-    dt[InternalID %in% atsi_list & covid19bb == "None",
+    dt[
+      InternalID %in% atsi_list & !is.na(covid19bb),
       # only if InternalID in atsi_list AND not already assigned (e.g. to 'NA')
-      covid19bb := "ATSI 50+"]
+      covid19bb := dMeasure::paste2(
+        covid19bb, "ATSI 50+",
+        sep = ", ", na.rm = TRUE
+      )
+    ]
     # data.table accepts empty vector for atsi_list!
 
     pregnant_list <- dMBillings$dM$pregnant_list(
-      dt[covid19bb == "None", c("InternalID", "Date")]
+      dt[!is.na(covid19bb), c("InternalID", "Date")]
     )
-    dt[InternalID %in% pregnant_list & covid19bb == "None", covid19bb := "Pregnant"]
+    dt[
+      InternalID %in% pregnant_list & !is.na(covid19bb),
+      covid19bb := dMeasure::paste2(
+        covid19bb, "Pregnant",
+        sep = ", ", na.rm = TRUE
+      )
+    ]
 
     postnatal_list <- dMBillings$dM$postnatal_list(
-      dt[covid19bb == "None", c("InternalID", "Date")],
+      dt[!is.na(covid19bb), c("InternalID", "Date")],
       include_edc = TRUE, # 'guess' delivery of no known result
       days_min = 0, days_max = 365,
-      outcome = c(0, 1)   # unknown result or live birth
+      outcome = c(0, 1) # unknown result or live birth
     ) %>>% dplyr::pull(InternalID)
     # $postnatal_list returns a dataframe, not a vector
-    dt[InternalID %in% postnatal_list & covid19bb == "None",
-      covid19bb := "Mother of child less than 12 months"]
+    dt[
+      InternalID %in% postnatal_list & !is.na(covid19bb),
+      covid19bb := dMeasure::paste2(
+        covid19bb, "Mother of child less than 12 months",
+        sep = ", ", na.rm = TRUE
+      )
+    ]
 
     diabetes_list <- dMBillings$dM$diabetes_list(
-      dt[covid19bb == "None", c("InternalID", "Date")]
+      dt[!is.na(covid19bb), c("InternalID", "Date")]
     )
-    dt[InternalID %in% diabetes_list & covid19bb == "None",
-      covid19bb := "Diabetes"]
+    dt[
+      InternalID %in% diabetes_list & !is.na(covid19bb),
+      covid19bb := dMeasure::paste2(
+        covid19bb, "Diabetes",
+        sep = ", ", na.rm = TRUE
+      )
+    ]
 
     asthma_list <- dMBillings$dM$asthma_list(
-      dt[covid19bb == "None", c("InternalID", "Date")]
+      dt[!is.na(covid19bb), c("InternalID", "Date")]
     )
-    dt[InternalID %in% asthma_list & covid19bb == "None",
-      covid19bb := "Asthma"]
+    dt[
+      InternalID %in% asthma_list & !is.na(covid19bb),
+      covid19bb := dMeasure::paste2(
+        covid19bb, "Asthma",
+        sep = ", ", na.rm = TRUE
+      )
+    ]
 
     hiv_list <- dMBillings$dM$hiv_list(
-      dt[covid19bb == "None", c("InternalID", "Date")]
+      dt[!is.na(covid19bb), c("InternalID", "Date")]
     )
-    dt[InternalID %in% hiv_list & covid19bb == "None",
-      covid19bb := "HIV"]
+    dt[
+      InternalID %in% hiv_list & !is.na(covid19bb),
+      covid19bb := dMeasure::paste2(
+        covid19bb, "HIV",
+        sep = ", ", na.rm = TRUE
+      )
+    ]
+
 
     malignancy_list <- dMBillings$dM$malignancy_list(
-      dt[covid19bb == "None", c("InternalID", "Date")]
+      dt[!is.na(covid19bb), c("InternalID", "Date")]
     )
-    dt[InternalID %in% malignancy_list & covid19bb == "None",
-      covid19bb := "Malignancy"]
+    dt[
+      InternalID %in% malignancy_list & !is.na(covid19bb),
+      covid19bb := dMeasure::paste2(
+        covid19bb, "Malignancy",
+        sep = ", ", na.rm = TRUE
+      )
+    ]
 
     haemoglobinopathy_list <- dMBillings$dM$haemoglobinopathy_list(
-      dt[covid19bb == "None", c("InternalID", "Date")]
+      dt[!is.na(covid19bb), c("InternalID", "Date")]
     )
-    dt[InternalID %in% haemoglobinopathy_list & covid19bb == "None",
-      covid19bb := "Haemoglobinopathy"]
+    dt[
+      InternalID %in% haemoglobinopathy_list & !is.na(covid19bb),
+      covid19bb := dMeasure::paste2(
+        covid19bb, "Haemoglobinopathy",
+        sep = ", ", na.rm = TRUE
+      )
+    ]
 
     asplenic_list <- dMBillings$dM$asplenic_list(
-      dt[covid19bb == "None", c("InternalID", "Date")]
+      dt[!is.na(covid19bb), c("InternalID", "Date")]
     )
-    dt[InternalID %in% asplenic_list & covid19bb == "None",
-      covid19bb := "Asplenia"]
+    dt[
+      InternalID %in% asplenic_list & !is.na(covid19bb),
+      covid19bb := dMeasure::paste2(
+        covid19bb, "Asplenia",
+        sep = ", ", na.rm = TRUE
+      )
+    ]
 
     transplant_list <- dMBillings$dM$transplant_list(
-      dt[covid19bb == "None", c("InternalID", "Date")]
+      dt[!is.na(covid19bb), c("InternalID", "Date")]
     )
-    dt[InternalID %in% transplant_list & covid19bb == "None",
-      covid19bb := "Transplant recipient"]
+    dt[
+      InternalID %in% transplant_list & !is.na(covid19bb),
+      covid19bb := dMeasure::paste2(
+        covid19bb, "Transplant recipient",
+        sep = ", ", na.rm = TRUE
+      )
+    ]
 
     cardiacdisease_list <- dMBillings$dM$cardiacdisease_list(
-      dt[covid19bb == "None", c("InternalID", "Date")]
+      dt[!is.na(covid19bb), c("InternalID", "Date")]
     )
-    dt[InternalID %in% cardiacdisease_list & covid19bb == "None",
-      covid19bb := "Heart disease"]
+    dt[
+      InternalID %in% cardiacdisease_list & !is.na(covid19bb),
+      covid19bb := dMeasure::paste2(
+        covid19bb, "Heart disease",
+        sep = ", ", na.rm = TRUE
+      )
+    ]
 
     chroniclungdisease_list <- dMBillings$dM$chroniclungdisease_list(
-      dt[covid19bb == "None", c("InternalID", "Date")]
+      dt[!is.na(covid19bb), c("InternalID", "Date")]
     )
-    dt[InternalID %in% chroniclungdisease_list & covid19bb == "None",
-      covid19bb := "Chronic lung disease"]
+    dt[
+      InternalID %in% chroniclungdisease_list & !is.na(covid19bb),
+      covid19bb := dMeasure::paste2(
+        covid19bb, "Chronic lung disease",
+        sep = ", ", na.rm = TRUE
+      )
+    ]
 
     chronicliverdisease_list <- dMBillings$dM$chronicliverdisease_list(
-      dt[covid19bb == "None", c("InternalID", "Date")]
+      dt[!is.na(covid19bb), c("InternalID", "Date")]
     )
-    dt[InternalID %in% chronicliverdisease_list & covid19bb == "None",
-      covid19bb := "Chronic liver disease"]
+    dt[
+      InternalID %in% chronicliverdisease_list & !is.na(covid19bb),
+      covid19bb := dMeasure::paste2(
+        covid19bb, "Chronic liver disease",
+        sep = ", ", na.rm = TRUE
+      )
+    ]
 
     neurologic_list <- dMBillings$dM$neurologic_list(
-      dt[covid19bb == "None", c("InternalID", "Date")]
+      dt[!is.na(covid19bb), c("InternalID", "Date")]
     )
-    dt[InternalID %in% neurologic_list & covid19bb == "None",
-      covid19bb := "Neurological disease"]
+    dt[
+      InternalID %in% neurologic_list & !is.na(covid19bb),
+      covid19bb := dMeasure::paste2(
+        covid19bb, "Neurological disease",
+        sep = ", ", na.rm = TRUE
+      )
+    ]
 
     chronicrenaldisease_list <- dMBillings$dM$chronicrenaldisease_list(
-      dt[covid19bb == "None", c("InternalID", "Date")]
+      dt[!is.na(covid19bb), c("InternalID", "Date")]
     )
-    dt[InternalID %in% chronicrenaldisease_list & covid19bb == "None",
-      covid19bb := "Chronic renal disease"]
+    dt[
+      InternalID %in% chronicrenaldisease_list & !is.na(covid19bb),
+      covid19bb := dMeasure::paste2(
+        covid19bb, "Chronic renal disease",
+        sep = ", ", na.rm = TRUE
+      )
+    ]
 
     bmi30_list <- dMBillings$dM$bmi30_list(
-      dt[covid19bb == "None", c("InternalID", "Date")]
+      dt[!is.na(covid19bb), c("InternalID", "Date")]
     )
-    dt[InternalID %in% bmi30_list & covid19bb == "None",
-      covid19bb := "BMI>30"]
+    dt[
+      InternalID %in% bmi30_list & !is.na(covid19bb),
+      covid19bb := dMeasure::paste2(
+        covid19bb, "BMI>30",
+        sep = ", ", na.rm = TRUE
+      )
+    ]
 
-    dt[covid19bb == "None", covid19bb := NA] # still nothing found!
+    dt[covid19bb == "", covid19bb := NA] # still nothing found!
 
     return(dt %>>% dplyr::pull(covid19bb))
   }

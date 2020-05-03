@@ -244,6 +244,18 @@ billings_datatable <- function(input, output, session, dMBillings) {
       )
     ]
 
+    parent_list <- dMBillings$dM$parent_list(
+      dt[!is.na(covid19bb), c("InternalID", "Date")],
+      months_min = 0, months_max = 12
+    )
+    dt[
+      InternalID %in% parent_list & !is.na(covid19bb),
+      covid19bb := dMeasure::paste2(
+        covid19bb, "Parent of child less than 12 months",
+        sep = ", ", na.rm = TRUE
+      )
+      ]
+
     diabetes_list <- dMBillings$dM$diabetes_list(
       dt[!is.na(covid19bb), c("InternalID", "Date")]
     )
@@ -387,6 +399,19 @@ billings_datatable <- function(input, output, session, dMBillings) {
         sep = ", ", na.rm = TRUE
       )
     ]
+
+    gpmp_list <- dMBillings$gpmp_list(
+      dt[!is.na(covid19bb), c("InternalID", "Date")],
+      months_min = 0,
+      months_max = 12
+    )
+    dt[
+      InternalID %in% gpmp_list & !is.na(covid19bb),
+      covid19bb := dMeasure::paste2(
+        covid19bb, "GPMP <12 months",
+        sep = ", ", na.rm = TRUE
+      )
+      ]
 
     dt[covid19bb == "", covid19bb := NA] # still nothing found!
 

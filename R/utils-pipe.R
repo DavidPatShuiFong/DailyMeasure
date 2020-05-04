@@ -5,10 +5,13 @@
 #' @name %>%
 #' @rdname pipe
 #' @keywords internal
+#' @importFrom data.table ":="
 #' @export
 #' @importFrom magrittr %>%
 #' @usage lhs \%>\% rhs
 NULL
+
+.datatable.aware = TRUE
 
 #' Pipe operator pipeR
 #'

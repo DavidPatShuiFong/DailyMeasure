@@ -93,30 +93,9 @@ billings_datatable <- function(input, output, session, dMBillings) {
     )
   })
 
-  payerCodePrevious <- 0:8
-  # a 'semi-global' containing current billings types viewed
-  # (all of them) in input$billing_types_viewed
-  # used in 'billings_list' reactive to check if there is
-  # a change in the input
-
-  billings_list <- shiny::eventReactive(
-    c(
-      dMBillings$billings_listR(),
-      input$billing_types_viewed,
-      input$billing_reminders_chosen
-    ), {
-      shiny::validate(
-        shiny::need(
-          dMBillings$billings_listR(),
-          "No appointments in chosen range"
-        ),
-        shiny::need(
-          nrow(dMBillings$billings_listR()) > 0,
-          "No appointments in chosen range"
-        )
-      )
-
-      # returns list_billings
+  shiny::observeEvent(
+    input$billing_types_viewed,
+    ignoreInit = TRUE, {
       # filtered by payerCode (e.g. bulk billing, DVA, WorkCover)
       # adds covid19bb if enabled, TRUE is possible bulk-bill incentive opportunity
 
@@ -132,26 +111,33 @@ billings_datatable <- function(input, output, session, dMBillings) {
       }
       if ("Other" %in% input$billing_types_viewed) {
         payerCode <- c(payerCode, 0, 1, 5:8)
+        # 0 = unknown
+        # 1 = private
+        # 5 = private (head of family)
+        # 8 = private (other)
       }
-      if (length(payerCode) == length(payerCodePrevious) &&
-        all(payerCode == payerCodePrevious)) {
-        # need to compare length as well as each individual element
-        # as there is a possibility of 're-cycling'
-        # https://stackoverflow.com/questions/10374932/comparing-two-vectors-in-an-if-statement
-        lazy <- TRUE
-        # don't need to force re-calculation of billings list
-        # as reactives have already taken care of recalculation
-      } else {
-        lazy <- FALSE
-        # need to force a re-calculation of billings list
-        # as payerCode is currently not a reactive
-        payerCodePrevious <- payerCode
-      }
+      dMBillings$payerCode <- payerCode
+    }
+  )
 
-      billingslist <- dMBillings$list_billings(
-        lazy = lazy,
-        payerCode = payerCode
+  billings_list <- shiny::eventReactive(
+    c(
+      dMBillings$billings_listR(),
+      input$billing_reminders_chosen
+    ), {
+      shiny::validate(
+        shiny::need(
+          dMBillings$billings_list,
+          "No appointments in chosen range"
+        ),
+        shiny::need(
+          nrow(dMBillings$billings_list) > 0,
+          "No appointments in chosen range"
+        )
       )
+
+      # returns list_billings
+      billingslist <- dMBillings$billings_list
 
       if ("COVID-19 Bulk Billing Incentive" %in% input$billing_reminders_chosen) {
         covid19bb <- check_for_covid19_bulkbilling(billingslist)
@@ -231,7 +217,7 @@ billings_datatable <- function(input, output, session, dMBillings) {
 
     postnatal_list <- dMBillings$dM$postnatal_list(
       dt[!is.na(covid19bb), c("InternalID", "Date")],
-      include_edc = TRUE, # 'guess' delivery of no known result
+      include_edc = TRUE, # 'guess' delivery if no known result
       days_min = 0, days_max = 365,
       outcome = c(0, 1) # unknown result or live birth
     ) %>>% dplyr::pull(InternalID)
@@ -418,90 +404,17 @@ billings_datatable <- function(input, output, session, dMBillings) {
     return(dt %>>% dplyr::pull(covid19bb))
   }
 
-  check_for_covid19_bulkbilling_old <- function(InternalID, DOB, Date, Age, MBSItem) {
-    # mapply version, checks line by line ...
-    if (is.na(MBSItem)) {
-      return(as.character(NA))
-      # wasn't billed, so can't add a bulk-billing incentive!
-    }
-
-    if (any(c(10990, 10991, 10992, 10981, 10982) %in% MBSItem)) {
-      return(as.character(NA))
-      # already charged a bulk-billing incentive
-    }
-
-    if (!is.na(Age) && Age >= 70) {
-      return("Age 70+")
-    }
-    intID_Date <- data.frame(InternalID = InternalID, Date = Date)
-    if (!is.na(Age) && Age >= 50 &&
-      length(dMBillings$dM$atsi_list(intID_Date))) {
-      return("ATSI 50+")
-    }
-    if (length(dMBillings$dM$pregnant_list(intID_Date))) {
-      return("Pregnant")
-    }
-    if (nrow(dMBillings$dM$postnatal_list(intID_Date,
-      include_edc = TRUE, # 'guess' delivery of no known result
-      days_min = 0, days_max = 365,
-      outcome = c(0, 1)
-    ))) { # unknown result or live birth
-      # $postnatal_list returns a dataframe, not a vector
-      return("Parent of child less than 12 months")
-    }
-    if (length(dMBillings$dM$diabetes_list(intID_Date))) {
-      return("Diabetes")
-    }
-    if (length(dMBillings$dM$asthma_list(intID_Date))) {
-      return("Asthma")
-    }
-    if (length(dMBillings$dM$hiv_list(intID_Date))) {
-      return("HIV")
-    }
-    if (length(dMBillings$dM$malignancy_list(intID_Date))) {
-      return("Malignancy")
-    }
-    if (length(dMBillings$dM$haemoglobinopathy_list(intID_Date))) {
-      return("Haemoglobinopathy")
-    }
-    if (length(dMBillings$dM$asplenic_list(intID_Date))) {
-      return("Asplenia")
-    }
-    if (length(dMBillings$dM$transplant_list(intID_Date))) {
-      return("Transplant recipient")
-    }
-    if (length(dMBillings$dM$cardiacdisease_list(intID_Date))) {
-      return("Heart disease")
-    }
-    if (length(dMBillings$dM$chroniclungdisease_list(intID_Date))) {
-      return("Chronic lung disease")
-    }
-    if (length(dMBillings$dM$chronicliverdisease_list(intID_Date))) {
-      return("Chronic liver disease")
-    }
-    if (length(dMBillings$dM$neurologic_list(intID_Date))) {
-      return("Neurological disease")
-    }
-    if (length(dMBillings$dM$chronicrenaldisease_list(intID_Date))) {
-      return("Chronic renal disease")
-    }
-    if (length(dMBillings$dM$bmi30_list(intID_Date))) {
-      return("BMI>30")
-    }
-
-    # no conditions found
-    return(as.character(NA))
-  }
-
   styled_billings_list <- shiny::eventReactive(
     c(
       billings_list(),
       input$printcopy_view
     ), {
       shiny::validate(
-        shiny::need(billings_list(), "No appointments in selected range")
+        shiny::need(
+          billings_list(),
+          "No appointments in selected range"
+        )
       )
-
       billings <- billings_list()
 
       if (input$printcopy_view == TRUE) {
@@ -556,26 +469,27 @@ billings_datatable <- function(input, output, session, dMBillings) {
 
       if (input$printcopy_view == TRUE) {
         # printable/copyable view
-        datatable_styled(billings %>>%
-          dplyr::select(
-            Patient, Date, AppointmentTime, Status, VisitType,
-            Provider, billingtag_print
-          ),
-        colnames = c("Billings" = "billingtag_print")
+        dt <- datatable_styled(billings %>>%
+            dplyr::select(
+              Patient, Date, AppointmentTime, Status, VisitType,
+              Provider, billingtag_print
+            ),
+          colnames = c("Billings" = "billingtag_print")
         )
       } else {
         # fomantic/semantic tag view
-        datatable_styled(billings %>%
-          dplyr::select(
-            Patient, Date, AppointmentTime, Status, VisitType,
-            Provider, billingtag
-          ),
-        escape = c(5),
-        copyHtml5 = NULL, printButton = NULL, # no copy/print buttons
-        downloadButton = NULL,
-        colnames = c("Billings" = "billingtag")
+        dt <- datatable_styled(billings %>%
+            dplyr::select(
+              Patient, Date, AppointmentTime, Status, VisitType,
+              Provider, billingtag
+            ),
+          escape = c(5),
+          copyHtml5 = NULL, printButton = NULL, # no copy/print buttons
+          downloadButton = NULL,
+          colnames = c("Billings" = "billingtag")
         )
       }
+      return(dt)
     }
   )
 

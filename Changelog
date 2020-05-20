@@ -2,8 +2,16 @@ GP stat! (c) David Fong, 2019
 
 front-end to DailyMeasure package
 
+Version 1.5.10, 20th May 2020
+=============================
+
+* better restriction of date ranges ('negative' date ranges prevented)
+* improved separation of tasks for billings_list
+* changes to report specific number of days which are restricted
+  by lack of subscription as reported by check_subscription_datechange_trigR
+
 Version 1.5.9, 3rd May 2020
-==============================
+===========================
 
 New
 

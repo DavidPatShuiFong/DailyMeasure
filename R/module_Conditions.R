@@ -24,7 +24,66 @@ conditions_UI <- function(id) {
           id = "postnatal_datatable_wrapper",
           conditions_postnatal_datatableUI(ns("post_natal"))
         )
+      ),
+      shiny::tabPanel(
+        title = "Asthma",
+        width = 12,
+        shiny::br(),
+        shiny::div(
+          id = "asthma_datatable_wrapper",
+          conditions_asthma_datatableUI(ns("asthma"))
+        )
       )
+    )
+  )
+}
+
+conditions_asthma_datatableUI <- function(id) {
+  ns <- shiny::NS(id)
+
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(
+        4,
+        shinyWidgets::switchInput(
+          inputId = ns("printcopy_view"),
+          label = paste(
+            "<i class=\"fas fa-print\"></i>",
+            "<i class=\"far fa-copy\"></i>",
+            " Print and Copy View"
+          ),
+          labelWidth = "12em",
+          width = "20em"
+        )
+      ),
+      shiny::column(2,
+        offset = 2,
+        shinyWidgets::pickerInput(
+          inputId = ns("appointment_contact_view"),
+          choices = c("Appointment view", "Contact view"),
+          choicesOpt = list(icon = c("fa fa-calendar-alt", "fa fa-handshake"))
+        )
+      ),
+      shiny::column(2,
+        offset = 0,
+        shinyWidgets::checkboxGroupButtons(
+          inputId = ns("include_uptodate"),
+          choiceNames = c("Include up-to-date"),
+          choiceValues = c(1),
+          selected = 1,
+          status = "primary",
+          checkIcon = list(
+            yes = icon("ok", lib = "glyphicon"),
+            no = icon("remove", lib = "glyphicon")
+          )
+        )
+      )
+    ),
+    shinycssloaders::withSpinner(
+      DT::DTOutput(ns("asthma_table")),
+      type = 8,
+      hide.element.when.recalculating = FALSE,
+      proxy.height = NULL
     )
   )
 }
@@ -169,6 +228,7 @@ conditions <- function(input, output, session, dM) {
 
   # data quality
   callModule(conditions_postnatal_datatable, "post_natal", dM)
+  callModule(conditions_asthma_datatable, "asthma", dM)
 }
 
 #' condition post-natal - server
@@ -511,5 +571,231 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
     postnatal_table()
   },
     server = TRUE
+  )
+}
+
+#' condition asthma - server
+#'
+#' search for asthma patients.
+#'
+#' Attached to appointments within the defined appointment search period.
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param dM dMeasure R6 object
+#'  access to appointments lists, visits, user interface elements
+#'  and post-natal status database
+#'
+#' @return none
+conditions_asthma_datatable <- function(input, output, session, dM) {
+  ns <- session$ns
+
+  asthma <-
+    shiny::eventReactive(
+      c(
+        input$appointment_contact_view,
+        input$include_uptodate,
+        dM$cliniciansR(), dM$appointments_listR(),
+        dM$date_aR(), dM$date_bR(),
+        dM$contact_typeR(),
+        dM$contact_minR(),
+        dM$contact_minDateR()
+      ),
+      ignoreInit = FALSE, {
+        # respond to appointments_listR()
+        # when clinician or dates is changed
+        shiny::req(dM$appointments_listR())
+
+        asthma_list <- dM$list_asthma_details(
+          contact = (input$appointment_contact_view == "Contact view"),
+          include_uptodate = (!is.null(input$include_uptodate))
+        )
+
+        return(asthma_list)
+      }
+    )
+
+  ### create tag-styled datatable (or 'printable' datatable)
+  asthma_table <- shiny::reactive({
+    shiny::req(!is.null(asthma()))
+
+    df <- asthma()
+
+    contact <- input$appointment_contact_view == "Contact view"
+    if (contact) {
+      df <- df %>>%
+        dplyr::mutate(ComparisonDate = dM$date_b)
+      # compare vax date to end of contact period
+    } else {
+      df <- df %>>%
+        dplyr::mutate(ComparisonDate = AppointmentDate)
+      # compare vax date to day of appointment
+    }
+
+    df <- df %>>%
+      dplyr::left_join(dM$db$preventive_health %>>%
+        # those who have been removed from the reminder system for influenza
+        dplyr::filter(ITEMID == 1) %>>%
+        dplyr::rename(DeclinedFluvax = ITEMID),
+      by = "InternalID",
+      copy = TRUE
+      ) %>>%
+      dplyr::mutate(
+        FluvaxStatus =
+          dplyr::if_else(
+            is.na(FluvaxDate) |
+              (FluvaxDate == as.Date(-Inf, origin = "1970-01-01")),
+            dplyr::if_else(
+              is.na(DeclinedFluvax),
+              "Never given", # no previous vax, not declined
+              "Removed" # removed from immunization reminders
+            ),
+            paste0(
+              dplyr::if_else(
+                format(FluvaxDate, "%Y") == format(ComparisonDate, "%Y"),
+                # this compares dates, is year same as end of contact period?
+                # https://stackoverflow.com/questions/36568070/extract-year-from-date
+                "Up-to-date",
+                "Old"
+              )
+            )
+          ),
+        AsthmaPlanStatus =
+          dplyr::if_else(
+            is.na(PlanDate) |
+              (PlanDate == as.Date(-Inf, origin = "1970-01-01")),
+            "Never done", # no previous asthma plan\
+            paste0(
+              dplyr::if_else(
+                dMeasure::interval(PlanDate, ComparisonDate)$year == 0,
+                "Up-to-date", # less than twelve months
+                "Old"
+              )
+            )
+          )
+      ) %>>%
+      dplyr::select(-c(InternalID, DeclinedFluvax, ComparisonDate)) # no longer need these
+
+    if (input$printcopy_view) {
+      df <- df %>>%
+        dplyr::mutate(
+          vaxtag_print =
+            paste0(
+              "Influenza", # printable version of information
+              dplyr::case_when(
+                FluvaxStatus == "Never given" ~ " (Never given)",
+                # no previous vax, not declined
+                FluvaxStatus == "Removed" ~
+                " (Removed from influenza immunization reminders)",
+                FluvaxStatus == "Up-to-date" ~
+                paste0(" (Up-to-date : ", FluvaxDate, ") "),
+                FluvaxStatus == "Old" ~
+                paste0(" (DUE : ", FluvaxDate, ") ")
+              )
+            ),
+          plantag_print =
+            paste0(
+              "Asthma plan", # printable version of information
+              dplyr::case_when(
+                AsthmaPlanStatus == "Never done" ~ " (Never done)",
+                # no previous asthma plan
+                AsthmaPlanStatus == "Up-to-date" ~
+                  paste0(" (Up-to-date : ", PlanDate, ") "),
+                AsthmaPlanStatus == "Old" ~
+                  paste0(" (DUE : ", PlanDate, ") ")
+              )
+            )
+        )
+    } else {
+      df <- df %>>%
+        dplyr::mutate(
+          vaxtag =
+            dMeasure::semantic_tag(
+              paste0(" Influenza "),
+              colour =
+                dplyr::case_when(
+                  FluvaxStatus == "Never given" ~ c("red"),
+                  # no previous vax, not declined
+                  FluvaxStatus == "Removed" ~ c("purple"),
+                  FluvaxStatus == "Up-to-date" ~ c("green"),
+                  FluvaxStatus == "Old" ~ c("yellow")
+                ),
+              # red if not given, purple if removed from flu vax reminders
+              # and green if has had the vax this year. yellow if 'old' vax
+              popuphtml =
+                paste0(
+                  "<h4>",
+                  dplyr::case_when(
+                    FluvaxStatus == "Never given" ~ "Never given",
+                    # no previous vax, not declined
+                    FluvaxStatus == "Removed" ~
+                    "Removed from influenza immunization reminders",
+                    FluvaxStatus == "Up-to-date" ~
+                    paste0(" Up-to-date : ", FluvaxDate),
+                    FluvaxStatus == "Old" ~
+                    paste0(" DUE : ", FluvaxDate) # old
+                  ),
+                  "</h4>"
+                )
+            ),
+          plantag =
+            dMeasure::semantic_tag(
+              paste0(" Asthma plan "),
+              colour =
+                dplyr::case_when(
+                  AsthmaPlanStatus == "Never done" ~ c("red"),
+                  # no previous asthma plan
+                  AsthmaPlanStatus == "Up-to-date" ~ c("green"),
+                  AsthmaPlanStatus == "Old" ~ c("yellow")
+                ),
+              # red if not given
+              # and green if has had the plan within year. yellow if 'old' plan
+              popuphtml =
+                paste0(
+                  "<h4>",
+                  dplyr::case_when(
+                    AsthmaPlanStatus == "Never done" ~ "Never done",
+                    # no previous asthma plan
+                    AsthmaPlanStatus == "Up-to-date" ~
+                      paste0(" Up-to-date : ", PlanDate),
+                    AsthmaPlanStatus == "Old" ~
+                      paste0(" DUE : ", PlanDate) # old
+                  ),
+                  "</h4>"
+                )
+            )
+        )
+    }
+
+    df <- df %>>%
+      dplyr::select(-c(FluvaxDate, FluvaxName, PlanDate,
+        FluvaxStatus, AsthmaPlanStatus))
+    # flu vax and asthma plan information now incorporated
+    #  into vaxtag/vaxtag_print and plantag, plantag_print
+
+    if (input$printcopy_view == TRUE) {
+      datatable_styled(df,
+        extensions = c("Buttons", "Scroller"),
+        scrollX = TRUE,
+        colnames = c("Vaccination" = "vaxtag_print",
+          "Asthma Plan" = "plantag_print")
+      ) # don't collapse columns
+    } else {
+      datatable_styled(df,
+        copyHtml5 = NULL, printButton = NULL,
+        downloadButton = NULL, # no copy/print buttons
+        escape = which(colnames(df) %in% c("vaxtag", "plantag")) - 1,
+        # escape the 'tag' columns so that HTML is interpreted
+        colnames = c("Vaccination" = "vaxtag",
+          "Asthma Plan" = "plantag")
+      )
+    }
+  })
+
+  output$asthma_table <- DT::renderDT({
+    asthma_table()
+  },
+  server = TRUE
   )
 }

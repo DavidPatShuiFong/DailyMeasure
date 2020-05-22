@@ -21,6 +21,10 @@ steps_choose_clinician_date_df <- function() {
         "Choose clinicians who will be seen in",
         "appointment or contact lists.",
         shiny::br(), shiny::br(),
+        "Don't forget",
+        "to click the ", shiny::icon("refresh"), "Update button",
+        "after choosing the clinicians to update the view!",
+        shiny::br(), shiny::br(),
         "Clinician list can be restricted by",
         "practice location.",
         shiny::br(), shiny::br(),
@@ -43,7 +47,12 @@ steps_choose_clinician_date_df <- function() {
           " Date selection"
         ),
         shiny::br(),
-        "Choose date range."
+        "Choose date range.",
+        shiny::br(), shiny::br(),
+        "Don't forget",
+        "to click the ", shiny::icon("refresh"), "Update button",
+        "after choosing the date range to update the view!"
+
       ),
       position = "left"
     ))
@@ -133,6 +142,27 @@ steps_choose_contact_details_df <- function() {
         shiny::br(), shiny::br(),
         "The default does", shiny::tags$em("not"), "include 'Non Visit' and",
         "'Telephone', but does include 'Telehealth'."
+      ),
+      position = "left"
+    )) %>>%
+    rbind(data.frame(
+      element = "#last_visit-wrapper",
+      intro = paste(
+        shiny::tags$h5(
+          shiny::icon("handshake"),
+          " Most recent contact"
+        ),
+        shiny::br(),
+        "The date of the most recent contact can be restricted to a date range.",
+        shiny::br(), shiny::br(),
+        "By default, the range is very broad, from more than ten years in the past",
+        "up to the current day.",
+        shiny::br(), shiny::br(),
+        "The date of the most recent contact can be restricted to, for example,",
+        "the past three months.",
+        shiny::br(), shiny::br(),
+        "Or changed to, for example,", shiny::tags$em("more"), "than three months",
+        "ago."
       ),
       position = "left"
     ))

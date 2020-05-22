@@ -286,29 +286,50 @@ userconfig_datatableUI <- function(id) {
         width = 12,
         shiny::tagList(
           shiny::br(),
-          shiny::wellPanel(
-            {
-              if (.bcdyz.option$demonstration) {
-                shiny::span(shiny::p(), shiny::strong("Demonstration mode : License read disabled"),
-                  style = "color:red", shiny::p()
-                )
-              }
-              else {}
-            }, {
-              x <- shiny::tagList(shiny::actionButton(ns("reread_subscription"),
-                "Re-read Subscriptions",
-                shiny::icon("book-reader"),
-                class = "btn btn-primary"
-              ))
-              # disabled if demonstration mode
-              if (.bcdyz.option$demonstration) {
-                shinyjs::disabled(x)
-              } else {
-                x
-              }
-            },
-            shiny::HTML("&nbsp;"), shiny::HTML("&nbsp;"), shiny::HTML("&nbsp;"),
-            "Read subscription/license dates from GPstat!/DailyMeasure databases"
+          shiny::fluidRow(
+            shiny::column(
+              width = 6,
+              shiny::wellPanel(
+                {
+                  if (.bcdyz.option$demonstration) {
+                    shiny::span(
+                      shiny::p(),
+                      shiny::strong("Demonstration mode : License read disabled"),
+                      style = "color:red",
+                      shiny::p()
+                    )
+                  }
+                  else {}
+                }, {
+                  x <- shiny::tagList(
+                    shiny::actionButton(ns("reread_subscription"),
+                    "Re-read Subscriptions",
+                    shiny::icon("book-reader"),
+                    class = "btn btn-primary"
+                  ))
+                  # disabled if demonstration mode
+                  if (.bcdyz.option$demonstration) {
+                    shinyjs::disabled(x)
+                  } else {
+                    x
+                  }
+                },
+                shiny::HTML("&nbsp;"),
+                shiny::HTML("&nbsp;"),
+                shiny::HTML("&nbsp;"),
+                "Read subscription/license dates from GPstat!/DailyMeasure databases"
+              )
+            ),
+            shiny::column(
+              width = 6,
+              shiny::wellPanel(
+                shiny::downloadButton(ns("downloadUserList"), "Download"),
+                shiny::HTML("&nbsp;"),
+                shiny::HTML("&nbsp;"),
+                shiny::HTML("&nbsp;"),
+                "Download configured user list, including Identifiers."
+              )
+            )
           ),
           DTedit::dteditUI(ns("userconfigs"))
         )
@@ -371,6 +392,16 @@ userconfig_datatable <- function(input, output, session, dM) {
     }
     )
   })
+
+  output$downloadUserList <- shiny::downloadHandler(
+    filename = "GPstat UserList.csv",
+    content = function(file) {
+      write.csv(dM$UserConfigLicense %>>%
+          dplyr::select(Fullname, Identifier, LicenseDate),
+        file,
+        row.names = FALSE)
+    }
+  )
 
   usernames <- shiny::reactiveVal()
   # list of user names

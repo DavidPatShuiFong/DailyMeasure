@@ -2,12 +2,50 @@ GP stat! (c) David Fong, 2019
 
 front-end to DailyMeasure package
 
+Version 1.5.10, 20th May 2020
+=============================
+
+* better restriction of date ranges ('negative' date ranges prevented)
+* improved separation of tasks for billings_list
+* changes to report specific number of days which are restricted
+  by lack of subscription as reported by check_subscription_datechange_trigR
+
+Version 1.5.9, 3rd May 2020
+===========================
+
+New
+
+* Download list of configured users, including 'Identifiers'
+  - for subscription application purposes
+* 'bounce' reminder on update_clinicians and update_date
+  button if chosen clinicians or dates change (shinyjqui effect)
+* Contact filter includes date of last contact (minimum and maximum dates)
+
+Change
+
+* chosen clinician list has an 'Update' button
+* Billings view adapted to change in billings module (version 0.4.0)
+  dMeasureBillings::list_billings no longer provides print/HTML tags
+  use dMeasureBillings::tag_billings_list to add print/HTML tags
+** improvement in billings view to reduce time to change from
+   print to HTML 'button' view
+
+
+
 Version 1.5.8, 24th April 2020
 ==============================
 
 New
 
+* asthma view in Conditions tab
 * 'include up-to-date' option for cancer screening
+* COVID-19 bulk billing incentive prompt in billing view
+* filters for different billing typess (private, WorkCare, DVA, 'bulk'/direct)
+  in billing view
+
+Fix
+
+* fixed logic for updating 'date_to' input on right side-panel
 
 Version 1.5.7, 8th April 2020
 =============================

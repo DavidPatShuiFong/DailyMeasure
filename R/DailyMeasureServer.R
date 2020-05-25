@@ -541,7 +541,8 @@ DailyMeasureServer <- function(input, output, session) {
           tabName = "qimAppt", icon = shiny::icon("chart-line")
         )
       ))
-    }) # if QIMmodule is FALSE, then output$PIPqimMenu will be left undefined
+    })
+    # if QIMmodule is FALSE, then output$PIPqimMenu will be left undefined
 
     # Practice Incentive Program (PIP) Quality Improvement (QI) measures
     # add PIP QIM tab items to the tabItem vector
@@ -599,6 +600,147 @@ DailyMeasureServer <- function(input, output, session) {
       )
     })
 
+  ##### configuration tabItem ########################################################
+
+  configuration_tabPanels <- list(
+    id = "tab_config",
+    title = "Configuration",
+    width = 12,
+    height = "85vh",
+    shiny::tabPanel(
+      # sqlite configuration file location
+      # this is stored in a YAML file
+      # allows a 'local' user to use a remote configuration file
+      title = "Configuration file",
+      value = "ConfigLocation",
+      shiny::column(
+        width = 12,
+        shiny::wellPanel(
+          textOutput("configuration_file_details")
+          # location of sqlite configuration file
+        ),
+        shiny::wellPanel(
+          {
+            if (.bcdyz.option$demonstration) {
+              shiny::span(shiny::p(),
+                shiny::strong("Demonstration mode : Configuration file choice disabled"),
+                style = "color:red", shiny::p()
+              )
+            }
+            else {}
+          }, {
+            x <- shinyFiles::shinyFilesButton(
+              "choose_configuration_file",
+              label = "Choose configuration file",
+              title = "Choose configuration file (must end in '.sqlite')",
+              multiple = FALSE
+            )
+            # disabled if demonstration mode
+            if (.bcdyz.option$demonstration) {
+              shinyjs::disabled(x)
+            } else {
+              x
+            }
+          }, {
+            x <- shinyFiles::shinySaveButton(
+              "create_configuration_file",
+              label = "Create (and choose) configuration file",
+              title = "Create (and choose) configuration file (must end in '.sqlite')",
+              filetype = list(sqlite = c("sqlite"))
+            )
+            # disabled if demonstration mode
+            if (.bcdyz.option$demonstration) {
+              shinyjs::disabled(x)
+            } else {
+              x
+            }
+          },
+          shiny::helpText(
+            paste(
+              "Choose location of an existing configuration file,",
+              "or create a new configuration file."
+            ),
+            shiny::br(), shiny::br(),
+            paste(
+              "It is strongly recommended that if a different",
+              "configuration file is chosen, or a new configuration",
+              "file is created,"
+            ),
+            shiny::br(),
+            paste(
+              "that the user exit(/close) GPstat!",
+              "and then (re-)start GPstat!"
+            )
+          )
+        )
+      )
+    ),
+    shiny::tabPanel(
+      # Microsoft SQL server details
+      title = "Microsoft SQL Server details",
+      value = "ServerPanel",
+      shiny::column(
+        width = 12,
+        servers_datatableUI("servers_dt")
+      )
+    ),
+    shiny::tabPanel(
+      # Microsoft SQL server details
+      title = "Logging details",
+      value = "LoggingPanel",
+      shiny::column(
+        width = 12,
+        logging_datatableUI("logging_dt")
+      )
+    ),
+    shiny::tabPanel(
+      # Practice locations or groups
+      title = "Practice locations/groups",
+      value = "LocationsPanel",
+      shiny::column(
+        width = 12,
+        locations_datatableUI("locations_dt")
+      )
+    ),
+    shiny::tabPanel(
+      # User settings and permissions
+      title = "User settings and permissions",
+      value = "UsersPanel",
+      shiny::column(
+        width = 12,
+        userconfig_datatableUI("userconfig_dt")
+      )
+    ),
+    shiny::tabPanel(
+      # User password
+      title = "User Password Setting",
+      value = "PasswordPanel",
+      shiny::column(
+        width = 12,
+        passwordConfig_UI("password_config")
+      )
+    )
+  )
+
+  if (Custommodule) {
+    configuration_tabPanels <- append(
+      configuration_tabPanels,
+      list(
+        dMeasureCustom::dMeasureConfigurationTabPanelItem()
+      )
+    )
+  }
+
+
+  configuration_tabItem <-
+    list(
+      shinydashboard::tabItem(
+        tabName = "configuration",
+        shiny::fluidRow(
+          do.call(shinydashboard::tabBox, configuration_tabPanels)
+        )
+      )
+    )
 
 
   ##### final definition of tabItems #################################################
@@ -621,130 +763,7 @@ DailyMeasureServer <- function(input, output, session) {
         administration_UI("admin_dt")
       ))
     )),
-    list(shinydashboard::tabItem(
-      tabName = "configuration",
-      shiny::fluidRow(
-        shinydashboard::tabBox(
-          id = "tab_config",
-          title = "Configuration",
-          width = 12,
-          height = "85vh",
-          shiny::tabPanel(
-            # sqlite configuration file location
-            # this is stored in a YAML file
-            # allows a 'local' user to use a remote configuration file
-            title = "Configuration file",
-            value = "ConfigLocation",
-            shiny::column(
-              width = 12,
-              shiny::wellPanel(
-                textOutput("configuration_file_details")
-                # location of sqlite configuration file
-              ),
-              shiny::wellPanel(
-                {
-                  if (.bcdyz.option$demonstration) {
-                    shiny::span(shiny::p(),
-                      shiny::strong("Demonstration mode : Configuration file choice disabled"),
-                      style = "color:red", shiny::p()
-                    )
-                  }
-                  else {}
-                }, {
-                  x <- shinyFiles::shinyFilesButton(
-                    "choose_configuration_file",
-                    label = "Choose configuration file",
-                    title = "Choose configuration file (must end in '.sqlite')",
-                    multiple = FALSE
-                  )
-                  # disabled if demonstration mode
-                  if (.bcdyz.option$demonstration) {
-                    shinyjs::disabled(x)
-                  } else {
-                    x
-                  }
-                }, {
-                  x <- shinyFiles::shinySaveButton(
-                    "create_configuration_file",
-                    label = "Create (and choose) configuration file",
-                    title = "Create (and choose) configuration file (must end in '.sqlite')",
-                    filetype = list(sqlite = c("sqlite"))
-                  )
-                  # disabled if demonstration mode
-                  if (.bcdyz.option$demonstration) {
-                    shinyjs::disabled(x)
-                  } else {
-                    x
-                  }
-                },
-                shiny::helpText(
-                  paste(
-                    "Choose location of an existing configuration file,",
-                    "or create a new configuration file."
-                  ),
-                  shiny::br(), shiny::br(),
-                  paste(
-                    "It is strongly recommended that if a different",
-                    "configuration file is chosen, or a new configuration",
-                    "file is created,"
-                  ),
-                  shiny::br(),
-                  paste(
-                    "that the user exit(/close) GPstat!",
-                    "and then (re-)start GPstat!"
-                  )
-                )
-              )
-            )
-          ),
-          shiny::tabPanel(
-            # Microsoft SQL server details
-            title = "Microsoft SQL Server details",
-            value = "ServerPanel",
-            shiny::column(
-              width = 12,
-              servers_datatableUI("servers_dt")
-            )
-          ),
-          shiny::tabPanel(
-            # Microsoft SQL server details
-            title = "Logging details",
-            value = "LoggingPanel",
-            shiny::column(
-              width = 12,
-              logging_datatableUI("logging_dt")
-            )
-          ),
-          shiny::tabPanel(
-            # Practice locations or groups
-            title = "Practice locations/groups",
-            value = "LocationsPanel",
-            shiny::column(
-              width = 12,
-              locations_datatableUI("locations_dt")
-            )
-          ),
-          shiny::tabPanel(
-            # User settings and permissions
-            title = "User settings and permissions",
-            value = "UsersPanel",
-            shiny::column(
-              width = 12,
-              userconfig_datatableUI("userconfig_dt")
-            )
-          ),
-          shiny::tabPanel(
-            # User password
-            title = "User Password Setting",
-            value = "PasswordPanel",
-            shiny::column(
-              width = 12,
-              passwordConfig_UI("password_config")
-            )
-          )
-        )
-      )
-    )),
+    configuration_tabItem,
     list(shinydashboard::tabItem(
       tabName = "about",
       fluidRow(column(width = 12, about_UI("about_dt")))
@@ -859,6 +878,24 @@ DailyMeasureServer <- function(input, output, session) {
   })
 
   userconfig_change <- callModule(userconfig_datatable, "userconfig_dt", dM)
+
+  ###### custom module configuration ##############################
+
+  if (Custommodule) {
+    if (
+      exists(
+        "dMeasureConfigurationTabPanel",
+        where = asNamespace("dMeasureCustom"),
+        mode = "function"
+      )
+    ) {
+      callModule(
+        dMeasureCustom::dMeasureConfigurationTabPanel,
+        "dMeasureCustom_config_dt",
+        dMCustom
+      )
+    }
+  }
 
   ###### user configuration of their own password #######################
   callModule(passwordConfig_server, "password_config", dM)

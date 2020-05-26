@@ -5,6 +5,8 @@
 \title{condition asthma - server}
 \usage{
 conditions_asthma_datatable(input, output, session, dM)
+
+conditions_asthma_datatable(input, output, session, dM)
 }
 \arguments{
 \item{input}{as required by Shiny modules}
@@ -19,10 +21,16 @@ and post-natal status database}
 }
 \value{
 none
+
+none
 }
 \description{
 search for asthma patients.
+
+search for asthma patients.
 }
 \details{
+Attached to appointments within the defined appointment search period.
+
 Attached to appointments within the defined appointment search period.
 }

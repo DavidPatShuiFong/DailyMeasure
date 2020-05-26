@@ -723,14 +723,21 @@ DailyMeasureServer <- function(input, output, session) {
   )
 
   if (Custommodule) {
-    configuration_tabPanels <- append(
-      configuration_tabPanels,
-      list(
-        dMeasureCustom::dMeasureConfigurationTabPanelItem()
+    if (
+      exists(
+        "dMeasureConfigurationTabPanelItem",
+        where = asNamespace("dMeasureCustom"),
+        mode = "function"
       )
-    )
+    ) {
+      configuration_tabPanels <- append(
+        configuration_tabPanels,
+        list(
+          dMeasureCustom::dMeasureConfigurationTabPanelItem()
+        )
+      )
+    }
   }
-
 
   configuration_tabItem <-
     list(

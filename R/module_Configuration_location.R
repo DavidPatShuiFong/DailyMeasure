@@ -12,7 +12,7 @@ locations_datatableUI <- function(id) {
   ns <- shiny::NS(id)
 
   shiny::tagList(
-    DTedit::dteditUI(ns("locations"))
+    DTedit::dteditmodUI(ns("locations"))
   )
 }
 
@@ -105,8 +105,9 @@ locations_datatable <- function(input, output, session, dM) {
 
   # depends on modularized version of DTedit
   shiny::observeEvent(dM$PracticeLocationsR(), ignoreNULL = TRUE, once = TRUE, {
-    locations_edited <- callModule(DTedit::dtedit, "locations",
-      thedataframe = dM$PracticeLocationsR, # a reactiveval
+    locations_edited <- callModule(
+      DTedit::dteditmod, "locations",
+      thedata = dM$PracticeLocationsR, # a reactiveval
       view.cols = locations_dt_viewcols, # no need to show 'id' in future
       edit.cols = c("Name", "Description"),
       edit.label.cols = c("Practice Locations", "Description"),

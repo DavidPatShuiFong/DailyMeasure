@@ -81,6 +81,14 @@ DailyMeasureServer <- function(input, output, session) {
       # generates the SQLite configuration database if needed
       # and updates old SQLite configuration databases with necessary fields
       dM$read_configuration_db()
+      if (Custommodule &&
+          exists("read_configuration_db",
+                 where = asNamespace("dMeasureCustom"),
+                 mode = "function")
+      ) {
+        # if dMCustom has a read_configuration_db function, then use it
+        dMCustom$read_configuration_db()
+      }
       # reads server definitions, location definitions, user attributes etc..
       if (dM$config_db$is_open()) {
         newdb <- dM$BPdatabaseChoice_new()
@@ -852,6 +860,14 @@ DailyMeasureServer <- function(input, output, session) {
       dM$open_configuration_db()
       # this will initialize the .sqlite configuration file and open it
       dM$read_configuration_db()
+      if (Custommodule &&
+          exists("read_configuration_db",
+                 where = asNamespace("dMeasureCustom"),
+                 mode = "function")
+      ) {
+        # if dMCustom has a read_configuration_db function, then use it
+        dMCustom$read_configuration_db()
+      }
       shinytoastr::toastr_warning(
         message = paste(
           "New configuration file created and chosen.",

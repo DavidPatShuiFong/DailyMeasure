@@ -7,7 +7,7 @@
 \usage{
 lhs \%>\% rhs
 
-lhs \%>>\% rhs
+x \%>>\% expr
 }
 \description{
 See \code{magrittr::\link[magrittr]{\%>\%}} for details.

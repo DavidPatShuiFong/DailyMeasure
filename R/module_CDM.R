@@ -110,7 +110,7 @@ cdm_datatable <- function(input, output, session, dMCDM) {
         input$cdm_chosen,
         input$appointment_contact_view,
         input$printcopy_view
-      ), {
+      ), ignoreInit = TRUE, {
         shiny::validate(
           shiny::need(
             dMCDM$dMBillings$appointments_billingsR(),

@@ -70,7 +70,7 @@ billings_datatable <- function(input, output, session, dMBillings) {
 
   output$billing_options <- shiny::renderUI({
     shinyWidgets::dropdown(
-      input_id = ns("billing_options_dropdown"),
+      inputId = ns("billing_options_dropdown"),
       icon = icon("gear"),
       label = "Billing options",
       shinyWidgets::checkboxGroupButtons(
@@ -82,24 +82,53 @@ billings_datatable <- function(input, output, session, dMBillings) {
         checkIcon = list(yes = icon("ok", lib = "glyphicon"))
       ),
       shiny::hr(),
-      shinyWidgets::checkboxGroupButtons(
-        inputId = ns("billing_types_viewed"),
-        label = "Billing types viewed",
-        choices = c("Direct 'bulk' billing", "DVA", "WorkCover", "Other"),
-        selected = c("Direct 'bulk' billing", "DVA", "WorkCover", "Other"),
-        status = "primary",
-        checkIcon = list(yes = icon("ok", lib = "glyphicon"))
+      shiny::actionButton(
+        inputId = ns("view_billing_types"),
+        label = "Change billing types"
       )
     )
   })
 
   shiny::observeEvent(
-    input$billing_types_viewed,
+    input$view_billing_types,
     ignoreInit = TRUE, {
-      # filtered by payerCode (e.g. bulk billing, DVA, WorkCover)
-      # adds covid19bb if enabled, TRUE is possible bulk-bill incentive opportunity
-
-      payerCode <- c()
+      selected_billings <- character(0)
+      if (2 %in% dMBillings$payerCode) {
+        selected_billings <- c(selected_billings, "Direct 'bulk' billing")
+      }
+      if (3 %in% dMBillings$payerCode) {
+        selected_billings <- c(selected_billings, "DVA")
+      }
+      if (4 %in% dMBillings$payerCode) {
+        selected_billings <- c(selected_billings, "WorkCover")
+      }
+      if (5 %in% dMBillings$payerCode) {
+        selected_billings <- c(selected_billings, "Other")
+      }
+      shiny::showModal(
+        shiny::modalDialog(
+          title = "Billing types",
+          shinyWidgets::checkboxGroupButtons(
+            inputId = ns("billing_types_viewed"),
+            label = "Billing types viewed",
+            choices = c("Direct 'bulk' billing", "DVA", "WorkCover", "Other"),
+            selected = selected_billings,
+            status = "primary",
+            checkIcon = list(yes = icon("ok", lib = "glyphicon"))
+          ),
+          easyClose = FALSE,
+          footer = tagList(
+            modalButton("Cancel"),
+            actionButton(ns("billing_types_ok"), "OK")
+          )
+        )
+      )
+    }
+  )
+  shiny::observeEvent(
+    # 'ok' for modal opened by 'view billing types' button
+    input$billing_types_ok, {
+      payerCode <- numeric(0)
       if ("Direct 'bulk' billing" %in% input$billing_types_viewed) {
         payerCode <- c(payerCode, 2)
       }
@@ -116,7 +145,10 @@ billings_datatable <- function(input, output, session, dMBillings) {
         # 5 = private (head of family)
         # 8 = private (other)
       }
-      dMBillings$payerCode <- payerCode
+      if (!isTRUE(all.equal(sort(payerCode), sort(dMBillings$payerCode)))) {
+        dMBillings$payerCode <- payerCode
+      }
+      shiny::removeModal()
     }
   )
 
@@ -124,7 +156,8 @@ billings_datatable <- function(input, output, session, dMBillings) {
     c(
       dMBillings$billings_listR(),
       input$billing_reminders_chosen
-    ), {
+    ),
+    ignoreInit = TRUE, {
       shiny::validate(
         shiny::need(
           dMBillings$billings_list,
@@ -149,7 +182,9 @@ billings_datatable <- function(input, output, session, dMBillings) {
     }
   )
 
-  shiny::observeEvent(input$allbillings_view, ignoreNULL = TRUE, {
+  shiny::observeEvent(input$allbillings_view,
+                      ignoreInit = TRUE,
+                      ignoreNULL = TRUE, {
     dMBillings$own_billings <- !input$allbillings_view
   })
 

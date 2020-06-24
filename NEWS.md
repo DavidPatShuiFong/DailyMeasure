@@ -5,6 +5,7 @@ front-end to DailyMeasure package
 # Version 1.6.0
 24th June 2020
 
+* Support for dMeasureMedication module
 * Support for custom patient list module interaction with
   configuration SQLite database
 * changes for new version of DTedit (v2)

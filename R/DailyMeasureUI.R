@@ -132,7 +132,9 @@ DailyMeasureUI <- function() {
           shinydashboard::menuItemOutput("CDMMenu"),
           shinydashboard::menuItemOutput("PIPqimMenu"),
           shinydashboard::menuItemOutput("CustomMenu"),
-          # dynamically created Billings, CDM, PIP quality improvement and Custom
+          shinydashboard::menuItemOutput("MedicationMenu"),
+          # dynamically created Billings, CDM, PIP quality improvement,
+          # Custom, Medication
           # menu items. could be blank!
           # e.g. will be blank unless dMeasureQIM module/package is available
           shinydashboard::menuItem("Conditions",

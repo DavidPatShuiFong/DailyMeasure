@@ -258,7 +258,7 @@ DailyMeasureServer <- function(input, output, session) {
   shiny::observeEvent(
     c(input$min_date,
       input$max_date),
-    ignoreInit = TRUE,
+    ignoreInit = FALSE,
     ignoreNULL = FALSE,
     {
       shinyjqui::jqui_effect(
@@ -299,7 +299,7 @@ DailyMeasureServer <- function(input, output, session) {
   # only adjust appointment view after dates are 'submitted' using 'submit' button
   shiny::observeEvent(
     input$update_lastvisit,
-    ignoreNULL = TRUE,
+    ignoreNULL = FALSE,
     ignoreInit = TRUE,
     {
       dM$contact_minDate <- input$min_date
@@ -500,26 +500,13 @@ DailyMeasureServer <- function(input, output, session) {
 
   if (CDMmodule == TRUE & Billingsmodule == TRUE) {
     output$CDMMenu <- shinydashboard::renderMenu({
-      shinydashboard::menuItem("CDM items",
-        tabName = "cdm", icon = shiny::icon("file-medical-alt")
-      )
+      dMeasureCDM::shinydashboardmenuItem()
     }) # if CDMmodule or Billingsmodule is FALSE, then output$CDMMenu will be left undefined
-    shinytabItems <- c(
-      shinytabItems,
-      list(shinydashboard::tabItem(
-        tabName = "cdm",
-        shiny::fluidRow(column(
-          width = 12, align = "center",
-          h2("Chronic Disease Management items")
-        )),
-        shiny::fluidRow(column(width = 12, shiny::div(
-          id = "cdm_datatable_wrapper",
-          cdm_datatableUI("cdm_dt")
-        )))
-      ))
-    )
+    shinytabItems <- c(shinytabItems, dMeasureCDM::dMeasureShinytabItems())
     # chronic disease management table
-    cdm_table_results <- callModule(cdm_datatable, "cdm_dt", dMCDM)
+    cdm_table_results <- callModule(
+      dMeasureCDM::datatableServer,
+      "cdm_dt", dMCDM)
   }
 
   if (Custommodule == TRUE) {

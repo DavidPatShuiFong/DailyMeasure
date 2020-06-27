@@ -3,15 +3,26 @@
 front-end to DailyMeasure package
 
 # Version 1.6.0
-24th June 2020
+27th June 2020
+
+## New
 
 * Support for dMeasureMedication module
 * Support for custom patient list module interaction with
   configuration SQLite database
-* changes for new version of DTedit (v2)
+
+## Changes
+
 * speed improvement for Chronic Disease Management (CDM) display
 * speed improvement for Billings display
 * Viewed billings types changed with modal
+* responsibility for CDM module UI moved to module
+  + this is what is already used for Medication and Custom modules
+* changes for new version of DTedit (v2.0+)
+
+## Bugfixes
+
+* Contact minimum/maximum date not properly initialized at start-up
 
 # Version 1.5.10
 20th May 2020

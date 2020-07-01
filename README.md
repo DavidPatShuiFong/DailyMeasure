@@ -1,19 +1,21 @@
 ## GPstat! (part of DailyMeasure) - 'Best Practice' dashboard for Quality Improvement
 
+v1.6.0 (1st July 2020)
+
 A quality improvement tool for [Best Practice](https://bpsoftware.net/).
 
 GPstat! interrogates the appointment book, searching for ‘near-future’ opportunities for preventative health, screening, chronic disease management and quality improvement opportunities.
 
 ![GPstat! screenshot](https://photos.smugmug.com/Office/Eltham/i-q3shMp5/0/a5b42c39/O/GPstat%21Measles.jpg)
 
-#### New features since version 1.5.7
+#### New features since version 1.5.9
 
-* Search for COVID-19 bulk billing incentive opportunities
-* Filter by most recent contact (allowing search for ‘not seen in past 1.5 months’)
-* Asthma view (care plans and influenza vax)
+* Medication module (counts and lists medications, by default lists patients with >= 4 medications)
+* Custom patient lists
 
 #### Also includes
 
+* Search for COVID-19 bulk billing incentive opportunities
 * Immunization lists (influenza, measles and Zostavax)
 * Cancer screening (bowel cancer, breast cancer, cervical screening, measles)
 * Quality Improvement Measure 1 to 10 – diabetes, BP, cardiovascular risk, smoking etc..
@@ -59,8 +61,39 @@ The ‘bpsrawdata’ database access password（as used by ‘BPbrowser’) is r
 #### Recent changelog
 
 ```
-Version 1.5.9, 29th April 2020
-==============================
+
+# Version 1.6.0
+27th June 2020
+
+## New
+
+* Support for dMeasureMedication module
+* Support for custom patient list module interaction with
+  configuration SQLite database
+
+## Changes
+
+* speed improvement for Chronic Disease Management (CDM) display
+* speed improvement for Billings display
+* Viewed billings types changed with modal
+* responsibility for CDM module UI moved to module
+  + this is what is already used for Medication and Custom modules
+* changes for new version of DTedit (v2.0+)
+
+## Bugfixes
+
+* Contact minimum/maximum date not properly initialized at start-up
+
+# Version 1.5.10
+20th May 2020
+
+* better restriction of date ranges ('negative' date ranges prevented)
+* improved separation of tasks for billings_list
+* changes to report specific number of days which are restricted
+  by lack of subscription as reported by check_subscription_datechange_trigR
+
+# Version 1.5.9
+29th April 2020
 
 New
 
@@ -79,8 +112,8 @@ Change
 ** improvement in billings view to reduce time to change from
    print to HTML 'button' view
 
-Version 1.5.8, 24th April 2020
-==============================
+# Version 1.5.8
+24th April 2020
 
 New
 

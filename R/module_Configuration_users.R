@@ -331,7 +331,7 @@ userconfig_datatableUI <- function(id) {
               )
             )
           ),
-          DTedit::dteditUI(ns("userconfigs"))
+          DTedit::dteditmodUI(ns("userconfigs"))
         )
       ),
       shiny::tabPanel(
@@ -554,8 +554,9 @@ userconfig_datatable <- function(input, output, session, dM) {
   # depends on modularized version of DTedit
   shiny::observeEvent(dM$UserConfigLicenseR(), ignoreNULL = TRUE, once = TRUE, {
     userconfig_edited <-
-      callModule(DTedit::dtedit, "userconfigs",
-        thedataframe = dM$UserConfigLicenseR, # pass a ReactiveVal
+      callModule(
+        DTedit::dteditmod, "userconfigs",
+        thedata = dM$UserConfigLicenseR, # pass a ReactiveVal
         view.cols = userconfig_dt_viewcols, # no need to show 'id' in future
         edit.cols = userconfig_dt_editcols,
         # edit.label.cols = ,

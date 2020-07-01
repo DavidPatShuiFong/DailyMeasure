@@ -35,14 +35,14 @@ cancerscreen_datatableUI <- function(id) {
           selected = 1,
           status = "primary",
           checkIcon = list(
-            yes = icon("ok", lib = "glyphicon"),
-            no = icon("remove", lib = "glyphicon")
+            yes = shiny::icon("ok", lib = "glyphicon"),
+            no = shiny::icon("remove", lib = "glyphicon")
           )
         )
       ),
       shiny::column(2,
         offset = 0, # note that total 'column' width = 12
-        uiOutput(ns("cancerscreen_choice"))
+        shiny::uiOutput(ns("cancerscreen_choice"))
       )
     ),
     shinycssloaders::withSpinner(
@@ -83,9 +83,9 @@ cancerscreen_datatable <- function(input, output, session, dM) {
         choices = cancerscreen_names, selected = cancerscreen_names,
         # all choices initially selected
         status = "primary",
-        checkIcon = list(yes = icon("ok", lib = "glyphicon"))
+        checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
       ),
-      icon = icon("gear"),
+      icon = shiny::icon("gear"),
       label = "Cancer screening shown"
     )
   })
@@ -156,7 +156,7 @@ cancerscreen_datatable <- function(input, output, session, dM) {
     return(screenlist)
   })
 
-  styled_cancerscreen_list <- reactive({
+  styled_cancerscreen_list <- shiny::reactive({
     shiny::validate(
       shiny::need(
         dM$appointments_listR(),

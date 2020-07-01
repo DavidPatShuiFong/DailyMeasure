@@ -69,7 +69,10 @@ DailyMeasureServer <- function(input, output, session) {
   if (Custommodule) {
     dMCustom <- dMeasureCustom::dMeasureCustom$new(dM)
   }
-
+  Medicationmodule <- requireNamespace("dMeasureMedication", quietly = TRUE)
+  if (Medicationmodule) {
+    dMMedication <- dMeasureMedication::dMeasureMedication$new(dM)
+  }
   # read config files
 
   ##### Configuration file ######################################################
@@ -81,6 +84,14 @@ DailyMeasureServer <- function(input, output, session) {
       # generates the SQLite configuration database if needed
       # and updates old SQLite configuration databases with necessary fields
       dM$read_configuration_db()
+      if (Custommodule &&
+          exists("read_configuration_db",
+                 where = asNamespace("dMeasureCustom"),
+                 mode = "function")
+      ) {
+        # if dMCustom has a read_configuration_db function, then use it
+        dMCustom$read_configuration_db()
+      }
       # reads server definitions, location definitions, user attributes etc..
       if (dM$config_db$is_open()) {
         newdb <- dM$BPdatabaseChoice_new()
@@ -145,8 +156,8 @@ DailyMeasureServer <- function(input, output, session) {
 
   date_today <- shiny::observeEvent(input$update_date_today, {
     # 'today' button. change date range to today, and click the 'update' button
-    shiny::updateDateInput(session, "date1", value = Sys.Date())
-    shiny::updateDateInput(session, "date2", value = Sys.Date())
+    shiny::updateDateInput(session, "date1", value = Sys.Date(), max = Sys.Date())
+    shiny::updateDateInput(session, "date2", value = Sys.Date(), min = Sys.Date())
     # change date range to today
     shinyjs::click("update_date")
     # and click the 'update' button
@@ -165,13 +176,13 @@ DailyMeasureServer <- function(input, output, session) {
       shiny::dateInput(
         inputId = "date1",
         label = "From:", format = "D dd/M/yyyy",
-        min = Sys.Date() - 6000, max = Sys.Date() + 180,
+        min = Sys.Date() - 6000, max = Sys.Date(),
         value = Sys.Date()
       ),
       shiny::dateInput(
         inputId = "date2",
         label = "To:", format = "D dd/M/yyyy",
-        min = Sys.Date() - 6000, max = Sys.Date() + 180,
+        min = Sys.Date(), max = Sys.Date() + 180,
         value = Sys.Date()
       )
     )
@@ -188,6 +199,8 @@ DailyMeasureServer <- function(input, output, session) {
         effect = "bounce",
         options = list(distance = 1)
       )
+      shiny::updateDateInput(session, "date1", max = input$date2)
+      shiny::updateDateInput(session, "date2", min = input$date1)
     })
 
   shiny::observeEvent(
@@ -196,8 +209,9 @@ DailyMeasureServer <- function(input, output, session) {
     ignoreNULL = TRUE,
     {
       # change 'date_from' in response to $date_a
-      if (input$date1 != dM$date_aR()) {
-        shiny::updateDateInput(session, "date1", value = dM$date_aR())
+      if (input$date1 != dM$date_a) {
+        shiny::updateDateInput(session, "date1", value = dM$date_a)
+        shiny::updateDateInput(session, "date2", min = dM$date_a)
       }
     }
   )
@@ -208,8 +222,9 @@ DailyMeasureServer <- function(input, output, session) {
     ignoreNULL = TRUE,
     {
       # change 'date_to' in response to $date_a
-      if (input$date2 != dM$date_bR()) {
-        shiny::updateDateInput(session, "date2", value = dM$date_bR())
+      if (input$date2 != dM$date_b) {
+        shiny::updateDateInput(session, "date2", value = dM$date_b)
+        shiny::updateDateInput(session, "date1", max = dM$date_b)
       }
     }
   )
@@ -220,7 +235,7 @@ DailyMeasureServer <- function(input, output, session) {
       shiny::dateInput(
         inputId = "min_date",
         label = "From:", format = "D dd/M/yyyy",
-        min = Sys.Date() - 6000, max = Sys.Date() + 180,
+        min = Sys.Date() - 6000, max = Sys.Date(),
         value = Sys.Date() - 6000
       ),
       shiny::dateInput(
@@ -243,7 +258,7 @@ DailyMeasureServer <- function(input, output, session) {
   shiny::observeEvent(
     c(input$min_date,
       input$max_date),
-    ignoreInit = TRUE,
+    ignoreInit = FALSE,
     ignoreNULL = FALSE,
     {
       shinyjqui::jqui_effect(
@@ -251,6 +266,8 @@ DailyMeasureServer <- function(input, output, session) {
         effect = "bounce",
         options = list(distance = 1)
       )
+      shiny::updateDateInput(session, "min_date", max = input$max_date)
+      shiny::updateDateInput(session, "max_date", min = input$min_date)
     })
 
   shiny::observeEvent(
@@ -258,9 +275,10 @@ DailyMeasureServer <- function(input, output, session) {
     ignoreInit = TRUE,
     ignoreNULL = TRUE,
     {
-      # change 'date_from' in response to $date_a
-      if (input$min_date != dM$contact_minDateR()) {
-        shiny::updateDateInput(session, "min_date", value = dM$contact_minDateR())
+      # change 'min_date' in response to $min_dateR
+      if (input$min_date != dM$contact_minDate) {
+        shiny::updateDateInput(session, "min_date", value = dM$contact_minDate)
+        shiny::updateDateInput(session, "max_date", min = dM$contact_minDate)
       }
     }
   )
@@ -270,9 +288,10 @@ DailyMeasureServer <- function(input, output, session) {
     ignoreInit = TRUE,
     ignoreNULL = TRUE,
     {
-      # change 'date_to' in response to $date_a
-      if (input$max_date != dM$contact_maxDateR()) {
-        shiny::updateDateInput(session, "max_date", value = dM$contact_maxDateR())
+      # change 'max_date' in response to $max_dateR
+      if (input$max_date != dM$contact_maxDate) {
+        shiny::updateDateInput(session, "max_date", value = dM$contact_maxDate)
+        shiny::updateDateInput(session, "min_date", max = dM$contact_maxDate)
       }
     }
   )
@@ -280,7 +299,7 @@ DailyMeasureServer <- function(input, output, session) {
   # only adjust appointment view after dates are 'submitted' using 'submit' button
   shiny::observeEvent(
     input$update_lastvisit,
-    ignoreNULL = TRUE,
+    ignoreNULL = FALSE,
     ignoreInit = TRUE,
     {
       dM$contact_minDate <- input$min_date
@@ -481,37 +500,35 @@ DailyMeasureServer <- function(input, output, session) {
 
   if (CDMmodule == TRUE & Billingsmodule == TRUE) {
     output$CDMMenu <- shinydashboard::renderMenu({
-      shinydashboard::menuItem("CDM items",
-        tabName = "cdm", icon = shiny::icon("file-medical-alt")
-      )
+      dMeasureCDM::shinydashboardmenuItem()
     }) # if CDMmodule or Billingsmodule is FALSE, then output$CDMMenu will be left undefined
-    shinytabItems <- c(
-      shinytabItems,
-      list(shinydashboard::tabItem(
-        tabName = "cdm",
-        shiny::fluidRow(column(
-          width = 12, align = "center",
-          h2("Chronic Disease Management items")
-        )),
-        shiny::fluidRow(column(width = 12, shiny::div(
-          id = "cdm_datatable_wrapper",
-          cdm_datatableUI("cdm_dt")
-        )))
-      ))
-    )
+    shinytabItems <- c(shinytabItems, dMeasureCDM::dMeasureShinytabItems())
     # chronic disease management table
-    cdm_table_results <- callModule(cdm_datatable, "cdm_dt", dMCDM)
+    cdm_table_results <- callModule(
+      dMeasureCDM::datatableServer,
+      "cdm_dt", dMCDM)
   }
 
   if (Custommodule == TRUE) {
     output$CustomMenu <- shinydashboard::renderMenu({
       dMeasureCustom::shinydashboardmenuItem()
-    }) # if CDMmodule or Billingsmodule is FALSE, then output$CDMMenu will be left undefined
+    })
     shinytabItems <- c(shinytabItems, dMeasureCustom::dMeasureShinytabItems())
     # chronic disease management table
     custom_table_results <- callModule(
       dMeasureCustom::datatableServer,
       "custom_dt", dMCustom
+    )
+  }
+  if (Medicationmodule == TRUE) {
+    output$MedicationMenu <- shinydashboard::renderMenu({
+      dMeasureMedication::shinydashboardmenuItem()
+    })
+    shinytabItems <- c(shinytabItems, dMeasureMedication::dMeasureShinytabItems())
+    # chronic disease management table
+    medication_table_results <- callModule(
+      dMeasureMedication::datatableServer,
+      "medication_dt", dMMedication
     )
   }
 
@@ -533,7 +550,8 @@ DailyMeasureServer <- function(input, output, session) {
           tabName = "qimAppt", icon = shiny::icon("chart-line")
         )
       ))
-    }) # if QIMmodule is FALSE, then output$PIPqimMenu will be left undefined
+    })
+    # if QIMmodule is FALSE, then output$PIPqimMenu will be left undefined
 
     # Practice Incentive Program (PIP) Quality Improvement (QI) measures
     # add PIP QIM tab items to the tabItem vector
@@ -591,6 +609,154 @@ DailyMeasureServer <- function(input, output, session) {
       )
     })
 
+  ##### configuration tabItem ########################################################
+
+  configuration_tabPanels <- list(
+    id = "tab_config",
+    title = "Configuration",
+    width = 12,
+    height = "85vh",
+    shiny::tabPanel(
+      # sqlite configuration file location
+      # this is stored in a YAML file
+      # allows a 'local' user to use a remote configuration file
+      title = "Configuration file",
+      value = "ConfigLocation",
+      shiny::column(
+        width = 12,
+        shiny::wellPanel(
+          textOutput("configuration_file_details")
+          # location of sqlite configuration file
+        ),
+        shiny::wellPanel(
+          {
+            if (.bcdyz.option$demonstration) {
+              shiny::span(shiny::p(),
+                shiny::strong("Demonstration mode : Configuration file choice disabled"),
+                style = "color:red", shiny::p()
+              )
+            }
+            else {}
+          }, {
+            x <- shinyFiles::shinyFilesButton(
+              "choose_configuration_file",
+              label = "Choose configuration file",
+              title = "Choose configuration file (must end in '.sqlite')",
+              multiple = FALSE
+            )
+            # disabled if demonstration mode
+            if (.bcdyz.option$demonstration) {
+              shinyjs::disabled(x)
+            } else {
+              x
+            }
+          }, {
+            x <- shinyFiles::shinySaveButton(
+              "create_configuration_file",
+              label = "Create (and choose) configuration file",
+              title = "Create (and choose) configuration file (must end in '.sqlite')",
+              filetype = list(sqlite = c("sqlite"))
+            )
+            # disabled if demonstration mode
+            if (.bcdyz.option$demonstration) {
+              shinyjs::disabled(x)
+            } else {
+              x
+            }
+          },
+          shiny::helpText(
+            paste(
+              "Choose location of an existing configuration file,",
+              "or create a new configuration file."
+            ),
+            shiny::br(), shiny::br(),
+            paste(
+              "It is strongly recommended that if a different",
+              "configuration file is chosen, or a new configuration",
+              "file is created,"
+            ),
+            shiny::br(),
+            paste(
+              "that the user exit(/close) GPstat!",
+              "and then (re-)start GPstat!"
+            )
+          )
+        )
+      )
+    ),
+    shiny::tabPanel(
+      # Microsoft SQL server details
+      title = "Microsoft SQL Server details",
+      value = "ServerPanel",
+      shiny::column(
+        width = 12,
+        servers_datatableUI("servers_dt")
+      )
+    ),
+    shiny::tabPanel(
+      # Microsoft SQL server details
+      title = "Logging details",
+      value = "LoggingPanel",
+      shiny::column(
+        width = 12,
+        logging_datatableUI("logging_dt")
+      )
+    ),
+    shiny::tabPanel(
+      # Practice locations or groups
+      title = "Practice locations/groups",
+      value = "LocationsPanel",
+      shiny::column(
+        width = 12,
+        locations_datatableUI("locations_dt")
+      )
+    ),
+    shiny::tabPanel(
+      # User settings and permissions
+      title = "User settings and permissions",
+      value = "UsersPanel",
+      shiny::column(
+        width = 12,
+        userconfig_datatableUI("userconfig_dt")
+      )
+    ),
+    shiny::tabPanel(
+      # User password
+      title = "User Password Setting",
+      value = "PasswordPanel",
+      shiny::column(
+        width = 12,
+        passwordConfig_UI("password_config")
+      )
+    )
+  )
+
+  if (Custommodule) {
+    if (
+      exists(
+        "dMeasureConfigurationTabPanelItem",
+        where = asNamespace("dMeasureCustom"),
+        mode = "function"
+      )
+    ) {
+      configuration_tabPanels <- append(
+        configuration_tabPanels,
+        list(
+          dMeasureCustom::dMeasureConfigurationTabPanelItem()
+        )
+      )
+    }
+  }
+
+  configuration_tabItem <-
+    list(
+      shinydashboard::tabItem(
+        tabName = "configuration",
+        shiny::fluidRow(
+          do.call(shinydashboard::tabBox, configuration_tabPanels)
+        )
+      )
+    )
 
 
   ##### final definition of tabItems #################################################
@@ -613,130 +779,7 @@ DailyMeasureServer <- function(input, output, session) {
         administration_UI("admin_dt")
       ))
     )),
-    list(shinydashboard::tabItem(
-      tabName = "configuration",
-      shiny::fluidRow(
-        shinydashboard::tabBox(
-          id = "tab_config",
-          title = "Configuration",
-          width = 12,
-          height = "85vh",
-          shiny::tabPanel(
-            # sqlite configuration file location
-            # this is stored in a YAML file
-            # allows a 'local' user to use a remote configuration file
-            title = "Configuration file",
-            value = "ConfigLocation",
-            shiny::column(
-              width = 12,
-              shiny::wellPanel(
-                textOutput("configuration_file_details")
-                # location of sqlite configuration file
-              ),
-              shiny::wellPanel(
-                {
-                  if (.bcdyz.option$demonstration) {
-                    shiny::span(shiny::p(),
-                      shiny::strong("Demonstration mode : Configuration file choice disabled"),
-                      style = "color:red", shiny::p()
-                    )
-                  }
-                  else {}
-                }, {
-                  x <- shinyFiles::shinyFilesButton(
-                    "choose_configuration_file",
-                    label = "Choose configuration file",
-                    title = "Choose configuration file (must end in '.sqlite')",
-                    multiple = FALSE
-                  )
-                  # disabled if demonstration mode
-                  if (.bcdyz.option$demonstration) {
-                    shinyjs::disabled(x)
-                  } else {
-                    x
-                  }
-                }, {
-                  x <- shinyFiles::shinySaveButton(
-                    "create_configuration_file",
-                    label = "Create (and choose) configuration file",
-                    title = "Create (and choose) configuration file (must end in '.sqlite')",
-                    filetype = list(sqlite = c("sqlite"))
-                  )
-                  # disabled if demonstration mode
-                  if (.bcdyz.option$demonstration) {
-                    shinyjs::disabled(x)
-                  } else {
-                    x
-                  }
-                },
-                shiny::helpText(
-                  paste(
-                    "Choose location of an existing configuration file,",
-                    "or create a new configuration file."
-                  ),
-                  shiny::br(), shiny::br(),
-                  paste(
-                    "It is strongly recommended that if a different",
-                    "configuration file is chosen, or a new configuration",
-                    "file is created,"
-                  ),
-                  shiny::br(),
-                  paste(
-                    "that the user exit(/close) GPstat!",
-                    "and then (re-)start GPstat!"
-                  )
-                )
-              )
-            )
-          ),
-          shiny::tabPanel(
-            # Microsoft SQL server details
-            title = "Microsoft SQL Server details",
-            value = "ServerPanel",
-            shiny::column(
-              width = 12,
-              servers_datatableUI("servers_dt")
-            )
-          ),
-          shiny::tabPanel(
-            # Microsoft SQL server details
-            title = "Logging details",
-            value = "LoggingPanel",
-            shiny::column(
-              width = 12,
-              logging_datatableUI("logging_dt")
-            )
-          ),
-          shiny::tabPanel(
-            # Practice locations or groups
-            title = "Practice locations/groups",
-            value = "LocationsPanel",
-            shiny::column(
-              width = 12,
-              locations_datatableUI("locations_dt")
-            )
-          ),
-          shiny::tabPanel(
-            # User settings and permissions
-            title = "User settings and permissions",
-            value = "UsersPanel",
-            shiny::column(
-              width = 12,
-              userconfig_datatableUI("userconfig_dt")
-            )
-          ),
-          shiny::tabPanel(
-            # User password
-            title = "User Password Setting",
-            value = "PasswordPanel",
-            shiny::column(
-              width = 12,
-              passwordConfig_UI("password_config")
-            )
-          )
-        )
-      )
-    )),
+    configuration_tabItem,
     list(shinydashboard::tabItem(
       tabName = "about",
       fluidRow(column(width = 12, about_UI("about_dt")))
@@ -818,6 +861,14 @@ DailyMeasureServer <- function(input, output, session) {
       dM$open_configuration_db()
       # this will initialize the .sqlite configuration file and open it
       dM$read_configuration_db()
+      if (Custommodule &&
+          exists("read_configuration_db",
+                 where = asNamespace("dMeasureCustom"),
+                 mode = "function")
+      ) {
+        # if dMCustom has a read_configuration_db function, then use it
+        dMCustom$read_configuration_db()
+      }
       shinytoastr::toastr_warning(
         message = paste(
           "New configuration file created and chosen.",
@@ -851,6 +902,24 @@ DailyMeasureServer <- function(input, output, session) {
   })
 
   userconfig_change <- callModule(userconfig_datatable, "userconfig_dt", dM)
+
+  ###### custom module configuration ##############################
+
+  if (Custommodule) {
+    if (
+      exists(
+        "dMeasureConfigurationTabPanel",
+        where = asNamespace("dMeasureCustom"),
+        mode = "function"
+      )
+    ) {
+      callModule(
+        dMeasureCustom::dMeasureConfigurationTabPanel,
+        "dMeasureCustom_config_dt",
+        dMCustom
+      )
+    }
+  }
 
   ###### user configuration of their own password #######################
   callModule(passwordConfig_server, "password_config", dM)
@@ -1293,7 +1362,9 @@ DailyMeasureServer <- function(input, output, session) {
       shinytoastr::toastr_warning(
         message = paste(
           "A chosen user has no subscription for chosen date range.",
-          "Dates changed (at least one week to four months, old).",
+          "If a chosen user has no subscription, the selected date range",
+          "needs to be at least ", abs(dM$check_subscription_datechange_trigR()),
+          "days old.",
           shiny::br(), shiny::br(),
           "Chosen users without subscription: ",
           no_subscription

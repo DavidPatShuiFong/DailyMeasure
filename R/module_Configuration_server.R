@@ -72,7 +72,7 @@ servers_datatableUI <- function(id) {
         )
       )
     ),
-    DTedit::dteditUI(ns("servers"))
+    DTedit::dteditmodUI(ns("servers"))
   )
 }
 
@@ -254,8 +254,9 @@ servers_datatable <- function(input, output, session, dM) {
 
   # depends on modularized version of DTedit
   shiny::observeEvent(dM$BPdatabaseR(), ignoreNULL = TRUE, once = TRUE, {
-    servers_edited <- callModule(DTedit::dtedit, "servers",
-      thedataframe = dM$BPdatabaseR, # pass a ReactiveVal
+    servers_edited <- callModule(
+      DTedit::dteditmod, "servers",
+      thedata = dM$BPdatabaseR, # pass a ReactiveVal
       view.cols = servers_dt_viewcols, # no need to show 'id' in future
       edit.cols = servers_dt_editcols,
       input.types = c(

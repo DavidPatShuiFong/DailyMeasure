@@ -1,11 +1,41 @@
-GP stat! (c) David Fong, 2019
+# GP stat! (c) David Fong, 2019
 
 front-end to DailyMeasure package
 
-Version 1.5.9, 3rd May 2020
-==============================
+# Version 1.6.0
+27th June 2020
 
-New
+## New
+
+* Support for dMeasureMedication module
+* Support for custom patient list module interaction with
+  configuration SQLite database
+
+## Changes
+
+* speed improvement for Chronic Disease Management (CDM) display
+* speed improvement for Billings display
+* Viewed billings types changed with modal
+* responsibility for CDM module UI moved to module
+  + this is what is already used for Medication and Custom modules
+* changes for new version of DTedit (v2.0+)
+
+## Bugfixes
+
+* Contact minimum/maximum date not properly initialized at start-up
+
+# Version 1.5.10
+20th May 2020
+
+* better restriction of date ranges ('negative' date ranges prevented)
+* improved separation of tasks for billings_list
+* changes to report specific number of days which are restricted
+  by lack of subscription as reported by check_subscription_datechange_trigR
+
+# Version 1.5.9
+3rd May 2020
+
+## New
 
 * Download list of configured users, including 'Identifiers'
   - for subscription application purposes
@@ -13,21 +43,20 @@ New
   button if chosen clinicians or dates change (shinyjqui effect)
 * Contact filter includes date of last contact (minimum and maximum dates)
 
-Change
+## Change
 
 * chosen clinician list has an 'Update' button
 * Billings view adapted to change in billings module (version 0.4.0)
   dMeasureBillings::list_billings no longer provides print/HTML tags
   use dMeasureBillings::tag_billings_list to add print/HTML tags
-** improvement in billings view to reduce time to change from
-   print to HTML 'button' view
+  + improvement in billings view to reduce time to change from
+    print to HTML 'button' view
 
 
+# Version 1.5.8
+24th April 2020
 
-Version 1.5.8, 24th April 2020
-==============================
-
-New
+## New
 
 * asthma view in Conditions tab
 * 'include up-to-date' option for cancer screening
@@ -35,14 +64,14 @@ New
 * filters for different billing typess (private, WorkCare, DVA, 'bulk'/direct)
   in billing view
 
-Fix
+## Fix
 
 * fixed logic for updating 'date_to' input on right side-panel
 
-Version 1.5.7, 8th April 2020
-=============================
+# Version 1.5.7
+8th April 2020
 
-New
+## New
 
 * Walkthrough (introduction) for appointments
 * Walkthrough (introduction) for immunizations
@@ -52,42 +81,42 @@ New
 * Walkthrough (introduction) for Conditions - Post-natal
 * Walkthrough (introduction) for Quality Improvement Measures
 
-Change
+## Change
 
 * Updated video demonstration of features
 
-Fix
+## Fix
 
 * fix to Javascript errors when displaying frisk/friskHI in qim_cvdRisk
 * fix Javascript error when displaying an empty table in QIM active (report)
 
-Version 1.5.6, 1st April 2020
-=============================
+# Version 1.5.6
+1st April 2020
 
-New
+## New
 
 * 'Contact' option for CDM - list CDM opportunities by past contact
 * 'include up-to-date' option for immunization/vaccination
 
 
-Version 1.5.5, 30th March 2020
-==============================
+# Version 1.5.5
+30th March 2020
 
-New
+## New
 
 * 'Contact' option for Immunization - list immunizations opportunities by past contact
 
-Version 1.5.4, 25th March 2020
-==============================
+# Version 1.5.4
+25th March 2020
 
-New
+## New
 
 * Custom tab
 
-Version 1.5.3, 7th March 2020
-=============================
+# Version 1.5.3
+7th March 2020
 
-New
+## New
 
 * if date changed because of no subscription, the list of user without subscription
   is shown in the alert
@@ -97,35 +126,34 @@ New
    app.R dependencies.R
    DailyMeasureUI and DailyMeasureServer are now exported objects
 
-
-Improvements & Fixes
+## Improvements & Fixes
 
 * server database password is 'maintained' (if not modified) during server description edit
   bug fixed where sometimes database password was not useable until after restart
 * warning if configuration database could not be successfully opened
 
-Version 1.5.2, 20th February 2020
-=================================
+# Version 1.5.2
+20th February 2020
 
-Fix
+## Fix
 
 * fix to demonstration mode
 
-Version 1.5.1, 19th February 2020
-================================
+# Version 1.5.1
+19th February 2020
 
-New
+## New
 
 * subscription features
-*  reads subscription database (user-action, from user configuration panel)
-*  CDM and BIllings UI checks subscription status
-*   if clinician selected with no subscription, then
-*   appointments must be minimum one week old
-*  user configuration displays license information
-*  subscripton information can be added manually in user configuration
-* updates date range dialog if dM$date_aR or dM$date_bR changes
+  +  reads subscription database (user-action, from user configuration panel)
+  +  CDM and BIllings UI checks subscription status
+  +  if clinician selected with no subscription, then
+    appointments must be minimum one week old
+  +  user configuration displays license information
+  +  subscription information can be added manually in user configuration
+  + updates date range dialog if dM$date_aR or dM$date_bR changes
 
-Changes
+## Changes
 
 * warnings regarding changing configuration filepath location
    GPstat! restart recommended.
@@ -133,10 +161,10 @@ Changes
 * better handling if Best Practice database not opened
 
 
-Version 1.4.1, 22nd December 2019
-=================================
+# Version 1.4.1
+22nd December 2019
 
-Features
+## Features
 
 * modified module_Immunization to depend on dM$vaccine_choices to choose vaccines.
   (in effect, adds 'measles vaccine' to list of choices without
@@ -151,69 +179,68 @@ Features
 
   Attached to appointments within the defined appointment search period.
 
-Version 1.4.0, 12th November 2019
-=================================
+# Version 1.4.0
+12th November 2019
 
-Features
+## Features
 
 * demonstration mode disables log file choosing/creation
 * Data Quality tab - allergies and social history
 
-Version 1.3.7, 5th November 2019
-==================================
+# Version 1.3.7
+5th November 2019
 
-Features
+## Features
 
 * define host and port number in GPstat()
 * multiple sessions can be opened. app does not stop until all sessions are closed
 * demontration mode option in GPstat()
 
-Bugfix
+## Bugfix
 
 * remove 'Download' option/button from HTML view of Billings module
 
+# Version 1.3.6
+28th September 2019
 
-Version 1.3.6, 28th September 2019
-==================================
-
-Improvement/bugfix
+## Improvement/bugfix
 
 * Added 'Invoiced' to contact_appointments types (reflects changes in dMeasure)
 
-Version 1.3.5, 27th September 2019
-==================================
+# Version 1.3.5
+27th September 2019
 
-Improvement
+## Improvement
 
 * round framingham risk equation results to 3 decimal places
 
-Bug fixes
+## Bug fixes
 
 * COPD patients in QIM COPD appointments, instead of diabetic patients
 
-Version 1.3.4, 23rd September 2019
-==================================
+# Version 1.3.4
+23rd September 2019
 
-Bug fixes
+## Bug fixes
 
 * Fix crash if trying to access logs when no logs database is open
 * Fix attempts to download 'graphical' (fomantic/semantic) tables
 * Prevent opening of Chronic Disease Management (CDM) tab if Billings module not available
 
-Version 1.3.3, 21st September 2019
-==================================
+# Version 1.3.3
+21st September 2019
 
-Modularization
+## Modularization
 
 * dMeasureQIM (quality improvement measures), dMeasureBillings (Billings) and
   dMeasureCDM (chronic disease management) are now an optional modules/packages.
   changes to UI and server to allow dynamic creation of tabItems and sidebarMenu
 
 
-Version 1.3.2, 18th September 2019
-==================================
+# Version 1.3.2
+18th September 2019
 
-Improvements
+## Improvements
 
 * Quality Improvement Measures appointments view
   Uses separate package version of dMeasureQIM
@@ -225,7 +252,7 @@ Improvements
 
   These items are no longer available for billing
 
-Bug-fix
+## Bug-fix
 
 * Move demographic_group and ignoreOld in QIM Measures
   to 'common' titlebar area
@@ -233,10 +260,8 @@ Bug-fix
   Having separate demographic_group buttons could cause
   a race-condition
 
-
-
-Version 1.3.1, 8th September 2019
----------------------------------
+# Version 1.3.1
+8th September 2019
 
 * Requires dMeasure back-end 0.4.99
 

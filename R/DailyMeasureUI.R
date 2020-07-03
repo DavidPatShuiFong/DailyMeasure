@@ -3,7 +3,6 @@
 #' Creates the shiny application user interface
 #'
 #' @include module_Appointments.R module_Immunization.R module_CancerScreen.R
-#' @include module_Billings.R
 #' @include module_Configuration_users.R module_Configuration_location.R
 #' @include module_Configuration_password.R module_Configuration_server.R
 #' requires all moduleUI definitions to be defined

@@ -2,6 +2,13 @@
 
 front-end to DailyMeasure package
 
+# Version 1.6.1
+3rd July 2020
+
+## Changes
+
+* move Billings UI to dMeasureBillings
+
 # Version 1.6.0
 27th June 2020
 

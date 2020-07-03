@@ -477,25 +477,14 @@ DailyMeasureServer <- function(input, output, session) {
 
   if (Billingsmodule == TRUE) {
     output$BillingsMenu <- shinydashboard::renderMenu({
-      shinydashboard::sidebarMenu(.list = list(
-        shinydashboard::menuItem("Billings",
-          tabName = "billings", icon = shiny::icon("receipt")
-        )
-      ))
+      dMeasureBillings::shinydashboardmenuItem()
     }) # if Billingsmodule is FALSE, then output$BillingsMenu will be left undefined
-    shinytabItems <- c(
-      shinytabItems,
-      list(shinydashboard::tabItem(
-        tabName = "billings",
-        fluidRow(column(width = 12, align = "center", h2("Billings"))),
-        fluidRow(column(width = 12, shiny::div(
-          id = "billings_datatable_wrapper",
-          billings_datatableUI("billings_dt")
-        )))
-      ))
-    )
+    shinytabItems <- c(shinytabItems, dMeasureBillings::dMeasureShinytabItems())
     # call the module to generate the table
-    callModule(billings_datatable, "billings_dt", dMBillings)
+    billings_table_results <- callModule(
+      dMeasureBillings::datatableServer,
+      "billings_dt", dMBillings
+    )
   }
 
   if (CDMmodule == TRUE & Billingsmodule == TRUE) {
@@ -506,7 +495,8 @@ DailyMeasureServer <- function(input, output, session) {
     # chronic disease management table
     cdm_table_results <- callModule(
       dMeasureCDM::datatableServer,
-      "cdm_dt", dMCDM)
+      "cdm_dt", dMCDM
+    )
   }
 
   if (Custommodule == TRUE) {

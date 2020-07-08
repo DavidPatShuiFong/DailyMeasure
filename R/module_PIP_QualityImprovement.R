@@ -284,10 +284,11 @@ qim <- function(input, output, session, dMQIM, contact) {
   output$settings_group <- shiny::renderUI({
     shinyWidgets::dropdown(
       input_id = "qim_dropdown",
-      icon = icon("gear"),
+      icon = shiny::icon("gear"),
       label = "Settings",
       shinyWidgets::checkboxGroupButtons(
-        inputId = ns("ignore_old"), label = "Measurements",
+        inputId = ns("ignore_old"),
+        label = "Measurements",
         checkIcon = list(
           yes = shiny::icon("calendar-times"),
           no = shiny::icon("calendar-alt")
@@ -299,7 +300,7 @@ qim <- function(input, output, session, dMQIM, contact) {
       shiny::actionButton(
         inputId = ns("view_demographicSettings"),
         label = "Demographic groups shown"
-      ),
+      )
     )
   })
   demographic_chosen <- shiny::reactiveVal(
@@ -317,7 +318,7 @@ qim <- function(input, output, session, dMQIM, contact) {
             choices = dMQIM$qim_demographicGroupings,
             selected = demographic_chosen(),
             status = "primary",
-            checkIcon = list(yes = icon("ok", lib = "glyphicon"))
+            checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
           ),
           easyClose = FALSE,
           footer = shiny::tagList(
@@ -453,7 +454,7 @@ qim_diabetes <- function(input, output, session, dMQIM, contact) {
   output$measure_group <- shiny::renderUI({
     shinyWidgets::dropdown(
       input_id = "measure_group_dropdown",
-      icon = icon("gear"),
+      icon = shiny::icon("gear"),
       label = "Diabetes Measures",
       shinyWidgets::checkboxGroupButtons(
         inputId = ns("measure_chosen"), label = "Measures Chosen",
@@ -768,7 +769,7 @@ qim_15plus <- function(input, output, session, dMQIM, contact) {
   output$measure_group <- shiny::renderUI({
     shinyWidgets::dropdown(
       input_id = "measure_group_dropdown",
-      icon = icon("gear"),
+      icon = shiny::icon("gear"),
       label = "15+ Measures",
       shinyWidgets::checkboxGroupButtons(
         inputId = ns("measure_chosen"), label = "Measures Chosen",
@@ -1209,7 +1210,7 @@ qim_cvdRisk <- function(input, output, session, dMQIM, contact) {
   output$groups <- shiny::renderUI({
     shinyWidgets::dropdown(
       input_id = "measure_group_dropdown",
-      icon = icon("gear"),
+      icon = shiny::icon("gear"),
       label = "Inclusions/Exclusions",
       shinyWidgets::checkboxGroupButtons(
         inputId = ns("groups_chosen"), label = "Groups chosen",

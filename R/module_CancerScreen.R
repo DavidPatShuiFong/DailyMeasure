@@ -79,20 +79,48 @@ cancerscreen_datatable <- function(input, output, session, dM) {
   output$cancerscreen_choice <- shiny::renderUI({
     shinyWidgets::dropdown(
       # placing the drop-down in the render UI (as opposed to module UI)
-      # allows input$cancerscreen_chosen to be defined at time of rendering
-      # (otherwise, it is not defined until the drop-down is actually opened!)
+      # allows cancerscreen_chosen() to be defined at time of rendering
       inputid = "choice_dropdown",
-      shinyWidgets::checkboxGroupButtons(
-        inputId = ns("cancerscreen_chosen"), label = "Cancer Screen items shown",
-        choices = cancerscreen_names, selected = cancerscreen_names,
-        # all choices initially selected
-        status = "primary",
-        checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
+      shiny::actionButton(
+        inputId = ns("view_cancerSettings"),
+        label = "Cancer screening items shown"
       ),
       icon = shiny::icon("gear"),
-      label = "Cancer screening shown"
+      label = "Cancer screening settings"
     )
   })
+  cancerscreen_chosen <- shiny::reactiveVal(
+    cancerscreen_names
+    # initially all choices selected
+  )
+  shiny::observeEvent(
+    input$view_cancerSettings,
+    ignoreInit = TRUE, {
+      shiny::showModal(
+        shiny::modalDialog(
+          title = "Cancer screening items shown",
+          shinyWidgets::checkboxGroupButtons(
+            inputId = ns("cancerscreen_chosen"), label = "Cancer Screen items shown",
+            choices = cancerscreen_names,
+            selected = cancerscreen_chosen(),
+            status = "primary",
+            checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
+          ),
+          easyClose = FALSE,
+          footer = shiny::tagList(
+            shiny::modalButton("Cancel"),
+            shiny::actionButton(ns("cancerChosen_ok"), "OK")
+          )
+        )
+      )
+    }
+  )
+  shiny::observeEvent(
+    input$cancerChosen_ok, {
+      cancerscreen_chosen(input$cancerscreen_chosen)
+      shiny::removeModal()
+    }
+  )
 
   cancerscreen_list <- shiny::reactiveVal(NULL)
 
@@ -101,10 +129,9 @@ cancerscreen_datatable <- function(input, output, session, dM) {
       shiny::need(dM$appointments_listR(), "No appointments defined"),
       shiny::need(nrow(dM$appointments_listR()) > 0, "No appointments in chosen range")
     )
-
     screenlist <- NULL
     # Bowel cancer
-    if ("Bowel" %in% input$cancerscreen_chosen) {
+    if ("Bowel" %in% cancerscreen_chosen()) {
       screenlist <- rbind(
         screenlist,
         dM$list_fobt(
@@ -116,7 +143,7 @@ cancerscreen_datatable <- function(input, output, session, dM) {
     }
     # both HTML and printable versions of tags requested
     # Cervical cancer
-    if ("Cervical" %in% input$cancerscreen_chosen) {
+    if ("Cervical" %in% cancerscreen_chosen()) {
       screenlist <- rbind(
         screenlist,
         dM$list_cst(
@@ -128,7 +155,7 @@ cancerscreen_datatable <- function(input, output, session, dM) {
     }
 
     # Breast cancer
-    if ("Breast" %in% input$cancerscreen_chosen) {
+    if ("Breast" %in% cancerscreen_chosen()) {
       screenlist <- rbind(
         screenlist,
         dM$list_mammogram(

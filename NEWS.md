@@ -7,7 +7,7 @@ front-end to DailyMeasure package
 
 ## Changes
 
-* Immunizations to show chosen through modal
+* Immunizations, Cancer screening to show chosen through modal
 * change license to Mozilla Public License 2.0
 
 # Version 1.6.1

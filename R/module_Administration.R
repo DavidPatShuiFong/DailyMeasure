@@ -101,11 +101,8 @@ admin_result_datatableUI <- function(id) {
       ),
       shiny::column(
         2,
-        shiny::uiOutput(ns("actioned_choice"))
-      ),
-      shiny::column(
-        2, # note that total 'column' width = 12
-        shiny::uiOutput(ns("action_choice"))
+        offset = 2,
+        shiny::uiOutput(ns("result_settings"))
       )
     ),
     shinycssloaders::withSpinner(
@@ -153,23 +150,51 @@ admin_dataQuality_datatable <- function(input, output, session, dM) {
   output$dataQuality_choice <- renderUI({
     shinyWidgets::dropdown(
       input_id = "dataQuality_choice_dropdown",
-      shinyWidgets::checkboxGroupButtons(
-        inputId = ns("dataQuality_chosen"), label = "Data Quality choices",
-        choices = dM$dataQuality_choices,
-        selected = dM$dataQuality_choices,
-        status = "primary",
-        checkIcon = list(yes = icon("ok", lib = "glyphicon"))
+      shiny::actionButton(
+        inputId = ns("view_dataQualitySettings"),
+        label = "Data Quality choices"
       ),
-      icon = icon("gear"),
-      label = "Data Quality choices shown"
+      icon = shiny::icon("gear"),
+      label = "Data Quality settings"
     )
   })
+  dataQuality_chosen <- shiny::reactiveVal(
+    dM$dataQuality_choices
+  )
+  shiny::observeEvent(
+    input$view_dataQualitySettings,
+    ignoreInit = TRUE, {
+      shiny::showModal(
+        shiny::modalDialog(
+          title = "Data Quality choices",
+          shinyWidgets::checkboxGroupButtons(
+            inputId = ns("dataQuality_chosen"), label = "Data Quality choices",
+            choices = dM$dataQuality_choices,
+            selected = dataQuality_chosen(),
+            status = "primary",
+            checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
+          ),
+          easyClose = FALSE,
+          footer = shiny::tagList(
+            shiny::modalButton("Cancel"),
+            shiny::actionButton(ns("dataQualityChosen_ok"), "OK")
+          )
+        )
+      )
+    }
+  )
+  shiny::observeEvent(
+    input$dataQualityChosen_ok, {
+      dataQuality_chosen(input$dataQuality_chosen)
+      shiny::removeModal()
+    }
+  )
 
   dataQuality <-
     shiny::eventReactive(
       c(
         dM$appointments_listR(),
-        input$dataQuality_chosen,
+        dataQuality_chosen(),
         input$printcopy_view
       ),
       ignoreInit = TRUE, {
@@ -179,7 +204,7 @@ admin_dataQuality_datatable <- function(input, output, session, dM) {
           lazy = TRUE,
           qualitytag = !input$printcopy_view,
           qualitytag_print = input$printcopy_view,
-          chosen = input$dataQuality_chosen
+          chosen = dataQuality_chosen()
         ) %>>%
           dplyr::collect()
         # no need to re-calculate $appointments_list
@@ -249,51 +274,108 @@ admin_result_datatable <- function(input, output, session, dM) {
     "Send routine reminder", "Non-urgent appointment",
     "Urgent appointment"
   )
-
-  output$action_choice <- renderUI({
+  output$result_settings <- renderUI({
     shinyWidgets::dropdown(
-      input_id = "action_choice_dropdown",
-      shinyWidgets::checkboxGroupButtons(
-        inputId = ns("action_chosen"), label = "Actions shown",
-        choices = action_names,
-        selected = c("Non-urgent appointment", "Urgent appointment"),
-        status = "primary",
-        checkIcon = list(yes = icon("ok", lib = "glyphicon"))
+      input_id = "result_choice_dropdown",
+      shiny::actionButton(
+        inputId = ns("view_resultActionSettings"),
+        label = "Action items shown"
       ),
-      icon = icon("gear"),
-      label = "Action items shown"
+      shiny::actionButton(
+        inputId = ns("view_resultActionedSettings"),
+        label = "Action items shown"
+      ),
+      icon = shiny::icon("gear"),
+      label = "Result settings"
     )
   })
-  shiny::observeEvent(input$action_chosen, {
-    # change the filter depending on the dropdown
-    dM$filter_incoming_Action <- input$action_chosen
-  })
-
-  output$actioned_choice <- renderUI({
-    shinyWidgets::dropdown(
-      input_id = "actioned_choice_dropdown",
-      icon = icon("gear"),
-      label = "Actioned status",
-      shinyWidgets::radioGroupButtons(
-        inputId = ns("actioned_chosen"), label = "Actioned status",
-        choices = c("Any status", "Not actioned", "Actioned", "Actioned before..."),
-        status = "primary",
-      ),
-      shiny::dateInput(ns("actioned_date"),
-        label = "Actioned before:",
-        format = "D dd/M/yyyy",
-        min = Sys.Date() - 6000, max = Sys.Date(),
-        value = Sys.Date()
+  action_chosen <- shiny::reactiveVal(
+    c("Non-urgent appointment", "Urgent appointment")
+  )
+  shiny::observeEvent(
+    input$view_resultActionSettings,
+    ignoreInit = TRUE, {
+      shiny::showModal(
+        shiny::modalDialog(
+          title = "Action items shown",
+          shinyWidgets::checkboxGroupButtons(
+            inputId = ns("action_chosen"),
+            label = "Actions shown",
+            choices = action_names,
+            selected = action_chosen(),
+            status = "primary",
+            checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
+          ),
+          easyClose = FALSE,
+          footer = shiny::tagList(
+            shiny::modalButton("Cancel"),
+            shiny::actionButton(ns("resultActionChosen_ok"), "OK")
+          )
+        )
       )
-    )
+    }
+  )
+  shiny::observeEvent(
+    input$resultActionChosen_ok, {
+      action_chosen(input$action_chosen)
+      shiny::removeModal()
+    }
+  )
+  shiny::observeEvent(
+    action_chosen(),
+    ignoreNULL = FALSE, {
+    # change the filter depending on the dropdown
+      dM$filter_incoming_Action <- action_chosen()
   })
-  shiny::observeEvent(input$actioned_chosen, {
-    if (input$actioned_chosen == "Actioned before...") {
+
+  actioned_chosen <- shiny::reactiveVal(
+    c("Any status")
+  )
+  actioned_date <- shiny::reactiveVal(
+    Sys.Date()
+  )
+  shiny::observeEvent(
+    input$view_resultActionedSettings,
+    ignoreInit = TRUE, {
+      shiny::showModal(
+        shiny::modalDialog(
+          title = "Actioned status",
+          shinyWidgets::radioGroupButtons(
+            inputId = ns("actioned_chosen"),
+            label = "Actioned status",
+            choices = c("Any status", "Not actioned", "Actioned", "Actioned before..."),
+            selected = actioned_chosen(),
+            status = "primary",
+          ),
+          shiny::dateInput(
+            ns("actioned_date"),
+            label = "Actioned before:",
+            format = "D dd/M/yyyy",
+            min = Sys.Date() - 6000, max = Sys.Date(),
+            value = actioned_date()
+          ),
+          easyClose = FALSE,
+          footer = shiny::tagList(
+            shiny::modalButton("Cancel"),
+            shiny::actionButton(ns("resultActionedChosen_ok"), "OK")
+          )
+        )
+      )
+    }
+  )
+  shiny::observeEvent(
+    input$resultActionedChosen_ok, {
+      actioned_chosen(input$actioned_chosen)
+      shiny::removeModal()
+    }
+  )
+  shiny::observeEvent(actioned_chosen(), {
+    if (actioned_chosen() == "Actioned before...") {
       shinyjs::enable("actioned_date")
-      dM$filter_incoming_Actioned <- as.Date(input$actioned_date)
+      dM$filter_incoming_Actioned <- as.Date(actioned_date())
     } else {
       shinyjs::disable("actioned_date")
-      switch(input$actioned_chosen,
+      switch(actioned_chosen(),
         "Any status" = {
           dM$filter_incoming_Actioned <- NULL
         },
@@ -306,9 +388,9 @@ admin_result_datatable <- function(input, output, session, dM) {
       )
     }
   })
-  shiny::observeEvent(input$actioned_date, {
-    if (input$actioned_chosen == "Actioned before...") {
-      dM$filter_incoming_Actioned <- as.Date(input$actioned_date)
+  shiny::observeEvent(actioned_date(), {
+    if (actioned_chosen() == "Actioned before...") {
+      dM$filter_incoming_Actioned <- as.Date(actioned_date())
     }
   })
 
@@ -322,7 +404,6 @@ admin_result_datatable <- function(input, output, session, dM) {
       c(
         dM$correspondence_filtered_namedR(),
         dM$investigations_filtered_namedR(),
-        input$action_choice_dropdown,
         input$printcopy_view
       ),
       ignoreInit = TRUE, {

@@ -285,7 +285,7 @@ qim <- function(input, output, session, dMQIM, contact) {
     shinyWidgets::dropdown(
       input_id = "qim_dropdown",
       icon = icon("gear"),
-      label = "Settings", width = "20em",
+      label = "Settings",
       shinyWidgets::checkboxGroupButtons(
         inputId = ns("ignore_old"), label = "Measurements",
         checkIcon = list(
@@ -294,21 +294,51 @@ qim <- function(input, output, session, dMQIM, contact) {
         ),
         choices = c("Ignore old measurements"),
         selected = c("Ignore old measurements"),
-        status = "primary",
-        width = "30em"
+        status = "primary"
       ),
-      shinyWidgets::checkboxGroupButtons(
-        inputId = ns("demographic_chosen"), label = "Demographic grouping",
-        choices = dMQIM$qim_demographicGroupings,
-        selected = initial_demographic,
-        status = "primary", width = "15em",
-        checkIcon = list(yes = icon("ok", lib = "glyphicon"))
-      )
+      shiny::actionButton(
+        inputId = ns("view_demographicSettings"),
+        label = "Demographic groups shown"
+      ),
     )
   })
-  shiny::observeEvent(input$demographic_chosen, ignoreNULL = FALSE, {
+  demographic_chosen <- shiny::reactiveVal(
+    initial_demographic
+  )
+  shiny::observeEvent(
+    input$view_demographicSettings,
+    ignoreInit = TRUE, {
+      shiny::showModal(
+        shiny::modalDialog(
+          title = "Demographic groups shown",
+          shinyWidgets::checkboxGroupButtons(
+            inputId = ns("demographic_chosen"),
+            label = "Demographic grouping",
+            choices = dMQIM$qim_demographicGroupings,
+            selected = demographic_chosen(),
+            status = "primary",
+            checkIcon = list(yes = icon("ok", lib = "glyphicon"))
+          ),
+          easyClose = FALSE,
+          footer = shiny::tagList(
+            shiny::modalButton("Cancel"),
+            shiny::actionButton(ns("demographicChosen_ok"), "OK")
+          )
+
+        )
+      )
+    }
+  )
+  shiny::observeEvent(
+    input$demographicChosen_ok, {
+      demographic_chosen(input$demographic_chosen)
+      shiny::removeModal()
+    }
+  )
+
+  shiny::observeEvent(demographic_chosen(), ignoreNULL = FALSE, {
     # change the filter depending on the dropdown
-    dMQIM$qim_demographicGroup <- input$demographic_chosen
+    dMQIM$qim_demographicGroup <- demographic_chosen()
   })
   shiny::observeEvent(input$ignore_old, ignoreNULL = FALSE, {
     # if selected, will filter out appointments older than current date

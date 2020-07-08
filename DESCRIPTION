@@ -1,14 +1,14 @@
 Package: DailyMeasure
 Type: Package
 Title: Case-finds from patient appointment list
-Version: 1.6.1
+Version: 1.6.2
 Author: David Fong
 Maintainer: David Fong <vkelim@bigpond.com>
 Description: R Shiny application looking through Electronic Medical Record's (EMR)
  patient appointment lists. The EMR used is 'Best Practice'.
  Finds and displays information about intervention, care planning and health
  assessment opportunities.
-License: (C) David Fong. All rights reserved. License: file LICENSE
+License: file LICENSE Mozilla Public License 2.0
 Encoding: UTF-8
 LazyData: true
 ByteCompile: true

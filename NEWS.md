@@ -2,6 +2,13 @@
 
 front-end to DailyMeasure package
 
+# Version 1.6.2
+8th July 2020
+
+## Changes
+
+* change license to Mozilla Public License 2.0
+
 # Version 1.6.1
 3rd July 2020
 

@@ -1,6 +1,6 @@
 ## GPstat! (part of DailyMeasure) - 'Best Practice' dashboard for Quality Improvement
 
-v1.6.0 (1st July 2020)
+v1.6.2 (10th July 2020)
 
 A quality improvement tool for [Best Practice](https://bpsoftware.net/).
 

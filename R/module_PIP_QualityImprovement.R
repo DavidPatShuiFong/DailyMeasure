@@ -835,25 +835,32 @@ qim_15plus <- function(input, output, session, dMQIM, contact) {
             ))
           }
         }
-        return(datatable_styled(
+        dt <- datatable_styled(
           df,
           extensions = c("Buttons", "Scroller"),
           columnDefs = list(list(
             targets =
               which(names(df) %in%
-                c(
-                  "Patient", "RecordNo", "HeightDate", "HeightValue",
-                  "WeightDate", "WeightValue", "AlcoholDescription",
-                  "PastAlcoholLevel", "YearStarted", "YearStopped",
-                  "AlcoholComment"
-                )),
+                      c(
+                        "Patient", "RecordNo", "HeightDate", "HeightValue",
+                        "WeightDate", "WeightValue", "AlcoholDescription",
+                        "PastAlcoholLevel", "YearStarted", "YearStopped",
+                        "AlcoholComment"
+                      )),
             # needs name by index as columns might be removed
             # by demographic filters above
             visible = FALSE
           )),
-          # Patient Name and RecordNo hidden by default, as well as various alcohol details etc.
+          # Patient Name and RecordNo hidden by default,
+          # as well as various alcohol details etc.
           scrollX = TRUE
-        ))
+        )
+        if (dim(df)[[2]] > 0) {
+          # not an empty dataframe
+          dt <- dt %>>%
+            DT::formatRound(columns = which(names(df) %in% c("BMIValue")), digits = 1)
+        }
+        return(dt)
       } else if (input$list_view == "Report") {
         df <- dMQIM$qim_15plus_reportR()
         dt <- datatable_styled(df)
@@ -921,10 +928,12 @@ qim_15plus <- function(input, output, session, dMQIM, contact) {
               )
             }
           }
-        return(datatable_styled(df,
+        dt <- datatable_styled(
+          df,
           extensions = c("Buttons", "Scroller"),
           scrollX = TRUE
-        )) # this is a wide table
+        )
+        return(dt) # this is a wide table
       }
     }
   )

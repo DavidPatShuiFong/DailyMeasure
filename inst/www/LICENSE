@@ -1,8 +1,7 @@
 "GPstat!" and "DailyMeasure" is written by David Fong.
 YEAR: 2019
 COPYRIGHT HOLDER: Dr David Pat Shui Fong
-Proprietary. All rights reserved.
-
+Mozilla Public LIcense 2.0
 
 All OTHER software modified, included or bundled with this "DailyMeasure" is freely
 available for distribution under various licenses. Not all of these licenses are
@@ -10,7 +9,7 @@ available for distribution under various licenses. Not all of these licenses are
 
 Details of these licenses, and copies of those licenses, follow below.
 Some software modified, included or bundled contain licensing details which
-are described in separate files in the "LICENSEdetails" folder.
+are described in separate files in the "LICENSE_details" folder of the source.
 
 Images and icons
 ================

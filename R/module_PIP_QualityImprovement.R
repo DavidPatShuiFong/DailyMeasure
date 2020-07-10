@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 ###### PIP QIM modules ###################################################
 
 #' qim_UI - Practice Incentive Program Quality Improvement Measures module
@@ -280,31 +284,62 @@ qim <- function(input, output, session, dMQIM, contact) {
   output$settings_group <- shiny::renderUI({
     shinyWidgets::dropdown(
       input_id = "qim_dropdown",
-      icon = icon("gear"),
-      label = "Settings", width = "20em",
+      icon = shiny::icon("gear"),
+      label = "Settings",
       shinyWidgets::checkboxGroupButtons(
-        inputId = ns("ignore_old"), label = "Measurements",
+        inputId = ns("ignore_old"),
+        label = "Measurements",
         checkIcon = list(
           yes = shiny::icon("calendar-times"),
           no = shiny::icon("calendar-alt")
         ),
         choices = c("Ignore old measurements"),
         selected = c("Ignore old measurements"),
-        status = "primary",
-        width = "30em"
+        status = "primary"
       ),
-      shinyWidgets::checkboxGroupButtons(
-        inputId = ns("demographic_chosen"), label = "Demographic grouping",
-        choices = dMQIM$qim_demographicGroupings,
-        selected = initial_demographic,
-        status = "primary", width = "15em",
-        checkIcon = list(yes = icon("ok", lib = "glyphicon"))
+      shiny::actionButton(
+        inputId = ns("view_demographicSettings"),
+        label = "Demographic groups shown"
       )
     )
   })
-  shiny::observeEvent(input$demographic_chosen, ignoreNULL = FALSE, {
+  demographic_chosen <- shiny::reactiveVal(
+    initial_demographic
+  )
+  shiny::observeEvent(
+    input$view_demographicSettings,
+    ignoreInit = TRUE, {
+      shiny::showModal(
+        shiny::modalDialog(
+          title = "Demographic groups shown",
+          shinyWidgets::checkboxGroupButtons(
+            inputId = ns("demographic_chosen"),
+            label = "Demographic grouping",
+            choices = dMQIM$qim_demographicGroupings,
+            selected = demographic_chosen(),
+            status = "primary",
+            checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
+          ),
+          easyClose = FALSE,
+          footer = shiny::tagList(
+            shiny::modalButton("Cancel"),
+            shiny::actionButton(ns("demographicChosen_ok"), "OK")
+          )
+
+        )
+      )
+    }
+  )
+  shiny::observeEvent(
+    input$demographicChosen_ok, {
+      demographic_chosen(input$demographic_chosen)
+      shiny::removeModal()
+    }
+  )
+
+  shiny::observeEvent(demographic_chosen(), ignoreNULL = FALSE, {
     # change the filter depending on the dropdown
-    dMQIM$qim_demographicGroup <- input$demographic_chosen
+    dMQIM$qim_demographicGroup <- demographic_chosen()
   })
   shiny::observeEvent(input$ignore_old, ignoreNULL = FALSE, {
     # if selected, will filter out appointments older than current date
@@ -419,7 +454,7 @@ qim_diabetes <- function(input, output, session, dMQIM, contact) {
   output$measure_group <- shiny::renderUI({
     shinyWidgets::dropdown(
       input_id = "measure_group_dropdown",
-      icon = icon("gear"),
+      icon = shiny::icon("gear"),
       label = "Diabetes Measures",
       shinyWidgets::checkboxGroupButtons(
         inputId = ns("measure_chosen"), label = "Measures Chosen",
@@ -734,7 +769,7 @@ qim_15plus <- function(input, output, session, dMQIM, contact) {
   output$measure_group <- shiny::renderUI({
     shinyWidgets::dropdown(
       input_id = "measure_group_dropdown",
-      icon = icon("gear"),
+      icon = shiny::icon("gear"),
       label = "15+ Measures",
       shinyWidgets::checkboxGroupButtons(
         inputId = ns("measure_chosen"), label = "Measures Chosen",
@@ -800,25 +835,32 @@ qim_15plus <- function(input, output, session, dMQIM, contact) {
             ))
           }
         }
-        return(datatable_styled(
+        dt <- datatable_styled(
           df,
           extensions = c("Buttons", "Scroller"),
           columnDefs = list(list(
             targets =
               which(names(df) %in%
-                c(
-                  "Patient", "RecordNo", "HeightDate", "HeightValue",
-                  "WeightDate", "WeightValue", "AlcoholDescription",
-                  "PastAlcoholLevel", "YearStarted", "YearStopped",
-                  "AlcoholComment"
-                )),
+                      c(
+                        "Patient", "RecordNo", "HeightDate", "HeightValue",
+                        "WeightDate", "WeightValue", "AlcoholDescription",
+                        "PastAlcoholLevel", "YearStarted", "YearStopped",
+                        "AlcoholComment"
+                      )),
             # needs name by index as columns might be removed
             # by demographic filters above
             visible = FALSE
           )),
-          # Patient Name and RecordNo hidden by default, as well as various alcohol details etc.
+          # Patient Name and RecordNo hidden by default,
+          # as well as various alcohol details etc.
           scrollX = TRUE
-        ))
+        )
+        if (dim(df)[[2]] > 0) {
+          # not an empty dataframe
+          dt <- dt %>>%
+            DT::formatRound(columns = which(names(df) %in% c("BMIValue")), digits = 1)
+        }
+        return(dt)
       } else if (input$list_view == "Report") {
         df <- dMQIM$qim_15plus_reportR()
         dt <- datatable_styled(df)
@@ -886,10 +928,12 @@ qim_15plus <- function(input, output, session, dMQIM, contact) {
               )
             }
           }
-        return(datatable_styled(df,
+        dt <- datatable_styled(
+          df,
           extensions = c("Buttons", "Scroller"),
           scrollX = TRUE
-        )) # this is a wide table
+        )
+        return(dt) # this is a wide table
       }
     }
   )
@@ -1175,7 +1219,7 @@ qim_cvdRisk <- function(input, output, session, dMQIM, contact) {
   output$groups <- shiny::renderUI({
     shinyWidgets::dropdown(
       input_id = "measure_group_dropdown",
-      icon = icon("gear"),
+      icon = shiny::icon("gear"),
       label = "Inclusions/Exclusions",
       shinyWidgets::checkboxGroupButtons(
         inputId = ns("groups_chosen"), label = "Groups chosen",

@@ -1,9 +1,12 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 #' Shiny app UI object
 #'
 #' Creates the shiny application user interface
 #'
 #' @include module_Appointments.R module_Immunization.R module_CancerScreen.R
-#' @include module_Billings.R
 #' @include module_Configuration_users.R module_Configuration_location.R
 #' @include module_Configuration_password.R module_Configuration_server.R
 #' requires all moduleUI definitions to be defined

@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 ##### Immunization modules ##########################################
 
 #' immunization module - UI function
@@ -78,23 +82,51 @@ vax_datatable <- function(input, output, session, dM) {
   output$vax_item_choice <- shiny::renderUI({
     shinyWidgets::dropdown(
       inputid = "choice_dropdown",
-      shinyWidgets::checkboxGroupButtons(
-        inputId = ns("vax_chosen"), label = "Vaccination items shown",
-        choices = dM$vaccine_choices,
-        selected = dM$vaccine_choices,
-        # all choices initially selected
-        status = "primary",
-        checkIcon = list(yes = icon("ok", lib = "glyphicon"))
+      shiny::actionButton(
+        inputId = ns("view_vaxSettings"),
+        label = "Vaccination items shown"
       ),
       icon = icon("gear"),
-      label = "Vaccination items shown"
+      label = "Vaccination settings"
     )
   })
+  vax_chosen <- shiny::reactiveVal(
+    dM$vaccine_choices
+  )
+  shiny::observeEvent(
+    input$view_vaxSettings,
+    ignoreInit = TRUE, {
+      shiny::showModal(
+        shiny::modalDialog(
+          title = "Vaccination items shown",
+          shinyWidgets::checkboxGroupButtons(
+            inputId = ns("vax_chosen"), label = "Vaccination items shown",
+            choices = dM$vaccine_choices,
+            selected = dM$vaccine_choices,
+            # all choices initially selected
+            status = "primary",
+            checkIcon = list(yes = icon("ok", lib = "glyphicon"))
+          ),
+          easyClose = FALSE,
+          footer = shiny::tagList(
+            shiny::modalButton("Cancel"),
+            shiny::actionButton(ns("vaxChosen_ok"), "OK")
+          )
 
+        )
+      )
+    }
+  )
+  shiny::observeEvent(
+    input$vaxChosen_ok, {
+      vax_chosen(input$vax_chosen)
+      shiny::removeModal()
+    }
+  )
   vax_list <- shiny::eventReactive(
     c(
       dM$appointments_listR(),
-      input$vax_chosen,
+      vax_chosen(),
       input$include_uptodate,
       input$printcopy_view
     ),
@@ -115,7 +147,7 @@ vax_datatable <- function(input, output, session, dM) {
         include_uptodate = !is.null(input$include_uptodate),
         vaxtag = !input$printcopy_view,
         vaxtag_print = input$printcopy_view,
-        chosen = input$vax_chosen
+        chosen = vax_chosen()
       ) %>>%
         dplyr::collect()
       return(vlist)
@@ -155,7 +187,7 @@ vax_datatable <- function(input, output, session, dM) {
   vax_contact_list <- shiny::eventReactive(
     c(
       dM$contact_count_listR(),
-      input$vax_chosen,
+      vax_chosen(),
       input$include_uptodate,
       input$printcopy_view
     ),
@@ -178,7 +210,7 @@ vax_datatable <- function(input, output, session, dM) {
         lazy = TRUE,
         vaxtag = !input$printcopy_view,
         vaxtag_print = input$printcopy_view,
-        chosen = input$vax_chosen
+        chosen = vax_chosen()
       ) %>>%
         dplyr::collect()
       return(vlist)

@@ -2,6 +2,22 @@
 
 front-end to DailyMeasure package
 
+# Version 1.6.2
+8th July 2020
+
+## Changes
+
+* Immunizations, Cancer screening, QIM, Administration to show chosen through modal
+* change license to Mozilla Public License 2.0
+* restrict `BMIvalue` displayto one decimal place
+
+# Version 1.6.1
+3rd July 2020
+
+## Changes
+
+* move Billings UI to dMeasureBillings
+
 # Version 1.6.0
 27th June 2020
 

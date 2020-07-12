@@ -9,7 +9,7 @@ front-end to DailyMeasure package
 
 * Immunizations, Cancer screening, QIM, Administration to show chosen through modal
 * change license to Mozilla Public License 2.0
-* restrict `BMIvalue` displayto one decimal place
+* restrict `BMIvalue` display to one decimal place
 
 # Version 1.6.1
 3rd July 2020

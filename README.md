@@ -48,11 +48,16 @@ The ‘bpsrawdata’ database access password（as used by ‘BPbrowser’) is r
 
 ##### Current version
 
+[OneDrive link v 1.6.2.0.9.11](https://unimelbcloud-my.sharepoint.com/:u:/g/personal/dfong1_unimelb_edu_au/Ed-uvfPKD95BorTES_VAokEBWOTEkRCiHLzJbo-aDDZytQ?e=bLB8dG)
+
+[Google Drive link v 1.6.2.0.9.11](https://drive.google.com/file/d/1z9c9mPO4K1-CxqVC-xp8Xa0h4aJK2fEd/view?usp=sharing)
+
+
+##### Older versions
+
 [OneDrive link v 1.6.0.0.9.10](https://unimelbcloud-my.sharepoint.com/:u:/g/personal/dfong1_unimelb_edu_au/EdJbHvnot_tAgJ3rmIUpqWgBitqo8ZuyYrC43_SuB0KanQ?e=wJaXJE)
 
 [Google Drive link v 1.6.0.0.9.10](https://drive.google.com/file/d/1oWKFcX3gta9ZyEazz-aIzfznMK8SXB5d/view?usp=sharing)
-
-##### Older versions
 
 [OneDrive link v 1.5.9.0.9.9](https://unimelbcloud-my.sharepoint.com/:u:/g/personal/dfong1_unimelb_edu_au/Eb6gXcBy-J1BtcRt53XVULABhA0bz2VSH-lvLd6WmcB6Og?e=HEXEch)
 
@@ -61,6 +66,23 @@ The ‘bpsrawdata’ database access password（as used by ‘BPbrowser’) is r
 #### Recent changelog
 
 ```
+
+# Version 1.6.2
+8th July 2020
+
+## Changes
+
+* Immunizations, Cancer screening, QIM, Administration to show chosen through modal
+* change license to Mozilla Public License 2.0
+* restrict `BMIvalue` display to one decimal place
+* dMeasure 0.9.11 : change to `WeightDone` report, depends on `BMIDate` instead of `WeightDate`
+
+# Version 1.6.1
+3rd July 2020
+
+## Changes
+
+* move Billings UI to dMeasureBillings
 
 # Version 1.6.0
 27th June 2020

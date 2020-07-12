@@ -31,6 +31,12 @@ administration_UI <- function(id) {
         width = 12,
         shiny::br(),
         admin_result_datatableUI(ns("result_management"))
+      ),
+      shiny::tabPanel(
+        title = "Document Search",
+        width = 12,
+        shiny::br(),
+        admin_document_datatableUI(ns("document_search"))
       )
     )
   )
@@ -114,6 +120,30 @@ admin_result_datatableUI <- function(id) {
   )
 }
 
+admin_document_datatableUI <- function(id) {
+  ns <- shiny::NS(id)
+
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(
+        4,
+        shiny::textOutput(ns("document_search_text"))
+      ),
+      shiny::column(
+        3, # note that total 'column' width = 12
+        offset = 2,
+        shiny::uiOutput(ns("document_search_choice"))
+      )
+    ),
+    shinycssloaders::withSpinner(
+      DT::DTOutput(ns("documentSearch_table")),
+      type = 8,
+      hide.element.when.recalculating = FALSE,
+      proxy.height = NULL
+    )
+  )
+}
+
 #' administration user interface
 #'
 #'
@@ -131,6 +161,8 @@ administration <- function(input, output, session, dM) {
 
   # result management
   callModule(admin_result_datatable, "result_management", dM)
+
+  callModule(admin_document_datatable, "document_search", dM)
 }
 
 #' data quality module - server
@@ -474,6 +506,161 @@ admin_result_datatable <- function(input, output, session, dM) {
 
   output$result_table <- DT::renderDT({
     result_management_table()
+  },
+  server = TRUE
+  )
+}
+
+
+#' document search module - server
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param dM dMeasure R6 object
+#'  access to documents
+#'
+#' @return none
+admin_document_datatable <- function(input, output, session, dM) {
+  ns <- session$ns
+
+  output$document_search_choice <- renderUI({
+    shinyWidgets::dropdown(
+      input_id = "dataSearch_choice_dropdown",
+      shiny::actionButton(
+        inputId = ns("view_documentSearchSettings"),
+        label = "Document Search settings"
+      ),
+      icon = shiny::icon("gear"),
+      label = "Document Search settings"
+    )
+  })
+
+  search_text <- shiny::reactiveVal("discharge")
+  # the default search string
+
+  output$document_search_text <-
+    shiny::renderText({paste("Search text: ", search_text())})
+
+  shiny::observeEvent(
+    input$view_documentSearchSettings,
+    ignoreInit = TRUE, {
+      shiny::showModal(
+        shiny::modalDialog(
+          title = "Document Search settings",
+          shiny::textInput(
+            inputId = ns("documentSearch_chosen"),
+            label = "Search text",
+            value = search_text()
+          ),
+          easyClose = FALSE,
+          footer = shiny::tagList(
+            shiny::modalButton("Cancel"),
+            shiny::actionButton(ns("documentSearchChosen_ok"), "OK")
+          )
+        )
+      )
+    }
+  )
+  shiny::observeEvent(
+    input$documentSearchChosen_ok, {
+      search_text(input$documentSearch_chosen)
+      shiny::removeModal()
+    }
+  )
+
+  documentSearch <-
+    shiny::eventReactive(
+      c(
+        dM$cliniciansR(),
+        dM$date_aR(),
+        dM$date_bR(),
+        search_text()
+      ),
+      ignoreInit = TRUE, ignoreNULL = FALSE, {
+        # respond to appointments_listR()
+        # when clinician or dates is changed
+        shiny::req(search_text()) # cannot be empty string
+
+        ChosenUserID <- dM$UserFullConfig %>>%
+          dplyr::filter(Fullname %in% dM$clinicians) %>>%
+          dplyr::pull(UserID) %>>% c(-1)
+        # add a dummy value if empty
+
+        wildcard_search <- paste0("%", search_text(), "%")
+        date_a <- dM$date_a
+        date_b <- dM$date_b
+
+        correspondence <- dM$db$correspondenceInRaw %>>%
+          dplyr::filter(
+            UserID %in% ChosenUserID |
+              CheckedBy %in% ChosenUserID,
+            dplyr::between(CorrespondenceDate, date_a, date_b) |
+              dplyr::between(CheckDate, date_a, date_b),
+            Category %like% wildcard_search |
+              Subject %like% wildcard_search |
+              Detail %like% wildcard_search |
+              Comment %like% wildcard_search
+          ) %>>%
+          dplyr::select(InternalID, UserID, CheckedBy,
+                        CorrespondenceDate, CheckDate, ActionDate,
+                        Category, Subject, Detail, Comment) %>>%
+          dplyr::collect()
+
+        intID <- correspondence %>>% dplyr::pull(InternalID) %>>% c(-1)
+
+        correspondence <- correspondence %>>%
+          dplyr::left_join(
+            dM$UserFullConfig %>>%
+              dplyr::filter(UserID %in% ChosenUserID) %>>%
+              dplyr::select(UserID, Fullname),
+            by = c("UserID")
+          ) %>>%
+          dplyr::rename(Clinician = Fullname) %>>%
+          dplyr::select(-c(UserID)) %>>%
+          dplyr::left_join(
+            dM$UserFullConfig %>>%
+              dplyr::filter(UserID %in% ChosenUserID) %>>%
+              dplyr::select(UserID, Fullname),
+            by = c("CheckedBy" = "UserID")
+          ) %>>%
+          dplyr::rename(Checked = Fullname) %>>%
+          dplyr::select(-c(CheckedBy)) %>>%
+          dplyr::left_join(
+            dM$db$patients %>>%
+              dplyr::filter(InternalID %in% intID) %>>%
+              dplyr::select(InternalID, ID = ExternalID,
+                            Firstname, Surname, DOB) %>>%
+              dplyr::collect(),
+            by = c("InternalID")
+          ) %>>%
+          dplyr::mutate(
+            Name = paste(Firstname, Surname),
+            DOB = as.Date(DOB)
+          ) %>>%
+          dplyr::select(-c(InternalID, Firstname, Surname))
+
+        return(correspondence)
+      }
+    )
+
+  ### create tag-styled datatable (or 'printable' datatable)
+  documentSearch_table <- shiny::reactive({
+
+    datatable_styled(documentSearch() %>>%
+                       dplyr::select(
+                         Name, ID, DOB,
+                         Clinician, Checked,
+                         CorrespondenceDate, CheckDate, ActionDate,
+                         Category, Subject, Detail, Comment
+                       ),
+                     extensions = c("Buttons", "Scroller"),
+                     scrollX = TRUE
+    )
+  })
+
+  output$documentSearch_table <- DT::renderDT({
+    documentSearch_table()
   },
   server = TRUE
   )

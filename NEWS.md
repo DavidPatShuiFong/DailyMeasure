@@ -2,6 +2,19 @@
 
 front-end to DailyMeasure package
 
+# Version 1.6.3
+12th July 2020
+
+## New
+
+* Search for documents on basis of text in Category, Subject, Detail or Comment
+  + in `Administration` section
+  
+## Change
+
+* change in date picker restricting dates (`date_b` cannot be less than `date_a`)
+  + allows typing in of arbitrary dates, according to restriction
+
 # Version 1.6.2
 8th July 2020
 

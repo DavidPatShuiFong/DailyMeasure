@@ -180,13 +180,13 @@ DailyMeasureServer <- function(input, output, session) {
       shiny::dateInput(
         inputId = "date1",
         label = "From:", format = "D dd/M/yyyy",
-        min = Sys.Date() - 6000, max = Sys.Date(),
+        min = Sys.Date() - 9000,
         value = Sys.Date()
       ),
       shiny::dateInput(
         inputId = "date2",
         label = "To:", format = "D dd/M/yyyy",
-        min = Sys.Date(), max = Sys.Date() + 180,
+        max = Sys.Date() + 180,
         value = Sys.Date()
       )
     )
@@ -198,13 +198,20 @@ DailyMeasureServer <- function(input, output, session) {
     ignoreInit = TRUE,
     ignoreNULL = FALSE,
     {
+      shiny::req(input$date1, input$date2)
+      # this event can be provoked during an incomplete date input,
+      # so need to check 'valid' date with `shiny::req`
       shinyjqui::jqui_effect(
         "#update_date_wrapper",
         effect = "bounce",
         options = list(distance = 1)
       )
-      shiny::updateDateInput(session, "date1", max = input$date2)
-      shiny::updateDateInput(session, "date2", min = input$date1)
+      if (input$date1 > dM$date_b) {
+        shiny::updateDateInput(session, "date1", value = dM$date_b)
+      }
+      if (input$date2 < dM$date_a) {
+        shiny::updateDateInput(session, "date2", value = dM$date_a)
+      }
     })
 
   shiny::observeEvent(
@@ -215,7 +222,6 @@ DailyMeasureServer <- function(input, output, session) {
       # change 'date_from' in response to $date_a
       if (input$date1 != dM$date_a) {
         shiny::updateDateInput(session, "date1", value = dM$date_a)
-        shiny::updateDateInput(session, "date2", min = dM$date_a)
       }
     }
   )
@@ -228,7 +234,6 @@ DailyMeasureServer <- function(input, output, session) {
       # change 'date_to' in response to $date_a
       if (input$date2 != dM$date_b) {
         shiny::updateDateInput(session, "date2", value = dM$date_b)
-        shiny::updateDateInput(session, "date1", max = dM$date_b)
       }
     }
   )

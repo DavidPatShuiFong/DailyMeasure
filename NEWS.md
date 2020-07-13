@@ -12,8 +12,10 @@ front-end to DailyMeasure package
   
 ## Change
 
-* change in date picker restricting dates (`date_b` cannot be less than `date_a`)
+* change in date picker restricting dates (`date_b` cannot be less than `date_a`) and 
+  change in date picker restricting dates (`min_date` cannot be less than `max_date`)
   + allows typing in of arbitrary dates, according to restriction
+
 
 # Version 1.6.2
 8th July 2020

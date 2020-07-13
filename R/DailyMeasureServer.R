@@ -142,6 +142,7 @@ DailyMeasureServer <- function(input, output, session) {
     ignoreNULL = FALSE,
     ignoreInit = TRUE,
     {
+      shiny::req(input$date1, input$date2) # catch out 'invalid' dates
       tryCatch({
         dM$choose_date(
           date_from = as.Date(input$date1),
@@ -158,10 +159,10 @@ DailyMeasureServer <- function(input, output, session) {
     }
   )
 
-  date_today <- shiny::observeEvent(input$update_date_today, {
+  shiny::observeEvent(input$update_date_today, {
     # 'today' button. change date range to today, and click the 'update' button
-    shiny::updateDateInput(session, "date1", value = Sys.Date(), max = Sys.Date())
-    shiny::updateDateInput(session, "date2", value = Sys.Date(), min = Sys.Date())
+    shiny::updateDateInput(session, "date1", value = Sys.Date())
+    shiny::updateDateInput(session, "date2", value = Sys.Date())
     # change date range to today
     shinyjs::click("update_date")
     # and click the 'update' button
@@ -206,11 +207,8 @@ DailyMeasureServer <- function(input, output, session) {
         effect = "bounce",
         options = list(distance = 1)
       )
-      if (input$date1 > dM$date_b) {
-        shiny::updateDateInput(session, "date1", value = dM$date_b)
-      }
-      if (input$date2 < dM$date_a) {
-        shiny::updateDateInput(session, "date2", value = dM$date_a)
+      if (input$date1 > input$date2) {
+        shiny::updateDateInput(session, "date1", value = input$date2)
       }
     })
 
@@ -244,13 +242,13 @@ DailyMeasureServer <- function(input, output, session) {
       shiny::dateInput(
         inputId = "min_date",
         label = "From:", format = "D dd/M/yyyy",
-        min = Sys.Date() - 6000, max = Sys.Date(),
+        min = Sys.Date() - 6000,
         value = Sys.Date() - 6000
       ),
       shiny::dateInput(
         inputId = "max_date",
         label = "To:", format = "D dd/M/yyyy",
-        min = Sys.Date() - 6000, max = Sys.Date() + 180,
+        max = Sys.Date() + 180,
         value = Sys.Date()
       ),
       shiny::div(
@@ -270,13 +268,16 @@ DailyMeasureServer <- function(input, output, session) {
     ignoreInit = FALSE,
     ignoreNULL = FALSE,
     {
+      shiny::req(input$min_date, input$max_date)
       shinyjqui::jqui_effect(
         "#update_lastvisit_wrapper",
         effect = "bounce",
         options = list(distance = 1)
       )
-      shiny::updateDateInput(session, "min_date", max = input$max_date)
-      shiny::updateDateInput(session, "max_date", min = input$min_date)
+      if (input$min_date > input$max_date) {
+        shiny::updateDateInput(session, "min_date", value = input$max_date)
+      }
+
     })
 
   shiny::observeEvent(
@@ -287,7 +288,6 @@ DailyMeasureServer <- function(input, output, session) {
       # change 'min_date' in response to $min_dateR
       if (input$min_date != dM$contact_minDate) {
         shiny::updateDateInput(session, "min_date", value = dM$contact_minDate)
-        shiny::updateDateInput(session, "max_date", min = dM$contact_minDate)
       }
     }
   )
@@ -300,7 +300,6 @@ DailyMeasureServer <- function(input, output, session) {
       # change 'max_date' in response to $max_dateR
       if (input$max_date != dM$contact_maxDate) {
         shiny::updateDateInput(session, "max_date", value = dM$contact_maxDate)
-        shiny::updateDateInput(session, "min_date", max = dM$contact_maxDate)
       }
     }
   )
@@ -311,6 +310,8 @@ DailyMeasureServer <- function(input, output, session) {
     ignoreNULL = FALSE,
     ignoreInit = TRUE,
     {
+      shiny::req(input$min_date, input$max_date)
+
       dM$contact_minDate <- input$min_date
       dM$contact_maxDate <- input$max_date
     }

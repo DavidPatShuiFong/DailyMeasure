@@ -281,59 +281,49 @@ qim <- function(input, output, session, dMQIM, contact) {
   # this is an unusual kludge, for some reason specifying dMQIM$qim_demographicGroup
   # in the 'choices' of checkboxGroupButtons does not work
 
-  output$settings_group <- shiny::renderUI({
-    shinyWidgets::dropdown(
-      input_id = "qim_dropdown",
-      icon = shiny::icon("gear"),
-      label = "Settings",
-      shinyWidgets::checkboxGroupButtons(
-        inputId = ns("ignore_old"),
-        label = "Measurements",
-        checkIcon = list(
-          yes = shiny::icon("calendar-times"),
-          no = shiny::icon("calendar-alt")
-        ),
-        choices = c("Ignore old measurements"),
-        selected = c("Ignore old measurements"),
-        status = "primary"
-      ),
-      shiny::actionButton(
-        inputId = ns("view_demographicSettings"),
-        label = "Demographic groups shown"
-      )
-    )
-  })
   demographic_chosen <- shiny::reactiveVal(
     initial_demographic
   )
-  shiny::observeEvent(
-    input$view_demographicSettings,
-    ignoreInit = TRUE, {
-      shiny::showModal(
-        shiny::modalDialog(
-          title = "Demographic groups shown",
-          shinyWidgets::checkboxGroupButtons(
-            inputId = ns("demographic_chosen"),
-            label = "Demographic grouping",
-            choices = dMQIM$qim_demographicGroupings,
-            selected = demographic_chosen(),
-            status = "primary",
-            checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
+  output$settings_group <- shiny::renderUI({
+    shinyWidgets::dropMenu(
+      shiny::actionButton(
+        inputId = ns("qim_dropdown"),
+        icon = shiny::icon("gear"),
+        label = "Settings"
+      ),
+      shiny::tags$div(
+        shinyWidgets::checkboxGroupButtons(
+          inputId = ns("ignore_old"),
+          label = "Measurements",
+          checkIcon = list(
+            yes = shiny::icon("calendar-times"),
+            no = shiny::icon("calendar-alt")
           ),
-          easyClose = FALSE,
-          footer = shiny::tagList(
-            shiny::modalButton("Cancel"),
-            shiny::actionButton(ns("demographicChosen_ok"), "OK")
-          )
-
+          choices = c("Ignore old measurements"),
+          selected = c("Ignore old measurements"),
+          status = "primary"
+        ),
+        shinyWidgets::checkboxGroupButtons(
+          inputId = ns("demographic_chosen"),
+          label = "Demographic grouping",
+          choices = dMQIM$qim_demographicGroupings,
+          selected = demographic_chosen(),
+          status = "primary",
+          checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
         )
       )
-    }
-  )
+    )
+  })
   shiny::observeEvent(
-    input$demographicChosen_ok, {
-      demographic_chosen(input$demographic_chosen)
-      shiny::removeModal()
+    input$qim_dropdown_dropmenu,
+    ignoreInit = TRUE, {
+      # this is triggered when shinyWidgets::dropMenu is opened/closed
+      # tag is derived from the first tag in dropMenu, adding '_dropmenu'
+      if (!input$qim_dropdown_dropmenu) {
+        # only if closing the 'dropmenu' modal
+        # unfortunately, is also triggered during Init (despite the ignoreInit)
+        demographic_chosen(input$demographic_chosen)
+      }
     }
   )
 

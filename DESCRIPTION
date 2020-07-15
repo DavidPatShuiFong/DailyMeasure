@@ -21,7 +21,7 @@ Imports:
     shinyjs,
     shinydashboard,
     shinydashboardPlus (>= 0.7.0),
-    shinyWidgets,
+    shinyWidgets (>= 0.5.2),
     shinytoastr,
     shinyFiles (>= 0.7.2),
     shinycssloaders,

@@ -76,53 +76,45 @@ cancerscreen_datatable <- function(input, output, session, dM) {
   # Cancer screening types
   cancerscreen_names <- c("Bowel", "Cervical", "Breast")
 
-  output$cancerscreen_choice <- shiny::renderUI({
-    shinyWidgets::dropdown(
-      # placing the drop-down in the render UI (as opposed to module UI)
-      # allows cancerscreen_chosen() to be defined at time of rendering
-      inputid = "choice_dropdown",
-      shiny::actionButton(
-        inputId = ns("view_cancerSettings"),
-        label = "Cancer screening items shown"
-      ),
-      icon = shiny::icon("gear"),
-      label = "Cancer screening settings"
-    )
-  })
   cancerscreen_chosen <- shiny::reactiveVal(
     cancerscreen_names
     # initially all choices selected
   )
+  output$cancerscreen_choice <- shiny::renderUI({
+    shinyWidgets::dropMenu(
+      # placing the drop-down in the render UI (as opposed to module UI)
+      # allows cancerscreen_chosen() to be defined at time of rendering
+      shiny::actionButton(
+        ns("choice_dropdown"),
+        label = "Cancer screen settings",
+        icon = shiny::icon("gear")
+      ),
+      shiny::tags$div(
+        shinyWidgets::checkboxGroupButtons(
+          inputId = ns("cancerscreen_chosen"), label = "Cancer Screen items shown",
+          choices = cancerscreen_names,
+          selected = cancerscreen_chosen(),
+          status = "primary",
+          checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
+        ),
+        shiny::br(),
+        shiny::em("Close to confirm")
+      ),
+      placement = "bottom-end"
+    )
+  })
   shiny::observeEvent(
-    input$view_cancerSettings,
+    input$choice_dropdown_dropmenu,
     ignoreInit = TRUE, {
-      shiny::showModal(
-        shiny::modalDialog(
-          title = "Cancer screening items shown",
-          shinyWidgets::checkboxGroupButtons(
-            inputId = ns("cancerscreen_chosen"), label = "Cancer Screen items shown",
-            choices = cancerscreen_names,
-            selected = cancerscreen_chosen(),
-            status = "primary",
-            checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
-          ),
-          easyClose = FALSE,
-          footer = shiny::tagList(
-            shiny::modalButton("Cancel"),
-            shiny::actionButton(ns("cancerChosen_ok"), "OK")
-          )
-        )
-      )
+      # this is triggered when shinyWidgets::dropMenu is opened/closed
+      # tag is derived from the first tag in dropMenu, adding '_dropmenu'
+      if (!input$choice_dropdown_dropmenu) {
+        # only if closing the 'dropmenu' modal
+        # unfortunately, is also triggered during Init (despite the ignoreInit)
+        cancerscreen_chosen(input$cancerscreen_chosen)
+      }
     }
   )
-  shiny::observeEvent(
-    input$cancerChosen_ok, {
-      cancerscreen_chosen(input$cancerscreen_chosen)
-      shiny::removeModal()
-    }
-  )
-
-  cancerscreen_list <- shiny::reactiveVal(NULL)
 
   cancerscreen_list <- shiny::reactive({
     shiny::validate(

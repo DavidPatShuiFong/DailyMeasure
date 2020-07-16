@@ -93,17 +93,17 @@ admin_result_datatableUI <- function(id) {
         )
       ),
       shiny::column(2,
-        offset = 2, # note that total 'column' width = 12
-        shinyWidgets::checkboxGroupButtons(
-          inputId = ns("ignorePast_appt"),
-          checkIcon = list(
-            yes = shiny::icon("calendar-times"),
-            no = shiny::icon("calendar-alt")
-          ),
-          choices = c("Ignore Past Appointments"),
-          status = "primary",
-          width = "30em"
-        )
+                    offset = 2, # note that total 'column' width = 12
+                    shinyWidgets::checkboxGroupButtons(
+                      inputId = ns("ignorePast_appt"),
+                      checkIcon = list(
+                        yes = shiny::icon("calendar-times"),
+                        no = shiny::icon("calendar-alt")
+                      ),
+                      choices = c("Ignore Past Appointments"),
+                      status = "primary",
+                      width = "30em"
+                    )
       ),
       shiny::column(
         2,
@@ -179,46 +179,40 @@ administration <- function(input, output, session, dM) {
 admin_dataQuality_datatable <- function(input, output, session, dM) {
   ns <- session$ns
 
-  output$dataQuality_choice <- renderUI({
-    shinyWidgets::dropdown(
-      input_id = "dataQuality_choice_dropdown",
-      shiny::actionButton(
-        inputId = ns("view_dataQualitySettings"),
-        label = "Data Quality choices"
-      ),
-      icon = shiny::icon("gear"),
-      label = "Data Quality settings"
-    )
-  })
   dataQuality_chosen <- shiny::reactiveVal(
     dM$dataQuality_choices
   )
+  output$dataQuality_choice <- renderUI({
+    shinyWidgets::dropMenu(
+      shiny::actionButton(
+        ns("dataQuality_choice_dropdown"),
+        label = "Data Quality settings",
+        icon = shiny::icon("gear")
+      ),
+      shiny::tags$div(
+        shinyWidgets::checkboxGroupButtons(
+          inputId = ns("dataQuality_chosen"), label = "Data Quality choices",
+          choices = dM$dataQuality_choices,
+          selected = dataQuality_chosen(),
+          status = "primary",
+          checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
+        ),
+        shiny::br(),
+        shiny::em("Close to confirm")
+      ),
+      placement = "bottom-end"
+    )
+  })
   shiny::observeEvent(
-    input$view_dataQualitySettings,
+    input$dataQuality_choice_dropdown_dropmenu,
     ignoreInit = TRUE, {
-      shiny::showModal(
-        shiny::modalDialog(
-          title = "Data Quality choices",
-          shinyWidgets::checkboxGroupButtons(
-            inputId = ns("dataQuality_chosen"), label = "Data Quality choices",
-            choices = dM$dataQuality_choices,
-            selected = dataQuality_chosen(),
-            status = "primary",
-            checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
-          ),
-          easyClose = FALSE,
-          footer = shiny::tagList(
-            shiny::modalButton("Cancel"),
-            shiny::actionButton(ns("dataQualityChosen_ok"), "OK")
-          )
-        )
-      )
-    }
-  )
-  shiny::observeEvent(
-    input$dataQualityChosen_ok, {
-      dataQuality_chosen(input$dataQuality_chosen)
-      shiny::removeModal()
+      # this is triggered when shinyWidgets::dropMenu is opened/closed
+      # tag is derived from the first tag in dropMenu, adding '_dropmenu'
+      if (!input$dataQuality_choice_dropdown_dropmenu) {
+        # only if closing the 'dropmenu' modal
+        # unfortunately, is also triggered during Init (despite the ignoreInit)
+        dataQuality_chosen(input$dataQuality_chosen)
+      }
     }
   )
 
@@ -250,30 +244,32 @@ admin_dataQuality_datatable <- function(input, output, session, dM) {
     if (!is.null(dM$appointments_list)) {
       if (input$printcopy_view == TRUE) {
         # printable/copyable view
-        datatable_styled(dataQuality() %>>%
-          dplyr::select(
-            Patient, AppointmentDate, AppointmentTime,
-            Provider, DOB, Age, qualitytag_print
-          ),
-        colnames = c("Data Quality" = "qualitytag_print"),
-        extensions = c("Buttons", "Scroller"),
-        scrollX = TRUE
+        datatable_styled(
+          dataQuality() %>>%
+            dplyr::select(
+              Patient, AppointmentDate, AppointmentTime,
+              Provider, DOB, Age, qualitytag_print
+            ),
+          colnames = c("Data Quality" = "qualitytag_print"),
+          extensions = c("Buttons", "Scroller"),
+          scrollX = TRUE
         ) # don't collapse columns
       } else {
         # fomantic/semantic tag view
-        datatable_styled(dataQuality() %>>%
-          dplyr::select(
-            Patient, AppointmentDate, AppointmentTime,
-            Provider, DOB, Age, qualitytag
-          ),
-        colnames = c("Data Quality" = "qualitytag"),
-        printButton = NULL, # no copy/print buttons
-        copyHtml5 = NULL,
-        downloadButton = NULL,
-        scrollX = "100%", # allow horizontal scroll-bar
-        extensions = c("Buttons", "Scroller"),
-        # no 'Responsive' column collapsing
-        escape = c(7)
+        datatable_styled(
+          dataQuality() %>>%
+            dplyr::select(
+              Patient, AppointmentDate, AppointmentTime,
+              Provider, DOB, Age, qualitytag
+            ),
+          colnames = c("Data Quality" = "qualitytag"),
+          printButton = NULL, # no copy/print buttons
+          copyHtml5 = NULL,
+          downloadButton = NULL,
+          scrollX = "100%", # allow horizontal scroll-bar
+          extensions = c("Buttons", "Scroller"),
+          # no 'Responsive' column collapsing
+          escape = c(7)
         ) # only interpret HTML for last column
       }
     }
@@ -306,120 +302,91 @@ admin_result_datatable <- function(input, output, session, dM) {
     "Send routine reminder", "Non-urgent appointment",
     "Urgent appointment"
   )
-  output$result_settings <- renderUI({
-    shinyWidgets::dropdown(
-      input_id = "result_choice_dropdown",
-      shiny::actionButton(
-        inputId = ns("view_resultActionSettings"),
-        label = "Action items shown"
-      ),
-      shiny::actionButton(
-        inputId = ns("view_resultActionedSettings"),
-        label = "Action items shown"
-      ),
-      icon = shiny::icon("gear"),
-      label = "Result settings"
-    )
-  })
   action_chosen <- shiny::reactiveVal(
     c("Non-urgent appointment", "Urgent appointment")
   )
-  shiny::observeEvent(
-    input$view_resultActionSettings,
-    ignoreInit = TRUE, {
-      shiny::showModal(
-        shiny::modalDialog(
-          title = "Action items shown",
-          shinyWidgets::checkboxGroupButtons(
-            inputId = ns("action_chosen"),
-            label = "Actions shown",
-            choices = action_names,
-            selected = action_chosen(),
-            status = "primary",
-            checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
-          ),
-          easyClose = FALSE,
-          footer = shiny::tagList(
-            shiny::modalButton("Cancel"),
-            shiny::actionButton(ns("resultActionChosen_ok"), "OK")
-          )
-        )
-      )
-    }
-  )
-  shiny::observeEvent(
-    input$resultActionChosen_ok, {
-      action_chosen(input$action_chosen)
-      shiny::removeModal()
-    }
-  )
-  shiny::observeEvent(
-    action_chosen(),
-    ignoreNULL = FALSE, {
-    # change the filter depending on the dropdown
-      dM$filter_incoming_Action <- action_chosen()
-  })
-
   actioned_chosen <- shiny::reactiveVal(
     c("Any status")
   )
   actioned_date <- shiny::reactiveVal(
     Sys.Date()
   )
-  shiny::observeEvent(
-    input$view_resultActionedSettings,
-    ignoreInit = TRUE, {
-      shiny::showModal(
-        shiny::modalDialog(
-          title = "Actioned status",
-          shinyWidgets::radioGroupButtons(
-            inputId = ns("actioned_chosen"),
-            label = "Actioned status",
-            choices = c("Any status", "Not actioned", "Actioned", "Actioned before..."),
-            selected = actioned_chosen(),
-            status = "primary",
-          ),
-          shiny::dateInput(
-            ns("actioned_date"),
-            label = "Actioned before:",
-            format = "D dd/M/yyyy",
-            min = Sys.Date() - 6000, max = Sys.Date(),
-            value = actioned_date()
-          ),
-          easyClose = FALSE,
-          footer = shiny::tagList(
-            shiny::modalButton("Cancel"),
-            shiny::actionButton(ns("resultActionedChosen_ok"), "OK")
-          )
-        )
-      )
-    }
-  )
-  shiny::observeEvent(
-    input$resultActionedChosen_ok, {
-      actioned_chosen(input$actioned_chosen)
-      shiny::removeModal()
-    }
-  )
-  shiny::observeEvent(actioned_chosen(), {
-    if (actioned_chosen() == "Actioned before...") {
-      shinyjs::enable("actioned_date")
-      dM$filter_incoming_Actioned <- as.Date(actioned_date())
-    } else {
-      shinyjs::disable("actioned_date")
-      switch(actioned_chosen(),
-        "Any status" = {
-          dM$filter_incoming_Actioned <- NULL
-        },
-        "Not actioned" = {
-          dM$filter_incoming_Actioned <- FALSE
-        },
-        "Actioned" = {
-          dM$filter_incoming_Actioned <- TRUE
-        }
-      )
-    }
+  output$result_settings <- renderUI({
+    shinyWidgets::dropMenu(
+      shiny::actionButton(
+        inputId = ns("results_choice_dropdown"),
+        label = "Result settings",
+        icon = shiny::icon("gear")
+      ),
+      shiny::tags$div(
+        shinyWidgets::checkboxGroupButtons(
+          inputId = ns("action_chosen"),
+          label = "Actions shown",
+          choices = action_names,
+          selected = action_chosen(),
+          status = "primary",
+          checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
+        ),
+        shinyWidgets::radioGroupButtons(
+          inputId = ns("actioned_chosen"),
+          label = "Actioned status",
+          choices = c("Any status", "Not actioned", "Actioned", "Actioned before..."),
+          selected = actioned_chosen(),
+          status = "primary",
+        ),
+        shiny::dateInput(
+          ns("actioned_date"),
+          label = "Actioned before:",
+          format = "D dd/M/yyyy",
+          min = Sys.Date() - 6000, max = Sys.Date(),
+          value = actioned_date()
+        ),
+        shiny::br(),
+        shiny::em("Close to confirm")
+      ),
+      placement = "bottom-end"
+    )
   })
+  shiny::observeEvent(
+    input$results_choice_dropdown_dropmenu,
+    ignoreInit = TRUE, {
+      # this is triggered when shinyWidgets::dropMenu is opened/closed
+      # tag is derived from the first tag in dropMenu, adding '_dropmenu'
+      if (!input$results_choice_dropdown_dropmenu) {
+        # only if closing the 'dropmenu' modal
+        # unfortunately, is also triggered during Init (despite the ignoreInit)
+        action_chosen(input$action_chosen)
+        actioned_chosen(input$actioned_chosen)
+      }
+    }
+  )
+  shiny::observeEvent(
+    action_chosen(),
+    ignoreNULL = FALSE, {
+      # change the filter depending on the dropdown
+      dM$filter_incoming_Action <- action_chosen()
+    })
+
+  shiny::observeEvent(
+    actioned_chosen(), {
+      if (actioned_chosen() == "Actioned before...") {
+        shinyjs::enable("actioned_date")
+        dM$filter_incoming_Actioned <- as.Date(actioned_date())
+      } else {
+        shinyjs::disable("actioned_date")
+        switch(actioned_chosen(),
+               "Any status" = {
+                 dM$filter_incoming_Actioned <- NULL
+               },
+               "Not actioned" = {
+                 dM$filter_incoming_Actioned <- FALSE
+               },
+               "Actioned" = {
+                 dM$filter_incoming_Actioned <- TRUE
+               }
+        )
+      }
+    })
   shiny::observeEvent(actioned_date(), {
     if (actioned_chosen() == "Actioned before...") {
       dM$filter_incoming_Actioned <- as.Date(actioned_date())
@@ -463,43 +430,45 @@ admin_result_datatable <- function(input, output, session, dM) {
 
     if (input$printcopy_view == TRUE) {
       # printable/copyable view
-      datatable_styled(results() %>>%
-        dplyr::select(
-          Patient, RecordNo, DOB, Age,
-          TestName, Reported, Checked, CheckedBy,
-          Notation, Action, Actioned, Comment, labeltag_print
+      datatable_styled(
+        results() %>>%
+          dplyr::select(
+            Patient, RecordNo, DOB, Age,
+            TestName, Reported, Checked, CheckedBy,
+            Notation, Action, Actioned, Comment, labeltag_print
+          ),
+        colnames = c(
+          "Patient", "RecordNo", "DOB", "Age",
+          "Report",
+          "Reported", "Checked", "Checked By",
+          "Notation", "Action", "Actioned", "Comment",
+          "Appointments"
         ),
-      colnames = c(
-        "Patient", "RecordNo", "DOB", "Age",
-        "Report",
-        "Reported", "Checked", "Checked By",
-        "Notation", "Action", "Actioned", "Comment",
-        "Appointments"
-      ),
-      extensions = c("Buttons", "Scroller"),
-      scrollX = TRUE
+        extensions = c("Buttons", "Scroller"),
+        scrollX = TRUE
       ) # don't collapse columns
     } else {
       # fomantic/semantic tag view
-      datatable_styled(results() %>>%
-        dplyr::select(
-          patienttag, RecordNo,
-          testtag, Checked, CheckedBy,
-          Notation, Action, Actioned, Comment, labeltag
+      datatable_styled(
+        results() %>>%
+          dplyr::select(
+            patienttag, RecordNo,
+            testtag, Checked, CheckedBy,
+            Notation, Action, Actioned, Comment, labeltag
+          ),
+        colnames = c(
+          "Patient", "RecordNo",
+          "Report", "Checked", "Checked By",
+          "Notation", "Action", "Actioned", "Comment",
+          "Appointments"
         ),
-      colnames = c(
-        "Patient", "RecordNo",
-        "Report", "Checked", "Checked By",
-        "Notation", "Action", "Actioned", "Comment",
-        "Appointments"
-      ),
-      printButton = NULL, # no copy/print buttons
-      copyHtml5 = NULL,
-      downloadButton = NULL,
-      scrollX = "100%", # allow horizontal scroll-bar
-      extensions = c("Buttons", "Scroller"),
-      # no 'Responsive' column collapsing
-      escape = c(1, 3, 10)
+        printButton = NULL, # no copy/print buttons
+        copyHtml5 = NULL,
+        downloadButton = NULL,
+        scrollX = "100%", # allow horizontal scroll-bar
+        extensions = c("Buttons", "Scroller"),
+        # no 'Responsive' column collapsing
+        escape = c(1, 3, 10)
       ) # only interpret HTML for some columns
     }
   })
@@ -524,48 +493,39 @@ admin_result_datatable <- function(input, output, session, dM) {
 admin_document_datatable <- function(input, output, session, dM) {
   ns <- session$ns
 
-  output$document_search_choice <- renderUI({
-    shinyWidgets::dropdown(
-      input_id = "dataSearch_choice_dropdown",
-      shiny::actionButton(
-        inputId = ns("view_documentSearchSettings"),
-        label = "Document Search settings"
-      ),
-      icon = shiny::icon("gear"),
-      label = "Document Search settings"
-    )
-  })
-
   search_text <- shiny::reactiveVal("discharge")
   # the default search string
-
   output$document_search_text <-
     shiny::renderText({paste("Search text: ", search_text())})
-
+  output$document_search_choice <- renderUI({
+    shinyWidgets::dropMenu(
+      shiny::actionButton(
+        inputId = ns("dataSearch_choice_dropdown"),
+        icon = shiny::icon("gear"),
+        label = "Document Search settings"
+      ),
+      shiny::tags$div(
+        shiny::textInput(
+          inputId = ns("documentSearch_chosen"),
+          label = "Search text",
+          value = search_text()
+        ),
+        shiny::br(),
+        shiny::em("Close to confirm")
+      ),
+      placement = "bottom-end"
+    )
+  })
   shiny::observeEvent(
-    input$view_documentSearchSettings,
+    input$dataSearch_choice_dropdown_dropmenu,
     ignoreInit = TRUE, {
-      shiny::showModal(
-        shiny::modalDialog(
-          title = "Document Search settings",
-          shiny::textInput(
-            inputId = ns("documentSearch_chosen"),
-            label = "Search text",
-            value = search_text()
-          ),
-          easyClose = FALSE,
-          footer = shiny::tagList(
-            shiny::modalButton("Cancel"),
-            shiny::actionButton(ns("documentSearchChosen_ok"), "OK")
-          )
-        )
-      )
-    }
-  )
-  shiny::observeEvent(
-    input$documentSearchChosen_ok, {
-      search_text(input$documentSearch_chosen)
-      shiny::removeModal()
+      # this is triggered when shinyWidgets::dropMenu is opened/closed
+      # tag is derived from the first tag in dropMenu, adding '_dropmenu'
+      if (!input$dataSearch_choice_dropdown_dropmenu) {
+        # only if closing the 'dropmenu' modal
+        # unfortunately, is also triggered during Init (despite the ignoreInit)
+        search_text(input$documentSearch_chosen)
+      }
     }
   )
 

@@ -85,7 +85,7 @@ vax_datatable <- function(input, output, session, dM) {
   output$vax_item_choice <- shiny::renderUI({
     shinyWidgets::dropMenu(
       shiny::actionButton(
-        ns("choice_dropdown"),
+        inputId = ns("choice_dropdown"),
         label = "Vaccination settings",
         icon = shiny::icon("gear")
       ),

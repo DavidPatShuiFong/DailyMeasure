@@ -114,10 +114,11 @@ qim_diabetes_UI <- function(id) {
   shiny::tagList(
     shiny::fluidRow(
       shiny::column(
-        3,
+        width = 3,
         shiny::uiOutput(ns("list_group"))
       ),
-      shiny::column(2,
+      shiny::column(
+        width = 2,
         offset = 7, # note that total 'column' width = 12
         shiny::uiOutput(ns("measure_group"))
       )
@@ -137,7 +138,7 @@ qim_cst_UI <- function(id) {
   shiny::tagList(
     shiny::fluidRow(
       shiny::column(
-        3,
+        width = 3,
         shiny::uiOutput(ns("list_group"))
       )
     ),
@@ -156,10 +157,11 @@ qim_15plus_UI <- function(id) {
   shiny::tagList(
     shiny::fluidRow(
       shiny::column(
-        3,
+        width = 3,
         shiny::uiOutput(ns("list_group"))
       ),
-      shiny::column(2,
+      shiny::column(
+        width = 2,
         offset = 7, # note that total 'column' width = 12
         shiny::uiOutput(ns("measure_group"))
       )
@@ -179,7 +181,7 @@ qim_65plus_UI <- function(id) {
   shiny::tagList(
     shiny::fluidRow(
       shiny::column(
-        3,
+        width = 3,
         shiny::uiOutput(ns("list_group"))
       )
     ),
@@ -198,7 +200,7 @@ qim_copd_UI <- function(id) {
   shiny::tagList(
     shiny::fluidRow(
       shiny::column(
-        3,
+        width = 3,
         shiny::uiOutput(ns("list_group"))
       )
     ),
@@ -217,11 +219,12 @@ qim_cvdRisk_UI <- function(id) {
   shiny::tagList(
     shiny::fluidRow(
       shiny::column(
-        3,
+        width = 3,
         shiny::uiOutput(ns("list_group"))
       ),
-      shiny::column(2,
-        offset = 7, # note that total 'column' width = 12
+      shiny::column(
+        width = 2,
+        offset = 6, # note that total 'column' width = 12
         shiny::uiOutput(ns("groups"))
       )
     ),
@@ -442,22 +445,36 @@ qim_diabetes <- function(input, output, session, dMQIM, contact) {
     )
   })
   output$measure_group <- shiny::renderUI({
-    shinyWidgets::dropdown(
-      input_id = "measure_group_dropdown",
-      icon = shiny::icon("gear"),
-      label = "Diabetes Measures",
-      shinyWidgets::checkboxGroupButtons(
-        inputId = ns("measure_chosen"), label = "Measures Chosen",
-        choices = dMQIM$qim_diabetes_measureTypes,
-        selected = dMQIM$qim_diabetes_measureTypes,
-        # initially all chosen
-        status = "primary"
-      )
+    shinyWidgets::dropMenu(
+      shiny::actionButton(
+        inputId = ns("measure_group_dropdown"),
+        icon = shiny::icon("gear"),
+        label = "Diabetes Measures"
+      ),
+      shiny::tags$div(
+        shinyWidgets::checkboxGroupButtons(
+          inputId = ns("measure_chosen"),
+          label = "Measures Chosen",
+          choices = dMQIM$qim_diabetes_measureTypes,
+          selected = dMQIM$qim_diabetes_measureTypes,
+          # initially all chosen
+          status = "primary"
+        ),
+        shiny::br(),
+        shiny::em("Close to confirm")
+      ),
+      placement = "bottom-end"
     )
   })
-  shiny::observeEvent(input$measure_chosen, ignoreNULL = FALSE, {
-    dMQIM$qim_diabetes_measure <- input$measure_chosen
-  })
+  shiny::observeEvent(
+    input$measure_group_dropdown_dropmenu,
+    ignoreInit = TRUE, {
+      # this is triggered when shinyWidgets::dropMenu is opened/closed
+      # tag is derived from the first tag in dropMenu, adding '_dropmenu'
+      if (!input$measure_group_dropdown_dropmenu) {
+        dMQIM$qim_diabetes_measure <- input$measure_chosen
+      }
+    })
 
   qim_diabetes_datatable <- shiny::eventReactive(
     c(
@@ -511,14 +528,16 @@ qim_diabetes <- function(input, output, session, dMQIM, contact) {
               dplyr::select(., -c(BPDate, BP))
             }
           }
-        datatable_styled(df,
+        datatable_styled(
+          df,
           extensions = c("Buttons", "Scroller"),
           columnDefs = list(list(
             targets =
-              which(names(df) %in%
-                c("Patient", "RecordNo")),
-            # needs name by index as columns might be removed
-            # by demographic filters above
+              which(
+                names(df) %in% c("Patient", "RecordNo")
+                # needs name by index as columns might be removed
+                # by demographic filters above
+              ),
             visible = FALSE
           )),
           # Patient Name and RecordNo hidden by default
@@ -574,12 +593,13 @@ qim_diabetes <- function(input, output, session, dMQIM, contact) {
               dplyr::select(., -c(BPDate, BP))
             }
           }
-        datatable_styled(df,
+        datatable_styled(
+          df,
           extensions = c("Buttons", "Scroller")
         ) %>>% {
           if ("HbA1C" %in% input$measure_chosen) {
             DT::formatStyle(., "HbA1CDate",
-              backgroundcolor = DT::styleInterval(as.Date(Sys.Date() - 365), c("ffeeee", "eeffee"))
+                            backgroundcolor = DT::styleInterval(as.Date(Sys.Date() - 365), c("ffeeee", "eeffee"))
             )
           } else {
             .
@@ -668,8 +688,7 @@ qim_cst <- function(input, output, session, dMQIM, contact) {
           df,
           columnDefs = list(list(
             targets =
-              which(names(df) %in%
-                c("Patient", "RecordNo")),
+              which(names(df) %in% c("Patient", "RecordNo")),
             # Patient Name and RecordNo hidden by default
             # needs name by index as columns might be removed
             # by demographic filters above
@@ -703,7 +722,8 @@ qim_cst <- function(input, output, session, dMQIM, contact) {
             # finds the demographics that were NOT chosen
             dplyr::select(., -remove_demographic)
           }
-        datatable_styled(df,
+        datatable_styled(
+          df,
           extensions = c("Buttons", "Scroller"),
           scrollX = TRUE
         ) # this is a wide table
@@ -757,21 +777,35 @@ qim_15plus <- function(input, output, session, dMQIM, contact) {
     )
   })
   output$measure_group <- shiny::renderUI({
-    shinyWidgets::dropdown(
-      input_id = "measure_group_dropdown",
+    shinyWidgets::dropMenu(
+      shiny::actionButton(
+      inputId = ns("measure_group_dropdown"),
       icon = shiny::icon("gear"),
-      label = "15+ Measures",
-      shinyWidgets::checkboxGroupButtons(
-        inputId = ns("measure_chosen"), label = "Measures Chosen",
-        choices = dMQIM$qim_15plus_measureTypes,
-        selected = dMQIM$qim_15plus_measureTypes,
-        # initially all chosen
-        status = "primary"
-      )
+      label = "15+ Measures"
+      ),
+      shiny::tags$div(
+        shinyWidgets::checkboxGroupButtons(
+          inputId = ns("measure_chosen"), label = "Measures Chosen",
+          choices = dMQIM$qim_15plus_measureTypes,
+          selected = dMQIM$qim_15plus_measureTypes,
+          # initially all chosen
+          status = "primary"
+        ),
+        shiny::br(),
+        shiny::em("Close to confirm")
+      ),
+      placement = "bottom-end"
     )
   })
-  shiny::observeEvent(input$measure_chosen, ignoreNULL = FALSE, {
-    dMQIM$qim_15plus_measure <- input$measure_chosen
+  shiny::observeEvent(
+    input$measure_group_dropdown_dropmenu, ignoreInit = TRUE, {
+      # this is triggered when shinyWidgets::dropMenu is opened/closed
+      # tag is derived from the first tag in dropMenu, adding '_dropmenu'
+      if (!input$measure_group_dropdown_dropmenu) {
+        # only if closing the 'dropmenu' modal
+        # unfortunately, is also triggered during Init (despite the ignoreInit)
+        dMQIM$qim_15plus_measure <- input$measure_chosen
+      }
   })
 
   qim_15plus_datatable <- shiny::eventReactive(
@@ -1001,7 +1035,7 @@ qim_65plus <- function(input, output, session, dMQIM, contact) {
           columnDefs = list(list(
             targets =
               which(names(df) %in%
-                c("Patient", "RecordNo")),
+                      c("Patient", "RecordNo")),
             # needs name by index as columns might be removed
             # by demographic filters above
             visible = FALSE
@@ -1036,7 +1070,8 @@ qim_65plus <- function(input, output, session, dMQIM, contact) {
             # finds the demographics that were NOT chosen
             dplyr::select(., -remove_demographic)
           }
-        datatable_styled(df,
+        datatable_styled(
+          df,
           extensions = c("Buttons", "Scroller"),
           scrollX = TRUE
         ) # this is a wide table
@@ -1117,7 +1152,7 @@ qim_copd <- function(input, output, session, dMQIM, contact) {
           columnDefs = list(list(
             targets =
               which(names(df) %in%
-                c("Patient", "RecordNo")),
+                      c("Patient", "RecordNo")),
             # needs name by index as columns might be removed
             # by demographic filters above
             visible = FALSE
@@ -1152,7 +1187,8 @@ qim_copd <- function(input, output, session, dMQIM, contact) {
             # finds the demographics that were NOT chosen
             dplyr::select(., -remove_demographic)
           }
-        datatable_styled(df,
+        datatable_styled(
+          df,
           extensions = c("Buttons", "Scroller"),
           scrollX = TRUE
         ) # this is a wide table
@@ -1207,24 +1243,38 @@ qim_cvdRisk <- function(input, output, session, dMQIM, contact) {
     )
   })
   output$groups <- shiny::renderUI({
-    shinyWidgets::dropdown(
-      input_id = "measure_group_dropdown",
-      icon = shiny::icon("gear"),
-      label = "Inclusions/Exclusions",
-      shinyWidgets::checkboxGroupButtons(
-        inputId = ns("groups_chosen"), label = "Groups chosen",
-        choices = dMQIM$qim_cvdRisk_measureTypes,
-        selected = dMQIM$qim_cvdRisk_measureTypes,
-        # initially all chosen, which includes choices to
-        #  'include' ATSI 35-44 years,
-        # and 'exclude'
-        #  those with known cardiovascular disease and age 75
-        status = "primary"
-      )
+    shinyWidgets::dropMenu(
+      shiny::actionButton(
+        inputId = ns("measure_group_dropdown"),
+        icon = shiny::icon("gear"),
+        label = "Inclusions/Exclusions"
+      ),
+      shiny::tags$div(
+        shinyWidgets::checkboxGroupButtons(
+          inputId = ns("groups_chosen"), label = "Groups chosen",
+          choices = dMQIM$qim_cvdRisk_measureTypes,
+          selected = dMQIM$qim_cvdRisk_measureTypes,
+          # initially all chosen, which includes choices to
+          #  'include' ATSI 35-44 years,
+          # and 'exclude'
+          #  those with known cardiovascular disease and age 75
+          status = "primary"
+        ),
+        shiny::br(),
+        shiny::em("Close to confirm")
+      ),
+      placement = "bottom-end"
     )
   })
-  shiny::observeEvent(input$groups_chosen, ignoreNULL = FALSE, {
-    dMQIM$qim_cvdRisk_measure <- input$groups_chosen
+  shiny::observeEvent(
+    input$measure_group_dropdown_dropmenu, ignoreInit = FALSE, {
+      # this is triggered when shinyWidgets::dropMenu is opened/closed
+      # tag is derived from the first tag in dropMenu, adding '_dropmenu'
+      if (!input$measure_group_dropdown_dropmenu) {
+        # only if closing the 'dropmenu' modal
+        # unfortunately, is also triggered during Init (despite the ignoreInit)
+        dMQIM$qim_cvdRisk_measure <- input$groups_chosen
+      }
   })
 
   qim_cvdRisk_datatable <- shiny::eventReactive(
@@ -1258,7 +1308,7 @@ qim_cvdRisk <- function(input, output, session, dMQIM, contact) {
           columnDefs = list(list(
             targets =
               which(names(df) %in%
-                c("Patient", "RecordNo")),
+                      c("Patient", "RecordNo")),
             # needs name by index as columns might be removed
             # by demographic filters above
             visible = FALSE
@@ -1306,7 +1356,8 @@ qim_cvdRisk <- function(input, output, session, dMQIM, contact) {
             # finds the demographics that were NOT chosen
             dplyr::select(., -remove_demographic)
           }
-        datatable_styled(df,
+        datatable_styled(
+          df,
           extensions = c("Buttons", "Scroller"),
           scrollX = TRUE
         ) # this is a wide table

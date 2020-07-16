@@ -2,6 +2,14 @@
 
 front-end to DailyMeasure package
 
+# Version 1.6.4
+16th July 2020
+
+## Change
+
+* dropdown no longer open a a formal shiny modal. will change settings when closed.
+  + use `shinyWidgets::dropMenu` instead of `shinyWidgets::dropdown` where possible
+
 # Version 1.6.3
 12th July 2020
 

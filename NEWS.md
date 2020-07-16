@@ -5,6 +5,10 @@ front-end to DailyMeasure package
 # Version 1.6.4
 16th July 2020
 
+## New
+
+* myHealth (PCEHR) document display
+
 ## Change
 
 * dropdown no longer open a a formal shiny modal. will change settings when closed.

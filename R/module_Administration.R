@@ -37,6 +37,12 @@ administration_UI <- function(id) {
         width = 12,
         shiny::br(),
         admin_document_datatableUI(ns("document_search"))
+      ),
+      shiny::tabPanel(
+        title = "myHealth (PCEHR)",
+        width = 12,
+        shiny::br(),
+        admin_pcehr_datatableUI(ns("pcehr_search"))
       )
     )
   )
@@ -144,6 +150,26 @@ admin_document_datatableUI <- function(id) {
   )
 }
 
+admin_pcehr_datatableUI <- function(id) {
+  ns <- shiny::NS(id)
+
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(
+        3, # note that total 'column' width = 12
+        offset = 6,
+        shiny::uiOutput(ns("pcehr_choice"))
+      )
+    ),
+    shinycssloaders::withSpinner(
+      DT::DTOutput(ns("pcehr_table")),
+      type = 8,
+      hide.element.when.recalculating = FALSE,
+      proxy.height = NULL
+    )
+  )
+}
+
 #' administration user interface
 #'
 #'
@@ -163,6 +189,8 @@ administration <- function(input, output, session, dM) {
   callModule(admin_result_datatable, "result_management", dM)
 
   callModule(admin_document_datatable, "document_search", dM)
+
+  callModule(admin_pcehr_datatable, "pcehr_search", dM)
 }
 
 #' data quality module - server
@@ -625,3 +653,173 @@ admin_document_datatable <- function(input, output, session, dM) {
   server = TRUE
   )
 }
+
+#' myHealth (pcehr) search module - server
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param dM dMeasure R6 object
+#'  access to documents
+#'
+#' @return none
+admin_pcehr_datatable <- function(input, output, session, dM) {
+  ns <- session$ns
+
+  pcehr_types <- c("Download", "Shared health summary", "Event")
+  pcehr_chosen <- shiny::reactiveVal("Shared health summary")
+  # the default search string
+  output$pcehr_choice <- renderUI({
+    shinyWidgets::dropMenu(
+      shiny::actionButton(
+        inputId = ns("pcehr_choice_dropdown"),
+        icon = shiny::icon("gear"),
+        label = "myHealth settings"
+      ),
+      shiny::tags$div(
+        shinyWidgets::checkboxGroupButtons(
+          inputId = ns("pcehr_chosen"),
+          label = "myHealth document types",
+          choices = pcehr_types,
+          selected = pcehr_chosen(),
+          status = "primary",
+          checkIcon = list(yes = icon("ok", lib = "glyphicon"))
+        ),
+        shiny::br(),
+        shiny::em("Close to confirm")
+      ),
+      placement = "bottom-end"
+    )
+  })
+  shiny::observeEvent(
+    input$pcehr_choice_dropdown_dropmenu,
+    ignoreInit = TRUE, {
+      # this is triggered when shinyWidgets::dropMenu is opened/closed
+      # tag is derived from the first tag in dropMenu, adding '_dropmenu'
+      if (!input$pcehr_choice_dropdown_dropmenu) {
+        # only if closing the 'dropmenu' modal
+        # unfortunately, is also triggered during Init (despite the ignoreInit)
+        pcehr_chosen(input$pcehr_chosen)
+      }
+    }
+  )
+
+  pcehr_documents <-
+    shiny::eventReactive(
+      c(
+        dM$cliniciansR(),
+        dM$date_aR(),
+        dM$date_bR(),
+        pcehr_chosen()
+      ),
+      ignoreInit = TRUE, ignoreNULL = FALSE, {
+        # respond to appointments_listR()
+        # when clinician or dates is changed
+        shiny::req(pcehr_chosen()) # cannot be empty string
+
+        ChosenUserID <- dM$UserFullConfig %>>%
+          dplyr::filter(Fullname %in% dM$clinicians) %>>%
+          dplyr::pull(UserID) %>>% c(-1)
+        # add a dummy value if empty
+
+        date_a <- dM$date_a
+        date_b <- dM$date_b
+
+        ChosenDocumentType <- c(-1)
+        if ("Download" %in% pcehr_chosen()) {
+          ChosenDocumentType <- c(ChosenDocumentType, 0)
+        }
+        if ("Shared health summary" %in% pcehr_chosen()) {
+          ChosenDocumentType <- c(ChosenDocumentType, 1)
+        }
+        if ("Event" %in% pcehr_chosen()) {
+          ChosenDocumentType <- c(ChosenDocumentType, 2)
+        }
+
+        documents <- dM$db$pcehrdocuments %>>%
+          dplyr::filter(
+            UserID %in% ChosenUserID |
+              CreatedBy %in% ChosenUserID |
+              UpdatedBy %in% ChosenUserID,
+            dplyr::between(DocumentDate, date_a, date_b) |
+              dplyr::between(Updated, date_a, date_b),
+            DocumentType %in% ChosenDocumentType
+          ) %>>%
+          dplyr::select(InternalID, UserID, DocumentType, DocumentDate,
+                        CreatedBy, UpdatedDate = Updated, UpdatedBy) %>>%
+          dplyr::collect()
+
+        intID <- documents %>>% dplyr::pull(InternalID) %>>% c(-1)
+
+        documents <- documents %>>%
+          dplyr::left_join(
+            dM$UserFullConfig %>>%
+              dplyr::filter(UserID %in% ChosenUserID) %>>%
+              dplyr::select(UserID, Fullname),
+            by = c("UserID")
+          ) %>>%
+          dplyr::rename(Clinician = Fullname) %>>%
+          dplyr::select(-c(UserID)) %>>%
+          dplyr::left_join(
+            dM$UserFullConfig %>>%
+              dplyr::filter(UserID %in% ChosenUserID) %>>%
+              dplyr::select(UserID, Fullname),
+            by = c("CreatedBy" = "UserID")
+          ) %>>%
+          dplyr::rename(Created = Fullname) %>>%
+          dplyr::select(-c(CreatedBy)) %>>%
+          dplyr::left_join(
+            dM$UserFullConfig %>>%
+              dplyr::filter(UserID %in% ChosenUserID) %>>%
+              dplyr::select(UserID, Fullname),
+            by = c("UpdatedBy" = "UserID")
+          ) %>>%
+          dplyr::rename(Updated = Fullname) %>>%
+          dplyr::select(-c(UpdatedBy)) %>>%
+          dplyr::left_join(
+            dM$db$patients %>>%
+              dplyr::filter(InternalID %in% intID) %>>%
+              dplyr::select(InternalID, ID = ExternalID,
+                            Firstname, Surname, DOB) %>>%
+              dplyr::collect(),
+            by = c("InternalID")
+          ) %>>%
+          dplyr::mutate(
+            Name = paste(Firstname, Surname),
+            DOB = as.Date(DOB)
+          ) %>>%
+          dplyr::select(-c(InternalID, Firstname, Surname)) %>>%
+          dplyr::mutate(
+            DocumentType = dplyr::case_when(
+              DocumentType == 0 ~ "Downloaded",
+              DocumentType == 1 ~ "Shared health summary",
+              DocumentType == 2 ~ "Event"
+            )
+          )
+
+        return(documents)
+      }
+    )
+
+  ### create tag-styled datatable (or 'printable' datatable)
+  pcehr_table <- shiny::reactive({
+
+    datatable_styled(
+      pcehr_documents() %>>%
+        dplyr::select(
+          Name, ID, DOB,
+          Clinician, DocumentType, DocumentDate,
+          Created, Updated, UpdatedDate
+        ),
+      extensions = c("Buttons", "Scroller"),
+      scrollX = TRUE
+    )
+  })
+
+  output$pcehr_table <- DT::renderDT({
+    pcehr_table()
+  },
+  server = TRUE
+  )
+}
+

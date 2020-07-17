@@ -542,45 +542,22 @@ DailyMeasureServer <- function(input, output, session) {
   if (QIMmodule == TRUE) {
     # only if QIM module/package is available
     output$PIPqimMenu <- shinydashboard::renderMenu({
-      shinydashboard::sidebarMenu(.list = list(
-        shinydashboard::menuItem("PIP Quality Improvement",
-          tabName = "qimRept", icon = shiny::icon("chart-line")
-        ),
-        shinydashboard::menuItem("QIM Appointment",
-          tabName = "qimAppt", icon = shiny::icon("chart-line")
-        )
-      ))
+      dMeasureQIM::shinydashboardmenuItem()
     })
     # if QIMmodule is FALSE, then output$PIPqimMenu will be left undefined
 
     # Practice Incentive Program (PIP) Quality Improvement (QI) measures
     # add PIP QIM tab items to the tabItem vector
-    shinytabItems <- c(
-      shinytabItems,
-      list(shinydashboard::tabItem(
-        tabName = "qimRept",
-        shiny::fluidRow(column(
-          width = 12, align = "center",
-          h2("Quality Improvement Measure Reporting")
-        )),
-        shiny::fluidRow(column(
-          width = 12,
-          qim_UI("qimRept")
-        ))
-      )),
-      list(shinydashboard::tabItem(
-        tabName = "qimAppt",
-        shiny::fluidRow(column(
-          width = 12, align = "center",
-          h2("Quality Improvement Measure Appointment View")
-        )),
-        shiny::fluidRow(column(width = 12, qim_UI("qimAppt")))
-      ))
-    )
-    qim_results_rept <- callModule(qim, "qimRept", dMQIMrept, contact = TRUE) # 'report' view
+    shinytabItems <- c(shinytabItems, dMeasureQIM::dMeasureShinytabItems())
+
+    qim_results_rept <- callModule(
+      dMeasureQIM::datatableServer,
+      "qimRept", dMQIMrept, contact = TRUE) # 'report' view
     # Practice Incentive Program (PIP) Quality Improvement (QI) measures
     # appointment view
-    qim_results_appt <- callModule(qim, "qimAppt", dMQIMappt, contact = FALSE)
+    qim_results_appt <- callModule(
+      dMeasureQIM::datatableServer,
+      "qimAppt", dMQIMappt, contact = FALSE)
   }
 
   # appointment list

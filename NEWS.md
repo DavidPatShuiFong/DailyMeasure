@@ -13,6 +13,7 @@ front-end to DailyMeasure package
 
 * dropdown no longer open a a formal shiny modal. will change settings when closed.
   + use `shinyWidgets::dropMenu` instead of `shinyWidgets::dropdown` where possible
+* move web UI of `dMeasureQIM` to `dMeasureQIM`
 
 # Version 1.6.3
 12th July 2020

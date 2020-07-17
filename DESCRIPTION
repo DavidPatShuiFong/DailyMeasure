@@ -44,6 +44,8 @@ Suggests:
     dMeasureQIM,
     dMeasureBillings,
     dMeasureCDM,
+    dMeasureMedication,
+    dMeasureCustom,
     knitr,
     rmarkdown
 ImportComments:
@@ -75,6 +77,5 @@ Collate:
     'module_Administration.R'
     'module_Conditions.R'
     'module_Configuration_logs.R'
-    'module_PIP_QualityImprovement.R'
     'zzz.R'
 VignetteBuilder: knitr

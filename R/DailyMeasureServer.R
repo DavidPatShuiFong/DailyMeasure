@@ -49,17 +49,6 @@ DailyMeasureServer <- function(input, output, session) {
   # create the dMeasure object
   dM <- dMeasure::dMeasure$new()
 
-  # create dMeasureQIM objects
-  QIMmodule <- requireNamespace("dMeasureQIM", quietly = TRUE)
-  # is module (package) available?
-  if (QIMmodule) {
-    dMQIMrept <- dMeasureQIM::dMeasureQIM$new(dM) # 'report' view of module
-    dMQIMappt <- dMeasureQIM::dMeasureQIM$new(dM) # a second QIM module
-    dMQIMappt$qim_contact <- FALSE # second module uses appointment list, not contact list
-    dMQIMappt$qim_demographicGroup <- c("")
-    # by default, the second module does not show QIM aggregate groups
-  }
-
   # find out what dMeasure modules are installed,
   # and if any have an 'integration' function which allows
   # sem-automated 'auto-loading'
@@ -74,6 +63,11 @@ DailyMeasureServer <- function(input, output, session) {
     dplyr::select(Package) %>>% # just need the package names
     dplyr::mutate( # now fill in description (Provides/Requires)
       Provides = sapply(
+        # usually a character vector with a single element
+        # however, it could be a list of character vectors
+        #  for an example, see dMeasureQIM
+        # if there are several elements, the Provides need to align
+        #  with moduleID
         Package,
         function(x) {
           do.call(
@@ -84,6 +78,8 @@ DailyMeasureServer <- function(input, output, session) {
         }
       ),
       Requires = sapply(
+        # a single character element (usually 'dMeasure')
+        #  or a vector/list of characters
         Package,
         function(x) {
           do.call(
@@ -95,6 +91,16 @@ DailyMeasureServer <- function(input, output, session) {
       ),
       moduleID = sapply(
         # the ID of modules to create
+        #
+        # this can either return a vector of character
+        #  (possibly a one-element vector)
+        #  in which case the characters are IDs
+        # *or* alternatively a list of lists
+        #  (maybe just one list)
+        #  a list contains $ID (a character vector)
+        #  and $extraArgs (a character vector)
+        #  $extraArgs are passed to the call to
+        #  datatableServer (a call to a module)
         Package,
         function(x) {
           do.call(
@@ -118,8 +124,9 @@ DailyMeasureServer <- function(input, output, session) {
     ) %>>%
     dplyr::add_row( # add a row for the dMeasure object
       Package = "dMeasure",
-      Provides = "dMeasure",
-      Requires = NULL
+      Provides = list("dMeasure"),
+      # needs to be list because some packages have two 'provides'
+      Requires = list(NULL)
     )
   dMeasureModulesR6[["dMeasure"]] <- dM # this *is* the dM object
 
@@ -129,37 +136,42 @@ DailyMeasureServer <- function(input, output, session) {
   while (defined_module) {
     defined_module <- FALSE # set to TRUE if a 'new' module is defined
     for (i in seq_len(nrow(dMeasureModules))) {
-      if (is.null(dMeasureModulesR6[[dMeasureModules[[i, "Provides"]]]])) {
-        # R6 object not yet defined
-        # initially, only the dMeasure object is defined
-        requires_defined <- TRUE # are all Requires defined?
-        requires_list <- list()
-        for (j in dMeasureModules[[i, "Requires"]]) {
-          if (is.null(dMeasureModulesR6[[j]])) {
-            requires_defined <- FALSE
-            # this requirement is not (yet) defined
-          } else {
-            # this requirement is defined,
-            # add R6object to the 'requires_list'
-            requires_list <- c(
-              requires_list,
-              dMeasureModulesR6[[j]]
-            )
+      for (k in dMeasureModules[[i, "Provides"]]) {
+        # potentially two provides (though usually only one)
+        # for an example of two provides, see dMeasureQIM
+        #  in the case of two calls, will also require two moduleID
+        if (is.null(dMeasureModulesR6[[k]])) {
+          # R6 object not yet defined
+          # initially, only the dMeasure object is defined
+          requires_defined <- TRUE # are all Requires defined?
+          requires_list <- list()
+          for (j in dMeasureModules[[i, "Requires"]]) {
+            if (is.null(dMeasureModulesR6[[j]])) {
+              requires_defined <- FALSE
+              # this requirement is not (yet) defined
+            } else {
+              # this requirement is defined,
+              # add R6object to the 'requires_list'
+              requires_list <- c(
+                requires_list,
+                dMeasureModulesR6[[j]]
+              )
+            }
           }
-        }
-        if (requires_defined) {
-          # all requirements defined
-          f <- eval(
-            parse(text = paste0(dMeasureModules[[i, "Provides"]], "$new")),
-            envir = asNamespace(dMeasureModules[[i, "Package"]])
-          ) # from https://github.com/r-lib/R6/issues/83 'do.call for class methods'
-          dMeasureModulesR6[[dMeasureModules[[i, "Provides"]]]] <-
-            do.call(
-              # create new R6 object
-              what = f,
-              args = requires_list
-            )
-          defined_module <- TRUE
+          if (requires_defined) {
+            # all requirements defined
+            f <- eval(
+              parse(text = paste0(dMeasureModules[[i, "Package"]], "$new")),
+              envir = asNamespace(dMeasureModules[[i, "Package"]])
+            ) # from https://github.com/r-lib/R6/issues/83 'do.call for class methods'
+            dMeasureModulesR6[[k]] <-
+              do.call(
+                # create new R6 object
+                what = f,
+                args = requires_list
+              )
+            defined_module <- TRUE
+          }
         }
       }
     }
@@ -188,7 +200,9 @@ DailyMeasureServer <- function(input, output, session) {
               mode = "function")
           ) {
             # if the module has a read_configuration_db function, then use it
-            dMeasureModulesR6[[dMeasureModules[[i, "Provides"]]]]$read_configuration_db()
+            for (k in dMeasureModules[[i, "Provides"]]) {
+              dMeasureModulesR6[[k]]$read_configuration_db()
+            }
           }
         }
       }
@@ -551,22 +565,22 @@ DailyMeasureServer <- function(input, output, session) {
     c(
       list(
         shinydashboard::tabItem(
-        tabName = "appointments",
-        fluidRow(column(width = 12, align = "center", h2("Appointments"))),
-        fluidRow(column(width = 12, shiny::div(
-          id = "appointments_datatable_wrapper", # for rintrojs
-          appointments_datatableUI("appointments_dt")
-        )))
-      )),
+          tabName = "appointments",
+          fluidRow(column(width = 12, align = "center", h2("Appointments"))),
+          fluidRow(column(width = 12, shiny::div(
+            id = "appointments_datatable_wrapper", # for rintrojs
+            appointments_datatableUI("appointments_dt")
+          )))
+        )),
       list(
         shinydashboard::tabItem(
-        tabName = "immunization",
-        fluidRow(column(width = 12, align = "center", h2("Immunization"))),
-        fluidRow(column(width = 12, shiny::div(
-          id = "immunization_datatable_wrapper", # for rintrojs
-          vax_datatableUI("vax_dt")
-        )))
-      )),
+          tabName = "immunization",
+          fluidRow(column(width = 12, align = "center", h2("Immunization"))),
+          fluidRow(column(width = 12, shiny::div(
+            id = "immunization_datatable_wrapper", # for rintrojs
+            vax_datatableUI("vax_dt")
+          )))
+        )),
       list(
         shinydashboard::tabItem(
           tabName = "cancerscreen",
@@ -609,12 +623,42 @@ DailyMeasureServer <- function(input, output, session) {
           args = list()
         )
       )
+      index <- 0
       for (j in dMeasureModules[[i, "moduleID"]]) {
-        do.call(
-          what = "datatableServer",
-          envir = asNamespace(dMeasureModules[i, "Package"]),
-          list(id = j, dMeasureModulesR6[[dMeasureModules[[i, "Provides"]]]])
-        )
+        # potentially more than one moduleID, though one is more common
+        # for an example of more than one moduleID, see dMeasureQIM
+        index <- index + 1
+        # the 'Provides' and 'moduleID' lists must align...
+
+        if (is.character(j)) {
+          # a character string, which will be an ID
+          # there is also only one provided R6 module
+          do.call(
+            what = "datatableServer",
+            envir = asNamespace(dMeasureModules[i, "Package"]),
+            list(
+              id = j,
+              dMeasureModulesR6[[dMeasureModules[[i, "Provides"]][[index]]]]
+            )
+          )
+        } else if (is.list(j)) {
+          # a list, which contains the ID in $id and
+          # extra arguments in $extraArgs
+          #  see example in dMeasureQIM
+          do.call(
+            what = "datatableServer",
+            envir = asNamespace(dMeasureModules[i, "Package"]),
+            append(
+              list(
+                id = j$ID,
+                dMeasureModulesR6[[dMeasureModules[[i, "Provides"]][[index]]]]
+              ),
+              eval(parse(text = paste0("list(", j$extraArgs, ")")))
+              # see https://stackoverflow.com/questions/7836972/
+              #  use-character-string-as-function-argument
+            )
+          )
+        }
       }
     }
   }
@@ -625,27 +669,6 @@ DailyMeasureServer <- function(input, output, session) {
   callModule(administration, "admin_dt", dM)
   # about
   callModule(about, "about_dt", dM)
-
-  if (QIMmodule == TRUE) {
-    # only if QIM module/package is available
-    sidebarmenu <- c(sidebarmenu, list(dMeasureQIM::shinydashboardmenuItem()))
-    # if QIMmodule is FALSE, then output$PIPqimMenu will be left undefined
-
-    # Practice Incentive Program (PIP) Quality Improvement (QI) measures
-    # add PIP QIM tab items to the tabItem vector
-    shinytabItems <- c(shinytabItems, dMeasureQIM::dMeasureShinytabItems())
-
-    callModule(
-      dMeasureQIM::datatableServer,
-      "qimRept", dMQIMrept, contact = TRUE
-    ) # 'report' view
-    # Practice Incentive Program (PIP) Quality Improvement (QI) measures
-    # appointment view
-    callModule(
-      dMeasureQIM::datatableServer,
-      "qimAppt", dMQIMappt, contact = FALSE
-    )
-  }
 
   # appointment list
   callModule(appointments_datatable, "appointments_dt", dM)
@@ -948,7 +971,9 @@ DailyMeasureServer <- function(input, output, session) {
               mode = "function")
           ) {
             # if the module has a read_configuration_db function, then use it
-            dMeasureModulesR6[[dMeasureModules[[i, "Provides"]]]]$read_configuration_db()
+            for (k in dMeasureModules[[i, "Provides"]] ) {
+              dMeasureModulesR6[[]]$read_configuration_db()
+            }
           }
         }
       }
@@ -1004,11 +1029,13 @@ DailyMeasureServer <- function(input, output, session) {
         # if the module has dMeasureConfigurationTabPanel, then call it
         for (j in dMeasureModules[[i, "configID"]]) {
           # go through configID vector
-          do.call(
-            what = "dMeasureConfigurationTabPanel",
-            envir = asNamespace(dMeasureModules[i, "Package"]),
-            list(id = j, dMeasureModulesR6[[dMeasureModules[[i, "Provides"]]]])
-          )
+          for (k in dMeasureModules[[i, "Provides"]]) {
+            do.call(
+              what = "dMeasureConfigurationTabPanel",
+              envir = asNamespace(dMeasureModules[i, "Package"]),
+              list(id = j, dMeasureModulesR6[[k]])
+            )
+          }
         }
       }
     }
@@ -1193,13 +1220,14 @@ DailyMeasureServer <- function(input, output, session) {
     # above opens the right side-bar
     # see https://stackoverflow.com/questions/
     #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
-    rintrojs::introjs(session,
-                      options = list(
-                        steps = steps_overview_df(),
-                        showStepNumbers = FALSE,
-                        skipLabel = "Quit"
-                      ),
-                      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)"))
+    rintrojs::introjs(
+      session,
+      options = list(
+        steps = steps_overview_df(),
+        showStepNumbers = FALSE,
+        skipLabel = "Quit"
+      ),
+      events = list(onbeforechange = I("rintrojs.callback.switchTabs(targetElement)"))
     )
   })
 

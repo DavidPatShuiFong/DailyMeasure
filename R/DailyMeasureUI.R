@@ -119,7 +119,42 @@ DailyMeasureUI <- function() {
         id = "sidebarMenu-wrapper", # this is needed for rintrojs
         shinydashboard::sidebarMenu(
           id = "sidebartabs",
-          shinydashboard::sidebarMenuOutput("sidebarmenu")
+          shinydashboard::menuItem("Appointments",
+                                   tabName = "appointments",
+                                   icon = shiny::icon("calendar-check")
+          ),
+          shinydashboard::menuItem("Immunization",
+                                   tabName = "immunization",
+                                   icon = shiny::icon("syringe")
+          ),
+          shinydashboard::menuItem("Cancer Screening",
+                                   tabName = "cancerscreen",
+                                   icon = icon("x-ray")
+          ),
+          shinydashboard::sidebarMenuOutput("sidebarmenu"),
+          # dynamically created Billings, CDM, PIP quality improvement,
+          # Custom, Medication
+          # menu items. could be blank!
+          # e.g. will be blank unless dMeasureQIM module/package is available
+          shinydashboard::menuItem("Conditions",
+                                   tabName = "conditions",
+                                   icon = shiny::icon("fingerprint")
+          ),
+          shinydashboard::menuItem("Administration",
+                                   tabName = "administration",
+                                   icon = shiny::icon("microscope")
+          ),
+          shinydashboard::menuItem("Configuration",
+                                   tabName = "configuration",
+                                   icon = shiny::icon("wrench"),
+                                   selected = TRUE
+                                   # this is a dummy entry and will be re-selected in the server
+          ),
+          shinydashboard::menuItem("About",
+                                   tabName = "about",
+                                   icon = shiny::icon("info")
+          )
+          # menuItem("Test", tabName = "test")
         )
       )
     ),

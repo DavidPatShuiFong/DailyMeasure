@@ -2,6 +2,14 @@
 
 front-end to DailyMeasure package
 
+# Version 2.0.0
+19th July 2020
+
+## Change
+
+* 'auto-load' of `dMeasure*` modules
+
+
 # Version 1.6.4
 16th July 2020
 

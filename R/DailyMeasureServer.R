@@ -4,7 +4,7 @@
 
 ##### Define server logic #####################################################
 
-sessionCount <- reactiveValues(count = 0) # initially no sessions opened
+sessionCount <- shiny::reactiveValues(count = 0) # initially no sessions opened
 # strangely, doesn't work if not a reactive
 
 #' Shiny app server function
@@ -103,6 +103,17 @@ DailyMeasureServer <- function(input, output, session) {
             args = list(information = "moduleID")
           )
         }
+      ),
+      configID = sapply(
+        # the ID of modules to create
+        Package,
+        function(x) {
+          do.call(
+            what = "dMeasureIntegration",
+            envir = asNamespace(x),
+            args = list(information = "configID")
+          )
+        }
       )
     ) %>>%
     dplyr::add_row( # add a row for the dMeasure object
@@ -154,10 +165,6 @@ DailyMeasureServer <- function(input, output, session) {
     }
   }
 
-  Custommodule <- requireNamespace("dMeasureCustom", quietly = TRUE)
-  if (Custommodule) {
-    dMCustom <- dMeasureCustom::dMeasureCustom$new(dM)
-  }
   Medicationmodule <- requireNamespace("dMeasureMedication", quietly = TRUE)
   if (Medicationmodule) {
     dMMedication <- dMeasureMedication::dMeasureMedication$new(dM)
@@ -174,14 +181,22 @@ DailyMeasureServer <- function(input, output, session) {
       # generates the SQLite configuration database if needed
       # and updates old SQLite configuration databases with necessary fields
       dM$read_configuration_db()
-      if (Custommodule &&
-          exists("read_configuration_db",
-                 where = asNamespace("dMeasureCustom"),
-                 mode = "function")
-      ) {
-        # if dMCustom has a read_configuration_db function, then use it
-        dMCustom$read_configuration_db()
+
+      # read dMeasure module specific configuration_db
+      for (i in seq_len(nrow(dMeasureModules))) {
+        if (dMeasureModules[[i, "Package"]] != "dMeasure") {
+          if (
+            exists(
+              "read_configuration_db",
+              where = asNamespace(dMeasureModules[[i, "Package"]]),
+              mode = "function")
+          ) {
+            # if the module has a read_configuration_db function, then use it
+            dMeasureModulesR6[[dMeasureModules[[i, "Provides"]]]]$read_configuration_db()
+          }
+        }
       }
+
       # reads server definitions, location definitions, user attributes etc..
       if (dM$config_db$is_open()) {
         newdb <- dM$BPdatabaseChoice_new()
@@ -567,30 +582,7 @@ DailyMeasureServer <- function(input, output, session) {
         ))
     )
 
-  sidebarmenu <-
-    c(
-      list(
-        shinydashboard::menuItem(
-          "Appointments",
-          tabName = "appointments",
-          icon = shiny::icon("calendar-check")
-        )
-      ),
-      list(
-        shinydashboard::menuItem(
-          "Immunization",
-          tabName = "immunization",
-          icon = shiny::icon("syringe")
-        )
-      ),
-      list(
-        shinydashboard::menuItem(
-          "Cancer Screening",
-          tabName = "cancerscreen",
-          icon = icon("x-ray")
-        )
-      )
-    )
+  sidebarmenu <- list()
 
   # no PIP Quality Improvement Measure, billings, or CDM tabs, these are inserted dynamically
   # in the server section if the dMeasureQIM module/package is available
@@ -631,15 +623,6 @@ DailyMeasureServer <- function(input, output, session) {
     }
   }
 
-  if (Custommodule == TRUE) {
-    sidebarmenu <- c(sidebarmenu, list(dMeasureCustom::shinydashboardmenuItem()))
-    shinytabItems <- c(shinytabItems, dMeasureCustom::dMeasureShinytabItems())
-    # chronic disease management table
-    callModule(
-      dMeasureCustom::datatableServer,
-      "custom_dt", dMCustom
-    )
-  }
   if (Medicationmodule == TRUE) {
     sidebarmenu <- c(sidebarmenu, list(dMeasureMedication::shinydashboardmenuItem()))
     shinytabItems <- c(shinytabItems, dMeasureMedication::dMeasureShinytabItems())
@@ -827,20 +810,26 @@ DailyMeasureServer <- function(input, output, session) {
     )
   )
 
-  if (Custommodule) {
-    if (
-      exists(
-        "dMeasureConfigurationTabPanelItem",
-        where = asNamespace("dMeasureCustom"),
-        mode = "function"
-      )
-    ) {
-      configuration_tabPanels <- append(
-        configuration_tabPanels,
-        list(
-          dMeasureCustom::dMeasureConfigurationTabPanelItem()
+  # add configuration panel from dMeasure module, if available
+  # e.g. dMeasureCustom
+  for (i in seq_len(nrow(dMeasureModules))) {
+    if (dMeasureModules[[i, "Package"]] != "dMeasure") {
+      if (
+        exists(
+          "dMeasureConfigurationTabPanelItem",
+          where = asNamespace(dMeasureModules[[i, "Package"]]),
+          mode = "function")
+      ) {
+        # if the module has dMeasureCofngiruationTabPanelItems, then use it
+        configuration_tabPanels <- append(
+          configuration_tabPanels,
+          do.call(
+            what = "dMeasureConfigurationTabPanelItem",
+            envir = asNamespace(dMeasureModules[[i, "Package"]]),
+            args = list()
+          )
         )
-      )
+      }
     }
   }
 
@@ -856,41 +845,6 @@ DailyMeasureServer <- function(input, output, session) {
 
   ##### final configuration of sidebarmenu ###########################################
 
-  sidebarmenu <-
-    c(
-      sidebarmenu,
-      list(
-        shinydashboard::menuItem(
-          "Conditions",
-          tabName = "conditions",
-          icon = shiny::icon("fingerprint")
-        )
-      ),
-      list(
-        shinydashboard::menuItem(
-          "Administration",
-          tabName = "administration",
-          icon = shiny::icon("microscope")
-        )
-      ),
-      list(
-        shinydashboard::menuItem(
-          "Configuration",
-          tabName = "configuration",
-          icon = shiny::icon("wrench"),
-          selected = TRUE
-          # this is a dummy entry and will be re-selected in the server
-        )
-      ),
-      list(
-        shinydashboard::menuItem(
-          "About",
-          tabName = "about",
-          icon = shiny::icon("info")
-        )
-      )
-      # menuItem("Test", tabName = "test")
-    )
   output$sidebarmenu <- shinydashboard::renderMenu({
     shinydashboard::sidebarMenu(.list = sidebarmenu)
   })
@@ -997,14 +951,22 @@ DailyMeasureServer <- function(input, output, session) {
       dM$open_configuration_db()
       # this will initialize the .sqlite configuration file and open it
       dM$read_configuration_db()
-      if (Custommodule &&
-          exists("read_configuration_db",
-                 where = asNamespace("dMeasureCustom"),
-                 mode = "function")
-      ) {
-        # if dMCustom has a read_configuration_db function, then use it
-        dMCustom$read_configuration_db()
+
+      # read dMeasure module specific configuration_db
+      for (i in seq_len(nrow(dMeasureModules))) {
+        if (dMeasureModules[[i, "Package"]] != "dMeasure") {
+          if (
+            exists(
+              "read_configuration_db",
+              where = asNamespace(dMeasureModules[[i, "Package"]]),
+              mode = "function")
+          ) {
+            # if the module has a read_configuration_db function, then use it
+            dMeasureModulesR6[[dMeasureModules[[i, "Provides"]]]]$read_configuration_db()
+          }
+        }
       }
+
       shinytoastr::toastr_warning(
         message = paste(
           "New configuration file created and chosen.",
@@ -1042,21 +1004,30 @@ DailyMeasureServer <- function(input, output, session) {
 
   ###### custom module configuration ##############################
 
-  if (Custommodule) {
-    if (
-      exists(
-        "dMeasureConfigurationTabPanel",
-        where = asNamespace("dMeasureCustom"),
-        mode = "function"
-      )
-    ) {
-      callModule(
-        dMeasureCustom::dMeasureConfigurationTabPanel,
-        "dMeasureCustom_config_dt",
-        dMCustom
-      )
+  # call configuration panel from dMeasure module, if available
+  # e.g. dMeasureCustom
+  for (i in seq_len(nrow(dMeasureModules))) {
+    if (dMeasureModules[[i, "Package"]] != "dMeasure") {
+      if (
+        exists(
+          "dMeasureConfigurationTabPanel",
+          where = asNamespace(dMeasureModules[[i, "Package"]]),
+          mode = "function"
+        )
+      ) {
+        # if the module has dMeasureConfigurationTabPanel, then call it
+        for (j in dMeasureModules[[i, "configID"]]) {
+          # go through configID vector
+          do.call(
+            what = "dMeasureConfigurationTabPanel",
+            envir = asNamespace(dMeasureModules[i, "Package"]),
+            list(id = j, dMeasureModulesR6[[dMeasureModules[[i, "Provides"]]]])
+          )
+        }
+      }
     }
   }
+
 
   ###### user configuration of their own password #######################
   callModule(passwordConfig_server, "password_config", dM)

@@ -165,10 +165,6 @@ DailyMeasureServer <- function(input, output, session) {
     }
   }
 
-  Medicationmodule <- requireNamespace("dMeasureMedication", quietly = TRUE)
-  if (Medicationmodule) {
-    dMMedication <- dMeasureMedication::dMeasureMedication$new(dM)
-  }
   # read config files
 
   ##### Configuration file ######################################################
@@ -621,16 +617,6 @@ DailyMeasureServer <- function(input, output, session) {
         )
       }
     }
-  }
-
-  if (Medicationmodule == TRUE) {
-    sidebarmenu <- c(sidebarmenu, list(dMeasureMedication::shinydashboardmenuItem()))
-    shinytabItems <- c(shinytabItems, dMeasureMedication::dMeasureShinytabItems())
-    # chronic disease management table
-    callModule(
-      dMeasureMedication::datatableServer,
-      "medication_dt", dMMedication
-    )
   }
 
   # Conditions

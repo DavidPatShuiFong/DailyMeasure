@@ -136,6 +136,7 @@ vax_datatable <- function(input, output, session, dM) {
           "No appointments in chosen range"
         )
       )
+      shiny::req(dM$clinicians)
 
       vlist <- dM$list_vax(
         lazy = TRUE,

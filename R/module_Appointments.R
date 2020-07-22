@@ -56,6 +56,8 @@ appointments_datatable <- function(input, output, session, dM) {
         "No appointments in selected range"
       )
     )
+    shiny::req(dM$clinicians)
+
     datatable_styled(dM$appointments_filtered_timeR() %>>%
       dplyr::select(
         Patient, AppointmentDate, AppointmentTime,

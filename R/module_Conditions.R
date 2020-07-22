@@ -270,6 +270,7 @@ conditions_postnatal_datatable <- function(input, output, session, dM) {
         # respond to appointments_listR()
         # when clinician or dates is changed
         shiny::req(dM$appointments_listR())
+        shiny::req(dM$clinicians)
 
         today <- Sys.Date()
         search_back <- today - (280 + 30 + input$days_postnatal[2])
@@ -623,6 +624,7 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
   ### create tag-styled datatable (or 'printable' datatable)
   asthma_table <- shiny::reactive({
     shiny::req(!is.null(asthma()))
+    shiny::req(dM$clinicians)
 
     df <- asthma()
 

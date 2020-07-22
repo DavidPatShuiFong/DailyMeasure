@@ -121,6 +121,7 @@ cancerscreen_datatable <- function(input, output, session, dM) {
       shiny::need(dM$appointments_listR(), "No appointments defined"),
       shiny::need(nrow(dM$appointments_listR()) > 0, "No appointments in chosen range")
     )
+    shiny::req(dM$clinicians)
     screenlist <- NULL
     # Bowel cancer
     if ("Bowel" %in% cancerscreen_chosen()) {

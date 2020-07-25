@@ -347,6 +347,72 @@ DailyMeasureServer <- function(input, output, session) {
     }
   )
 
+  output$contact <- shiny::renderUI({
+    shiny::tagList(
+      shiny::div(
+        id = "contact_type-wrapper",
+        shiny::wellPanel(
+          shinyWidgets::pickerInput(
+            inputId = "contact_type",
+            label = "Contact types",
+            choices = c("Appointments", "Visits", "Services"),
+            selected = dM$contact_type,
+            options = list(
+              style = "btn-primary",
+              `actions-box` = TRUE
+            ),
+            multiple = TRUE
+          ),
+          shinyWidgets::sliderTextInput(
+            inputId = "min_contact",
+            label = "Minimum number of contacts",
+            choices = c(1:10),
+            grid = TRUE,
+            selected = dM$contact_min
+          )
+        )
+      ),
+      shiny::div(
+        id = "appointment_visit-wrapper",
+        shiny::wellPanel(
+          shinyWidgets::pickerInput(
+            inputId = "appointment_status",
+            label = "Appointment status shown",
+            choices = c(
+              "Booked", "Waiting", "With doctor",
+              "At billing", "Invoiced", "Completed"
+            ),
+            selected = dM$appointment_status,
+            # all 'completed' choices initially selected
+            options = list(
+              style = "btn-primary",
+              `actions-box` = TRUE
+            ),
+            multiple = TRUE
+          ),
+          shinyWidgets::pickerInput(
+            inputId = "visit_type",
+            label = "Visit types shown",
+            choices = c(
+              "Surgery", "Home", "Non Visit", "Hospital",
+              "RACF", "Telephone",
+              "SMS", "Email", "Locum Service", "Out of Office",
+              "Other", "Hostel",
+              "Telehealth"
+            ),
+            selected = dM$visit_type,
+            # consult choices initially selected
+            options = list(
+              style = "btn-primary",
+              `actions-box` = TRUE
+            ),
+            multiple = TRUE
+          )
+        )
+      )
+    )
+  })
+
   output$last_visit <- shiny::renderUI({
     shiny::tagList(
       shiny::h5("Most recent contact"),
@@ -359,6 +425,7 @@ DailyMeasureServer <- function(input, output, session) {
       shiny::dateInput(
         inputId = "max_date",
         label = "To:", format = "D dd/M/yyyy",
+        min = Sys.Date() - 6000,
         max = Sys.Date() + 180,
         value = Sys.Date()
       ),
@@ -377,7 +444,7 @@ DailyMeasureServer <- function(input, output, session) {
   shiny::observeEvent(
     c(input$min_date,
       input$max_date),
-    ignoreInit = FALSE,
+    ignoreInit = TRUE,
     ignoreNULL = FALSE,
     {
       shiny::req(input$min_date, input$max_date)

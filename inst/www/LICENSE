@@ -141,10 +141,8 @@ other licensing details in LICENSE.shinyWidgets
 shinyFiles
 https://cran.r-project.org/web/packages/shinyFiles/
 
-shinycssloaders
-https://github.com/Pill-GZ/shinycssloaders
-Gao Zheng's fork from
-https://cran.r-project.org/web/packages/shinycssloaders/
+shinybusy
+https://github.com/dreamRs/shinybusy
 
 pool (optional package, referenced through dbConnection which is MIT licensed)
 https://cran.r-project.org/web/packages/pool/

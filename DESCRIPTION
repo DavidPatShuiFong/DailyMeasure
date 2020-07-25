@@ -24,7 +24,7 @@ Imports:
     shinyWidgets (>= 0.5.2),
     shinytoastr,
     shinyFiles (>= 0.7.2),
-    shinycssloaders,
+    shinybusy,
     configr,
     DT (>= 0.5.3),
     DTedit,
@@ -49,9 +49,6 @@ Suggests:
     knitr,
     rmarkdown
 ImportComments:
- shinycssloaders - loading animations
-  custom version based on Gao Zheng's 'transparent' background version
-  installed with devtools::install_github('DavidPatShuiFong/shinycssloaders')
  DTedit - datatable edit wrapper.
   substantially based on jbryer/DTedit
   install with devtools::install_github('DavidPatShuiFong/DTedit')

@@ -30,7 +30,8 @@ cancerscreen_datatableUI <- function(id) {
           width = "20em"
         )
       ),
-      shiny::column(2,
+      shiny::column(
+        2,
         offset = 3,
         shinyWidgets::checkboxGroupButtons(
           inputId = ns("include_uptodate"),
@@ -44,17 +45,13 @@ cancerscreen_datatableUI <- function(id) {
           )
         )
       ),
-      shiny::column(2,
+      shiny::column(
+        2,
         offset = 0, # note that total 'column' width = 12
         shiny::uiOutput(ns("cancerscreen_choice"))
       )
     ),
-    shinycssloaders::withSpinner(
-      DT::DTOutput(ns("cancerscreen_table")),
-      type = 8,
-      hide.element.when.recalculating = FALSE,
-      proxy.height = NULL
-    )
+    DT::DTOutput(ns("cancerscreen_table"))
   )
 }
 
@@ -200,23 +197,23 @@ cancerscreen_datatable <- function(input, output, session, dM) {
     if (input$printcopy_view == TRUE) {
       # printable/copyable view
       datatable_styled(cancerscreen_list() %>>%
-        dplyr::select(c(
-          "Patient", "AppointmentDate", "AppointmentTime",
-          "Provider", "DOB", "Age", "screentag_print"
-        )),
-      colnames = c("Screening" = "screentag_print")
+                         dplyr::select(c(
+                           "Patient", "AppointmentDate", "AppointmentTime",
+                           "Provider", "DOB", "Age", "screentag_print"
+                         )),
+                       colnames = c("Screening" = "screentag_print")
       )
     } else {
       # fomantic/semantic tag view
       datatable_styled(cancerscreen_list() %>>%
-        dplyr::select(c(
-          "Patient", "AppointmentDate", "AppointmentTime",
-          "Provider", "DOB", "Age", "screentag"
-        )),
-      escape = c(7),
-      copyHtml5 = NULL, printButton = NULL,
-      downloadButton = NULL, # no copy/print buttons
-      colnames = c("Screening" = "screentag")
+                         dplyr::select(c(
+                           "Patient", "AppointmentDate", "AppointmentTime",
+                           "Provider", "DOB", "Age", "screentag"
+                         )),
+                       escape = c(7),
+                       copyHtml5 = NULL, printButton = NULL,
+                       downloadButton = NULL, # no copy/print buttons
+                       colnames = c("Screening" = "screentag")
       )
     }
   })

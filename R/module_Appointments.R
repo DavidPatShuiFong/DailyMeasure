@@ -16,12 +16,7 @@ appointments_datatableUI <- function(id) {
 
   shiny::tagList(
     # print-view only (no semantic/fomantic buttons)
-    shinycssloaders::withSpinner(
-      DT::DTOutput(ns("appointments_table")),
-      type = 8,
-      hide.element.when.recalculating = FALSE,
-      proxy.height = NULL
-    )
+    DT::DTOutput(ns("appointments_table"))
   )
 }
 
@@ -59,10 +54,10 @@ appointments_datatable <- function(input, output, session, dM) {
     shiny::req(dM$clinicians)
 
     datatable_styled(dM$appointments_filtered_timeR() %>>%
-      dplyr::select(
-        Patient, AppointmentDate, AppointmentTime,
-        Provider, Status
-      ))
+                       dplyr::select(
+                         Patient, AppointmentDate, AppointmentTime,
+                         Provider, Status
+                       ))
   })
 
   output$appointments_table <- DT::renderDT({

@@ -60,7 +60,8 @@ conditions_asthma_datatableUI <- function(id) {
           width = "20em"
         )
       ),
-      shiny::column(2,
+      shiny::column(
+        2,
         offset = 2,
         shinyWidgets::pickerInput(
           inputId = ns("appointment_contact_view"),
@@ -68,7 +69,8 @@ conditions_asthma_datatableUI <- function(id) {
           choicesOpt = list(icon = c("fa fa-calendar-alt", "fa fa-handshake"))
         )
       ),
-      shiny::column(2,
+      shiny::column(
+        2,
         offset = 0,
         shinyWidgets::checkboxGroupButtons(
           inputId = ns("include_uptodate"),
@@ -83,12 +85,7 @@ conditions_asthma_datatableUI <- function(id) {
         )
       )
     ),
-    shinycssloaders::withSpinner(
-      DT::DTOutput(ns("asthma_table")),
-      type = 8,
-      hide.element.when.recalculating = FALSE,
-      proxy.height = NULL
-    )
+    DT::DTOutput(ns("asthma_table"))
   )
 }
 
@@ -154,25 +151,25 @@ conditions_postnatal_datatableUI <- function(id) {
         )
       ),
       shiny::column(2,
-        offset = 4,
-        shinyWidgets::dropdown(
-          inputId = ns("include_edc_dropdown"),
-          icon = icon("birthday-cake"),
-          label = "Include EDC",
-          shinyWidgets::switchInput(
-            inputId = ns("include_edc"),
-            value = TRUE,
-            label = paste(" Include EDC"),
-            labelWidth = "10em",
-            width = "16em"
-          ),
-          "Pregnancies which have a defined end-date are post-natal (by definition).",
-          shiny::br(), shiny::br(),
-          "If 'Include EDC' is", shiny::HTML("<strong>ON</strong>"),
-          "pregnancies which have no defined end-date ('Not recorded' outcome)",
-          "are also defined as post-natal after the defined",
-          "'estimated date of confinement (EDC)'"
-        )
+                    offset = 4,
+                    shinyWidgets::dropdown(
+                      inputId = ns("include_edc_dropdown"),
+                      icon = icon("birthday-cake"),
+                      label = "Include EDC",
+                      shinyWidgets::switchInput(
+                        inputId = ns("include_edc"),
+                        value = TRUE,
+                        label = paste(" Include EDC"),
+                        labelWidth = "10em",
+                        width = "16em"
+                      ),
+                      "Pregnancies which have a defined end-date are post-natal (by definition).",
+                      shiny::br(), shiny::br(),
+                      "If 'Include EDC' is", shiny::HTML("<strong>ON</strong>"),
+                      "pregnancies which have no defined end-date ('Not recorded' outcome)",
+                      "are also defined as post-natal after the defined",
+                      "'estimated date of confinement (EDC)'"
+                    )
       ),
       shiny::column(
         2,
@@ -210,12 +207,7 @@ conditions_postnatal_datatableUI <- function(id) {
         )
       )
     ),
-    shinycssloaders::withSpinner(
-      DT::DTOutput(ns("postnatal_table")),
-      type = 8,
-      hide.element.when.recalculating = FALSE,
-      proxy.height = NULL
-    )
+    DT::DTOutput(ns("postnatal_table"))
   )
 }
 
@@ -305,7 +297,7 @@ conditions_postnatal_datatable <- function(input, output, session, dM) {
         # outside the factor function
         outcomes <- as.integer(
           factor(outcomes_string,
-            levels = pregnancy_outcome_levels
+                 levels = pregnancy_outcome_levels
           )
         ) - 1
         # converts the outcomes from a vector of strings to
@@ -367,15 +359,15 @@ conditions_postnatal_datatable <- function(input, output, session, dM) {
       dplyr::select(Name, DOB, RecordNo, EDCbyDate, EDCbyScan, EndDate, Outcome, AppointmentDate, AppointmentTime, Status, Provider)
 
     datatable_styled(d,
-      extensions = c("Buttons", "Scroller"),
-      scrollX = TRUE
+                     extensions = c("Buttons", "Scroller"),
+                     scrollX = TRUE
     ) # don't collapse columns
   })
 
   output$postnatal_table <- DT::renderDT({
     postnatal_table()
   },
-    server = TRUE
+  server = TRUE
   )
 }
 
@@ -468,26 +460,26 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
       }
 
       fluvaxList <- dM$influenzaVax_obs(copdID,
-        date_from = ifelse(ignoreOld,
-          NA,
-          as.Date(-Inf, origin = "1970-01-01")
-        ),
-        # if ignoreOld, then influenza_vax will (given NA)
-        # calculate date_from as fifteen months before date_to
-        date_to = date_to
+                                        date_from = ifelse(ignoreOld,
+                                                           NA,
+                                                           as.Date(-Inf, origin = "1970-01-01")
+                                        ),
+                                        # if ignoreOld, then influenza_vax will (given NA)
+                                        # calculate date_from as fifteen months before date_to
+                                        date_to = date_to
       )
       # returns InternalID, FluVaxName, FluvaxDate
 
       qim_asthma_list <- asthma_list %>>%
         dplyr::left_join(fluvaxList,
-          by = "InternalID",
-          copy = TRUE
+                         by = "InternalID",
+                         copy = TRUE
         ) %>>%
         dplyr::left_join(dM$db$patients %>>%
-            dplyr::filter(InternalID %in% asthmaID) %>>%
-            dplyr::select(InternalID, DOB, Sex, RecordNo),
-          by = "InternalID",
-          copy = TRUE
+                           dplyr::filter(InternalID %in% asthmaID) %>>%
+                           dplyr::select(InternalID, DOB, Sex, RecordNo),
+                         by = "InternalID",
+                         copy = TRUE
         ) %>>%
         dplyr::select(
           Patient, InternalID, RecordNo, Sex,
@@ -567,15 +559,15 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
       dplyr::select(Name, DOB, RecordNo, EDCbyDate, EDCbyScan, EndDate, Outcome, AppointmentDate, AppointmentTime, Status, Provider)
 
     datatable_styled(d,
-      extensions = c("Buttons", "Scroller"),
-      scrollX = TRUE
+                     extensions = c("Buttons", "Scroller"),
+                     scrollX = TRUE
     ) # don't collapse columns
   })
 
   output$postnatal_table <- DT::renderDT({
     postnatal_table()
   },
-    server = TRUE
+  server = TRUE
   )
 }
 
@@ -641,11 +633,11 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
 
     df <- df %>>%
       dplyr::left_join(dM$db$preventive_health %>>%
-        # those who have been removed from the reminder system for influenza
-        dplyr::filter(ITEMID == 1) %>>%
-        dplyr::rename(DeclinedFluvax = ITEMID),
-      by = "InternalID",
-      copy = TRUE
+                         # those who have been removed from the reminder system for influenza
+                         dplyr::filter(ITEMID == 1) %>>%
+                         dplyr::rename(DeclinedFluvax = ITEMID),
+                       by = "InternalID",
+                       copy = TRUE
       ) %>>%
       dplyr::mutate(
         FluvaxStatus =
@@ -693,11 +685,11 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
                 FluvaxStatus == "Never given" ~ " (Never given)",
                 # no previous vax, not declined
                 FluvaxStatus == "Removed" ~
-                " (Removed from influenza immunization reminders)",
+                  " (Removed from influenza immunization reminders)",
                 FluvaxStatus == "Up-to-date" ~
-                paste0(" (Up-to-date : ", FluvaxDate, ") "),
+                  paste0(" (Up-to-date : ", FluvaxDate, ") "),
                 FluvaxStatus == "Old" ~
-                paste0(" (DUE : ", FluvaxDate, ") ")
+                  paste0(" (DUE : ", FluvaxDate, ") ")
               )
             ),
           plantag_print =
@@ -736,11 +728,11 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
                     FluvaxStatus == "Never given" ~ "Never given",
                     # no previous vax, not declined
                     FluvaxStatus == "Removed" ~
-                    "Removed from influenza immunization reminders",
+                      "Removed from influenza immunization reminders",
                     FluvaxStatus == "Up-to-date" ~
-                    paste0(" Up-to-date : ", FluvaxDate),
+                      paste0(" Up-to-date : ", FluvaxDate),
                     FluvaxStatus == "Old" ~
-                    paste0(" DUE : ", FluvaxDate) # old
+                      paste0(" DUE : ", FluvaxDate) # old
                   ),
                   "</h4>"
                 )
@@ -776,25 +768,25 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
 
     df <- df %>>%
       dplyr::select(-c(FluvaxDate, FluvaxName, PlanDate,
-        FluvaxStatus, AsthmaPlanStatus))
+                       FluvaxStatus, AsthmaPlanStatus))
     # flu vax and asthma plan information now incorporated
     #  into vaxtag/vaxtag_print and plantag, plantag_print
 
     if (input$printcopy_view == TRUE) {
       datatable_styled(df,
-        extensions = c("Buttons", "Scroller"),
-        scrollX = TRUE,
-        colnames = c("Vaccination" = "vaxtag_print",
-          "Asthma Plan" = "plantag_print")
+                       extensions = c("Buttons", "Scroller"),
+                       scrollX = TRUE,
+                       colnames = c("Vaccination" = "vaxtag_print",
+                                    "Asthma Plan" = "plantag_print")
       ) # don't collapse columns
     } else {
       datatable_styled(df,
-        copyHtml5 = NULL, printButton = NULL,
-        downloadButton = NULL, # no copy/print buttons
-        escape = which(colnames(df) %in% c("vaxtag", "plantag")) - 1,
-        # escape the 'tag' columns so that HTML is interpreted
-        colnames = c("Vaccination" = "vaxtag",
-          "Asthma Plan" = "plantag")
+                       copyHtml5 = NULL, printButton = NULL,
+                       downloadButton = NULL, # no copy/print buttons
+                       escape = which(colnames(df) %in% c("vaxtag", "plantag")) - 1,
+                       # escape the 'tag' columns so that HTML is interpreted
+                       colnames = c("Vaccination" = "vaxtag",
+                                    "Asthma Plan" = "plantag")
       )
     }
   })

@@ -3,12 +3,23 @@
 front-end to DailyMeasure package
 
 # Version 2.0.0
-19th July 2020
+25th July 2020
+
+## New
+
+* 'auto-load' of `dMeasure*` modules
+  + this potentially allows auto-loading of user-written custom modules
 
 ## Change
 
-* 'auto-load' of `dMeasure*` modules
+* move from `shinycssloaders` to `shinybusy`
 
+## Bugfix
+
+* most recent contact picker
+  + limit the minimum of the 'maximum' date of recent contact to
+    be the same as the 'minimum' date
+  + no longer trigger a refresh (set `IgnoreInit = TRUE`) on first sight
 
 # Version 1.6.4
 16th July 2020

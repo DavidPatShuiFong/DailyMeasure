@@ -71,12 +71,7 @@ admin_dataQuality_datatableUI <- function(id) {
         shiny::uiOutput(ns("dataQuality_choice"))
       )
     ),
-    shinycssloaders::withSpinner(
-      DT::DTOutput(ns("dataQuality_table")),
-      type = 8,
-      hide.element.when.recalculating = FALSE,
-      proxy.height = NULL
-    )
+    DT::DTOutput(ns("dataQuality_table"))
   )
 }
 
@@ -117,12 +112,7 @@ admin_result_datatableUI <- function(id) {
         shiny::uiOutput(ns("result_settings"))
       )
     ),
-    shinycssloaders::withSpinner(
-      DT::DTOutput(ns("result_table")),
-      type = 8,
-      hide.element.when.recalculating = FALSE,
-      proxy.height = NULL
-    )
+    DT::DTOutput(ns("result_table"))
   )
 }
 
@@ -141,12 +131,7 @@ admin_document_datatableUI <- function(id) {
         shiny::uiOutput(ns("document_search_choice"))
       )
     ),
-    shinycssloaders::withSpinner(
-      DT::DTOutput(ns("documentSearch_table")),
-      type = 8,
-      hide.element.when.recalculating = FALSE,
-      proxy.height = NULL
-    )
+    DT::DTOutput(ns("documentSearch_table"))
   )
 }
 
@@ -161,12 +146,7 @@ admin_pcehr_datatableUI <- function(id) {
         shiny::uiOutput(ns("pcehr_choice"))
       )
     ),
-    shinycssloaders::withSpinner(
-      DT::DTOutput(ns("pcehr_table")),
-      type = 8,
-      hide.element.when.recalculating = FALSE,
-      proxy.height = NULL
-    )
+    DT::DTOutput(ns("pcehr_table"))
   )
 }
 

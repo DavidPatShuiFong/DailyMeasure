@@ -11,7 +11,8 @@ An object of class \code{character} of length 1.
 semantic_popupJS
 }
 \description{
-necessary for semantic/fomantic JS popups. included directly in datatables options
+necessary for semantic/fomantic JS popups. included directly in
+  datatables options
 }
 \details{
 provide padding for export/print buttons

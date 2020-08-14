@@ -47,7 +47,9 @@ Suggests:
     dMeasureMedication,
     dMeasureCustom,
     knitr,
-    rmarkdown
+    rmarkdown,
+    highcharter,
+    devtools
 ImportComments:
  DTedit - datatable edit wrapper.
   substantially based on jbryer/DTedit

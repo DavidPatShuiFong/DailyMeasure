@@ -317,8 +317,8 @@
       "RemoteRepo": "dMeasureQIM",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "1a966263fe6ff2ae5cf4465bffd71dadc8da32cb",
-      "Hash": "a8f1e9568bac93b6864294d6105bd00a"
+      "RemoteSha": "268fc6fbd343e139039034debd6c20baedfa5a68",
+      "Hash": "c461c62eb1b003103a89d8098fa66c6c"
     },
     "data.table": {
       "Package": "data.table",

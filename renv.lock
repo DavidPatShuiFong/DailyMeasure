@@ -244,9 +244,14 @@
     "curl": {
       "Package": "curl",
       "Version": "4.2",
-      "Source": "Repository",
-      "Repository": null,
-      "Hash": "ec0bde6776afca14b9ec1e3e0735a846"
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "jeroen",
+      "RemoteRepo": "curl",
+      "RemoteRef": "v4.2",
+      "RemoteSha": "e2708bd40b4abc1414f335f3b341f4bfde15f653",
+      "Hash": "ba2ae49ca5d65be0781f0993f3e9bb62"
     },
     "dMeasure": {
       "Package": "dMeasure",
@@ -490,8 +495,8 @@
       "Package": "glue",
       "Version": "1.4.0.9000",
       "Source": "GitHub",
-      "Remotes": "r-lib/vctrs",
       "RemoteType": "github",
+      "Remotes": "r-lib/vctrs",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "glue",
       "RemoteUsername": "tidyverse",

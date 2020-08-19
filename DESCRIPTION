@@ -1,7 +1,7 @@
 Package: DailyMeasure
 Type: Package
 Title: Case-finds from patient appointment list
-Version: 1.6.2
+Version: 2.0.0
 Author: David Fong
 Maintainer: David Fong <vkelim@bigpond.com>
 Description: R Shiny application looking through Electronic Medical Record's (EMR)
@@ -17,14 +17,14 @@ Imports:
     dplyr,
     dbplyr,
     tidyr,
-    shiny,
+    shiny (>= 1.5.0),
     shinyjs,
     shinydashboard,
     shinydashboardPlus (>= 0.7.0),
-    shinyWidgets,
+    shinyWidgets (>= 0.5.2),
     shinytoastr,
     shinyFiles (>= 0.7.2),
-    shinycssloaders,
+    shinybusy,
     configr,
     DT (>= 0.5.3),
     DTedit,
@@ -44,12 +44,13 @@ Suggests:
     dMeasureQIM,
     dMeasureBillings,
     dMeasureCDM,
+    dMeasureMedication,
+    dMeasureCustom,
     knitr,
-    rmarkdown
+    rmarkdown,
+    highcharter,
+    devtools
 ImportComments:
- shinycssloaders - loading animations
-  custom version based on Gao Zheng's 'transparent' background version
-  installed with devtools::install_github('DavidPatShuiFong/shinycssloaders')
  DTedit - datatable edit wrapper.
   substantially based on jbryer/DTedit
   install with devtools::install_github('DavidPatShuiFong/DTedit')
@@ -75,6 +76,5 @@ Collate:
     'module_Administration.R'
     'module_Conditions.R'
     'module_Configuration_logs.R'
-    'module_PIP_QualityImprovement.R'
     'zzz.R'
 VignetteBuilder: knitr

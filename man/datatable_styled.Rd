@@ -47,7 +47,8 @@ datatable_styled(
 
 \item{drawCallback}{by default, execute JS code to enable semantic popups}
 
-\item{paging}{'pages' for long table. default is FALSE, otherwise hard to 'print'/copy a whole table}
+\item{paging}{'pages' for long table. default is FALSE, otherwise
+hard to 'print'/copy a whole table}
 
 \item{scrollY}{percentage of window height}
 
@@ -64,6 +65,6 @@ DT datatable object
 }
 \description{
 by default, have export/print buttons, only render what is visible.
-javascript code to attach labels to semantic/fomantic JS popups.
+javascript code to attach labels to semantic/fomantic JS pop-ups.
 no pagination.
 }

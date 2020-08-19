@@ -29,7 +29,8 @@ vax_datatableUI <- function(id) {
           width = "20em"
         )
       ),
-      shiny::column(2,
+      shiny::column(
+        2,
         offset = 2,
         shinyWidgets::pickerInput(
           inputId = ns("appointment_contact_view"),
@@ -37,7 +38,8 @@ vax_datatableUI <- function(id) {
           choicesOpt = list(icon = c("fa fa-calendar-alt", "fa fa-handshake"))
         )
       ),
-      shiny::column(2,
+      shiny::column(
+        2,
         offset = 0,
         shinyWidgets::checkboxGroupButtons(
           inputId = ns("include_uptodate"),
@@ -51,17 +53,13 @@ vax_datatableUI <- function(id) {
           )
         )
       ),
-      shiny::column(2,
+      shiny::column(
+        2,
         offset = 0, # note that total 'column' width = 12
         shiny::uiOutput(ns("vax_item_choice"))
       )
     ),
-    shinycssloaders::withSpinner(
-      DT::DTOutput(ns("vax_table")),
-      type = 8,
-      hide.element.when.recalculating = FALSE,
-      proxy.height = NULL
-    )
+    DT::DTOutput(ns("vax_table"))
   )
 }
 
@@ -79,50 +77,45 @@ vax_datatableUI <- function(id) {
 vax_datatable <- function(input, output, session, dM) {
   ns <- session$ns
 
-  output$vax_item_choice <- shiny::renderUI({
-    shinyWidgets::dropdown(
-      inputid = "choice_dropdown",
-      shiny::actionButton(
-        inputId = ns("view_vaxSettings"),
-        label = "Vaccination items shown"
-      ),
-      icon = icon("gear"),
-      label = "Vaccination settings"
-    )
-  })
   vax_chosen <- shiny::reactiveVal(
     dM$vaccine_choices
   )
+  output$vax_item_choice <- shiny::renderUI({
+    shinyWidgets::dropMenu(
+      shiny::actionButton(
+        inputId = ns("choice_dropdown"),
+        label = "Vaccination settings",
+        icon = shiny::icon("gear")
+      ),
+      shiny::tags$div(
+        shinyWidgets::checkboxGroupButtons(
+          label = "Vaccination items shown",
+          inputId = ns("vax_chosen"),
+          choices = dM$vaccine_choices,
+          selected = dM$vaccine_choices,
+          # all choices initially selected
+          status = "primary",
+          checkIcon = list(yes = icon("ok", lib = "glyphicon"))
+        ),
+        shiny::br(),
+        shiny::em("Close to confirm")
+      ),
+      placement = "bottom-end"
+    )
+  })
   shiny::observeEvent(
-    input$view_vaxSettings,
+    input$choice_dropdown_dropmenu,
     ignoreInit = TRUE, {
-      shiny::showModal(
-        shiny::modalDialog(
-          title = "Vaccination items shown",
-          shinyWidgets::checkboxGroupButtons(
-            inputId = ns("vax_chosen"), label = "Vaccination items shown",
-            choices = dM$vaccine_choices,
-            selected = dM$vaccine_choices,
-            # all choices initially selected
-            status = "primary",
-            checkIcon = list(yes = icon("ok", lib = "glyphicon"))
-          ),
-          easyClose = FALSE,
-          footer = shiny::tagList(
-            shiny::modalButton("Cancel"),
-            shiny::actionButton(ns("vaxChosen_ok"), "OK")
-          )
+      # this is triggered when shinyWidgets::dropMenu is opened/closed
+      # tag is derived from the first tag in dropMenu, adding '_dropmenu'
+      if (!input$choice_dropdown_dropmenu) {
+        # only if closing the 'dropmenu' modal
+        # unfortunately, is also triggered during Init (despite the ignoreInit)
+        vax_chosen(input$vax_chosen)
+      }
+    }
+  )
 
-        )
-      )
-    }
-  )
-  shiny::observeEvent(
-    input$vaxChosen_ok, {
-      vax_chosen(input$vax_chosen)
-      shiny::removeModal()
-    }
-  )
   vax_list <- shiny::eventReactive(
     c(
       dM$appointments_listR(),
@@ -141,6 +134,7 @@ vax_datatable <- function(input, output, session, dM) {
           "No appointments in chosen range"
         )
       )
+      shiny::req(dM$clinicians)
 
       vlist <- dM$list_vax(
         lazy = TRUE,
@@ -160,23 +154,23 @@ vax_datatable <- function(input, output, session, dM) {
     if (input$printcopy_view == TRUE) {
       # printable/copyable view
       datatable_styled(vax_list() %>>%
-        dplyr::select(
-          Patient, AppointmentDate, AppointmentTime,
-          Provider, DOB, Age, vaxtag_print
-        ),
-      colnames = c("Vaccination" = "vaxtag_print")
+                         dplyr::select(
+                           Patient, AppointmentDate, AppointmentTime,
+                           Provider, DOB, Age, vaxtag_print
+                         ),
+                       colnames = c("Vaccination" = "vaxtag_print")
       )
     } else {
       # fomantic/semantic tag view
       datatable_styled(vax_list() %>>%
-        dplyr::select(
-          Patient, AppointmentDate, AppointmentTime,
-          Provider, DOB, Age, vaxtag
-        ),
-      escape = c(7),
-      copyHtml5 = NULL, printButton = NULL,
-      downloadButton = NULL, # no copy/print buttons
-      colnames = c("Vaccination" = "vaxtag")
+                         dplyr::select(
+                           Patient, AppointmentDate, AppointmentTime,
+                           Provider, DOB, Age, vaxtag
+                         ),
+                       escape = c(7),
+                       copyHtml5 = NULL, printButton = NULL,
+                       downloadButton = NULL, # no copy/print buttons
+                       colnames = c("Vaccination" = "vaxtag")
       )
     }
   })
@@ -223,59 +217,59 @@ vax_datatable <- function(input, output, session, dM) {
     if (input$printcopy_view == TRUE) {
       # printable/copyable view
       datatable_styled(vax_contact_list() %>>%
-        dplyr::left_join(dM$db$patients %>>%
-          dplyr::filter(InternalID %in% intID) %>>%
-          dplyr::select(
-            InternalID, ExternalID, DOB,
-            Firstname, Surname,
-            HomePhone, MobilePhone
-          ) %>>%
-          dplyr::collect() %>>%
-          dplyr::mutate(DOB = as.Date(DOB), Date = Sys.Date()) %>>%
-          # initially Date is a dttm (POSIXt) object,
-          # which makes the subsequent calc_age very slow,
-          # and throws up warnings
-          dplyr::mutate(
-            Age = dMeasure::calc_age(DOB, Date),
-            Patient = paste(Firstname, Surname)
-          ),
-        by = "InternalID"
-        ) %>>%
-        dplyr::select(
-          Patient, ExternalID, DOB, Age,
-          HomePhone, MobilePhone, vaxtag_print
-        ),
-      colnames = c("Vaccination" = "vaxtag_print")
+                         dplyr::left_join(dM$db$patients %>>%
+                                            dplyr::filter(InternalID %in% intID) %>>%
+                                            dplyr::select(
+                                              InternalID, ExternalID, DOB,
+                                              Firstname, Surname,
+                                              HomePhone, MobilePhone
+                                            ) %>>%
+                                            dplyr::collect() %>>%
+                                            dplyr::mutate(DOB = as.Date(DOB), Date = Sys.Date()) %>>%
+                                            # initially Date is a dttm (POSIXt) object,
+                                            # which makes the subsequent calc_age very slow,
+                                            # and throws up warnings
+                                            dplyr::mutate(
+                                              Age = dMeasure::calc_age(DOB, Date),
+                                              Patient = paste(Firstname, Surname)
+                                            ),
+                                          by = "InternalID"
+                         ) %>>%
+                         dplyr::select(
+                           Patient, ExternalID, DOB, Age,
+                           HomePhone, MobilePhone, vaxtag_print
+                         ),
+                       colnames = c("Vaccination" = "vaxtag_print")
       )
     } else {
       # fomantic/semantic tag view
       datatable_styled(vax_contact_list() %>>%
-        dplyr::left_join(dM$db$patients %>>%
-          dplyr::filter(InternalID %in% intID) %>>%
-          dplyr::select(
-            InternalID, ExternalID, DOB,
-            Firstname, Surname,
-            HomePhone, MobilePhone
-          ) %>>%
-          dplyr::collect() %>>%
-          dplyr::mutate(DOB = as.Date(DOB), Date = Sys.Date()) %>>%
-          # initially Date is a dttm (POSIXt) object,
-          # which makes the subsequent calc_age very slow,
-          # and throws up warnings
-          dplyr::mutate(
-            Age = dMeasure::calc_age(DOB, Date),
-            Patient = paste(Firstname, Surname)
-          ),
-        by = "InternalID"
-        ) %>>%
-        dplyr::select(
-          Patient, ExternalID, DOB, Age,
-          HomePhone, MobilePhone, vaxtag
-        ),
-      escape = c(7),
-      copyHtml5 = NULL, printButton = NULL,
-      downloadButton = NULL, # no copy/print buttons
-      colnames = c("Vaccination" = "vaxtag")
+                         dplyr::left_join(dM$db$patients %>>%
+                                            dplyr::filter(InternalID %in% intID) %>>%
+                                            dplyr::select(
+                                              InternalID, ExternalID, DOB,
+                                              Firstname, Surname,
+                                              HomePhone, MobilePhone
+                                            ) %>>%
+                                            dplyr::collect() %>>%
+                                            dplyr::mutate(DOB = as.Date(DOB), Date = Sys.Date()) %>>%
+                                            # initially Date is a dttm (POSIXt) object,
+                                            # which makes the subsequent calc_age very slow,
+                                            # and throws up warnings
+                                            dplyr::mutate(
+                                              Age = dMeasure::calc_age(DOB, Date),
+                                              Patient = paste(Firstname, Surname)
+                                            ),
+                                          by = "InternalID"
+                         ) %>>%
+                         dplyr::select(
+                           Patient, ExternalID, DOB, Age,
+                           HomePhone, MobilePhone, vaxtag
+                         ),
+                       escape = c(7),
+                       copyHtml5 = NULL, printButton = NULL,
+                       downloadButton = NULL, # no copy/print buttons
+                       colnames = c("Vaccination" = "vaxtag")
       )
     }
   })

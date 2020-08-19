@@ -2,6 +2,53 @@
 
 front-end to DailyMeasure package
 
+# Version 2.0.0
+19th August 2020
+
+## New
+
+* 'auto-load' of `dMeasure*` modules
+  + this potentially allows auto-loading of user-written custom modules
+
+## Change
+
+* move from `shinycssloaders` to `shinybusy`
+
+## Bugfix
+
+* most recent contact picker
+  + limit the minimum of the 'maximum' date of recent contact to
+    be the same as the 'minimum' date
+  + no longer trigger a refresh (set `IgnoreInit = TRUE`) on first sight
+
+# Version 1.6.4
+16th July 2020
+
+## New
+
+* myHealth (PCEHR) document display
+
+## Change
+
+* dropdown no longer open a a formal shiny modal. will change settings when closed.
+  + use `shinyWidgets::dropMenu` instead of `shinyWidgets::dropdown` where possible
+* move web UI of `dMeasureQIM` to `dMeasureQIM`
+
+# Version 1.6.3
+12th July 2020
+
+## New
+
+* Search for documents on basis of text in Category, Subject, Detail or Comment
+  + in `Administration` section
+  
+## Change
+
+* change in date picker restricting dates (`date_b` cannot be less than `date_a`) and 
+  change in date picker restricting dates (`min_date` cannot be less than `max_date`)
+  + allows typing in of arbitrary dates, according to restriction
+
+
 # Version 1.6.2
 8th July 2020
 

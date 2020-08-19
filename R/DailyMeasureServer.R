@@ -4,7 +4,7 @@
 
 ##### Define server logic #####################################################
 
-sessionCount <- reactiveValues(count = 0) # initially no sessions opened
+sessionCount <- shiny::reactiveValues(count = 0) # initially no sessions opened
 # strangely, doesn't work if not a reactive
 
 #' Shiny app server function
@@ -49,53 +49,164 @@ DailyMeasureServer <- function(input, output, session) {
   # create the dMeasure object
   dM <- dMeasure::dMeasure$new()
 
-  # create dMeasureQIM objects
-  QIMmodule <- requireNamespace("dMeasureQIM", quietly = TRUE)
-  # is module (package) available?
-  if (QIMmodule) {
-    dMQIMrept <- dMeasureQIM::dMeasureQIM$new(dM) # 'report' view of module
-    dMQIMappt <- dMeasureQIM::dMeasureQIM$new(dM) # a second QIM module
-    dMQIMappt$qim_contact <- FALSE # second module uses appointment list, not contact list
-    dMQIMappt$qim_demographicGroup <- c("") # by default, the second module does not show QIM aggregate groups
+  # find out what dMeasure modules are installed,
+  # and if any have an 'integration' function which allows
+  # sem-automated 'auto-loading'
+  dMeasureModulesR6 <- list() # list of R6 objects
+  dMeasureModules <- as.data.frame(installed.packages(), stringsAsFactors = FALSE) %>>%
+    dplyr::filter(grepl("dMeasure", Package)) %>>% # must have 'dMeasure' in part of the name
+    dplyr::filter(sapply(Package, function(x) {
+      # exists does not accept a vector for 'where', so use sapply (which returns a vector)
+      # check if the package contains the 'dMeasureIntegration' function
+      exists("dMeasureIntegration", where = asNamespace(x), mode = "function")
+    })) %>>%
+    dplyr::select(Package) %>>% # just need the package names
+    dplyr::mutate( # now fill in description (Provides/Requires)
+      Provides = sapply(
+        # usually a character vector with a single element
+        # however, it could be a list of character vectors
+        #  for an example, see dMeasureQIM
+        # if there are several elements, the Provides need to align
+        #  with moduleID
+        Package,
+        function(x) {
+          do.call(
+            what = "dMeasureIntegration",
+            envir = asNamespace(x),
+            args = list(information = "Provides")
+          )
+        }
+      ),
+      Requires = sapply(
+        # a single character element (usually 'dMeasure')
+        #  or a vector/list of characters
+        Package,
+        function(x) {
+          do.call(
+            what = "dMeasureIntegration",
+            envir = asNamespace(x),
+            args = list(information = "Requires")
+          )
+        }
+      ),
+      moduleID = sapply(
+        # the ID of modules to create
+        #
+        # this can either return a vector of character
+        #  (possibly a one-element vector)
+        #  in which case the characters are IDs
+        # *or* alternatively a list of lists
+        #  (maybe just one list)
+        #  a list contains $ID (a character vector)
+        #  and $extraArgs (a character vector)
+        #  $extraArgs are passed to the call to
+        #  datatableServer (a call to a module)
+        Package,
+        function(x) {
+          do.call(
+            what = "dMeasureIntegration",
+            envir = asNamespace(x),
+            args = list(information = "moduleID")
+          )
+        }
+      ),
+      configID = sapply(
+        # the ID of modules to create
+        Package,
+        function(x) {
+          do.call(
+            what = "dMeasureIntegration",
+            envir = asNamespace(x),
+            args = list(information = "configID")
+          )
+        }
+      )
+    ) %>>%
+    dplyr::add_row( # add a row for the dMeasure object
+      Package = "dMeasure",
+      Provides = list("dMeasure"),
+      # needs to be list because some packages have two 'provides'
+      Requires = list(NULL)
+    )
+  dMeasureModulesR6[["dMeasure"]] <- dM # this *is* the dM object
+
+  # for any dMeasure modules that have been found
+  # with integration functions, start to 'auto-load'!
+  defined_module <- TRUE
+  while (defined_module) {
+    defined_module <- FALSE # set to TRUE if a 'new' module is defined
+    for (i in seq_len(nrow(dMeasureModules))) {
+      for (k in dMeasureModules[[i, "Provides"]]) {
+        # potentially two provides (though usually only one)
+        # for an example of two provides, see dMeasureQIM
+        #  in the case of two calls, will also require two moduleID
+        if (is.null(dMeasureModulesR6[[k]])) {
+          # R6 object not yet defined
+          # initially, only the dMeasure object is defined
+          requires_defined <- TRUE # are all Requires defined?
+          requires_list <- list()
+          for (j in dMeasureModules[[i, "Requires"]]) {
+            if (is.null(dMeasureModulesR6[[j]])) {
+              requires_defined <- FALSE
+              # this requirement is not (yet) defined
+            } else {
+              # this requirement is defined,
+              # add R6object to the 'requires_list'
+              requires_list <- c(
+                requires_list,
+                dMeasureModulesR6[[j]]
+              )
+            }
+          }
+          if (requires_defined) {
+            # all requirements defined
+            f <- eval(
+              parse(text = paste0(dMeasureModules[[i, "Package"]], "$new")),
+              envir = asNamespace(dMeasureModules[[i, "Package"]])
+            ) # from https://github.com/r-lib/R6/issues/83 'do.call for class methods'
+            dMeasureModulesR6[[k]] <-
+              do.call(
+                # create new R6 object
+                what = f,
+                args = requires_list
+              )
+            defined_module <- TRUE
+          }
+        }
+      }
+    }
   }
-  Billingsmodule <- requireNamespace("dMeasureBillings", quietly = TRUE)
-  # is module (package) available?
-  if (Billingsmodule) {
-    dMBillings <- dMeasureBillings::dMeasureBillings$new(dM)
-  }
-  CDMmodule <- requireNamespace("dMeasureCDM", quietly = TRUE)
-  # is module (package) available?
-  if (Billingsmodule & CDMmodule) {
-    # needs both modules!
-    dMCDM <- dMeasureCDM::dMeasureCDM$new(dM, dMBillings)
-  }
-  Custommodule <- requireNamespace("dMeasureCustom", quietly = TRUE)
-  if (Custommodule) {
-    dMCustom <- dMeasureCustom::dMeasureCustom$new(dM)
-  }
-  Medicationmodule <- requireNamespace("dMeasureMedication", quietly = TRUE)
-  if (Medicationmodule) {
-    dMMedication <- dMeasureMedication::dMeasureMedication$new(dM)
-  }
+
   # read config files
 
   ##### Configuration file ######################################################
 
-  shiny::observeEvent(dM$configuration_file_pathR(),
+  shiny::observeEvent(
+    dM$configuration_file_pathR(),
     ignoreNULL = TRUE, {
       dM$open_configuration_db()
       # connects to SQLite configuration database, using either DBI or pool
       # generates the SQLite configuration database if needed
       # and updates old SQLite configuration databases with necessary fields
       dM$read_configuration_db()
-      if (Custommodule &&
-          exists("read_configuration_db",
-                 where = asNamespace("dMeasureCustom"),
-                 mode = "function")
-      ) {
-        # if dMCustom has a read_configuration_db function, then use it
-        dMCustom$read_configuration_db()
+
+      # read dMeasure module specific configuration_db
+      for (i in seq_len(nrow(dMeasureModules))) {
+        if (dMeasureModules[[i, "Package"]] != "dMeasure") {
+          if (
+            exists(
+              "read_configuration_db",
+              where = asNamespace(dMeasureModules[[i, "Package"]]),
+              mode = "function")
+          ) {
+            # if the module has a read_configuration_db function, then use it
+            for (k in dMeasureModules[[i, "Provides"]]) {
+              dMeasureModulesR6[[k]]$read_configuration_db()
+            }
+          }
+        }
       }
+
       # reads server definitions, location definitions, user attributes etc..
       if (dM$config_db$is_open()) {
         newdb <- dM$BPdatabaseChoice_new()
@@ -142,26 +253,27 @@ DailyMeasureServer <- function(input, output, session) {
     ignoreNULL = FALSE,
     ignoreInit = TRUE,
     {
+      shiny::req(input$date1, input$date2) # catch out 'invalid' dates
       tryCatch({
         dM$choose_date(
           date_from = as.Date(input$date1),
           date_to = as.Date(input$date2)
         ) # also update the dMeasure object
       },
-        warning = function(w) {
-          shinytoastr::toastr_warning(
-            message = w$message,
-            position = "bottom-left"
-          )
-        }
+      warning = function(w) {
+        shinytoastr::toastr_warning(
+          message = w$message,
+          position = "bottom-left"
+        )
+      }
       )
     }
   )
 
-  date_today <- shiny::observeEvent(input$update_date_today, {
+  shiny::observeEvent(input$update_date_today, {
     # 'today' button. change date range to today, and click the 'update' button
-    shiny::updateDateInput(session, "date1", value = Sys.Date(), max = Sys.Date())
-    shiny::updateDateInput(session, "date2", value = Sys.Date(), min = Sys.Date())
+    shiny::updateDateInput(session, "date1", value = Sys.Date())
+    shiny::updateDateInput(session, "date2", value = Sys.Date())
     # change date range to today
     shinyjs::click("update_date")
     # and click the 'update' button
@@ -180,13 +292,13 @@ DailyMeasureServer <- function(input, output, session) {
       shiny::dateInput(
         inputId = "date1",
         label = "From:", format = "D dd/M/yyyy",
-        min = Sys.Date() - 6000, max = Sys.Date(),
+        min = Sys.Date() - 9000,
         value = Sys.Date()
       ),
       shiny::dateInput(
         inputId = "date2",
         label = "To:", format = "D dd/M/yyyy",
-        min = Sys.Date(), max = Sys.Date() + 180,
+        max = Sys.Date() + 180,
         value = Sys.Date()
       )
     )
@@ -198,13 +310,17 @@ DailyMeasureServer <- function(input, output, session) {
     ignoreInit = TRUE,
     ignoreNULL = FALSE,
     {
+      shiny::req(input$date1, input$date2)
+      # this event can be provoked during an incomplete date input,
+      # so need to check 'valid' date with `shiny::req`
       shinyjqui::jqui_effect(
         "#update_date_wrapper",
         effect = "bounce",
         options = list(distance = 1)
       )
-      shiny::updateDateInput(session, "date1", max = input$date2)
-      shiny::updateDateInput(session, "date2", min = input$date1)
+      if (input$date1 > input$date2) {
+        shiny::updateDateInput(session, "date1", value = input$date2)
+      }
     })
 
   shiny::observeEvent(
@@ -215,7 +331,6 @@ DailyMeasureServer <- function(input, output, session) {
       # change 'date_from' in response to $date_a
       if (input$date1 != dM$date_a) {
         shiny::updateDateInput(session, "date1", value = dM$date_a)
-        shiny::updateDateInput(session, "date2", min = dM$date_a)
       }
     }
   )
@@ -228,10 +343,75 @@ DailyMeasureServer <- function(input, output, session) {
       # change 'date_to' in response to $date_a
       if (input$date2 != dM$date_b) {
         shiny::updateDateInput(session, "date2", value = dM$date_b)
-        shiny::updateDateInput(session, "date1", max = dM$date_b)
       }
     }
   )
+
+  output$contact <- shiny::renderUI({
+    shiny::tagList(
+      shiny::div(
+        id = "contact_type-wrapper",
+        shiny::wellPanel(
+          shinyWidgets::pickerInput(
+            inputId = "contact_type",
+            label = "Contact types",
+            choices = c("Appointments", "Visits", "Services"),
+            selected = dM$contact_type,
+            options = list(
+              style = "btn-primary",
+              `actions-box` = TRUE
+            ),
+            multiple = TRUE
+          ),
+          shinyWidgets::sliderTextInput(
+            inputId = "min_contact",
+            label = "Minimum number of contacts",
+            choices = c(1:10),
+            grid = TRUE,
+            selected = dM$contact_min
+          )
+        )
+      ),
+      shiny::div(
+        id = "appointment_visit-wrapper",
+        shiny::wellPanel(
+          shinyWidgets::pickerInput(
+            inputId = "appointment_status",
+            label = "Appointment status shown",
+            choices = c(
+              "Booked", "Waiting", "With doctor",
+              "At billing", "Invoiced", "Completed"
+            ),
+            selected = dM$appointment_status,
+            # all 'completed' choices initially selected
+            options = list(
+              style = "btn-primary",
+              `actions-box` = TRUE
+            ),
+            multiple = TRUE
+          ),
+          shinyWidgets::pickerInput(
+            inputId = "visit_type",
+            label = "Visit types shown",
+            choices = c(
+              "Surgery", "Home", "Non Visit", "Hospital",
+              "RACF", "Telephone",
+              "SMS", "Email", "Locum Service", "Out of Office",
+              "Other", "Hostel",
+              "Telehealth"
+            ),
+            selected = dM$visit_type,
+            # consult choices initially selected
+            options = list(
+              style = "btn-primary",
+              `actions-box` = TRUE
+            ),
+            multiple = TRUE
+          )
+        )
+      )
+    )
+  })
 
   output$last_visit <- shiny::renderUI({
     shiny::tagList(
@@ -239,19 +419,21 @@ DailyMeasureServer <- function(input, output, session) {
       shiny::dateInput(
         inputId = "min_date",
         label = "From:", format = "D dd/M/yyyy",
-        min = Sys.Date() - 6000, max = Sys.Date(),
+        min = Sys.Date() - 6000,
         value = Sys.Date() - 6000
       ),
       shiny::dateInput(
         inputId = "max_date",
         label = "To:", format = "D dd/M/yyyy",
-        min = Sys.Date() - 6000, max = Sys.Date() + 180,
+        min = Sys.Date() - 6000,
+        max = Sys.Date() + 180,
         value = Sys.Date()
       ),
       shiny::div(
         id = "update_lastvisit_wrapper",
         # wrapper needed for shinyjqui shake effect
-        shiny::actionButton("update_lastvisit", "Update",
+        shiny::actionButton(
+          "update_lastvisit", "Update",
           shiny::icon("refresh"),
           class = "btn btn-primary"
         )
@@ -262,16 +444,19 @@ DailyMeasureServer <- function(input, output, session) {
   shiny::observeEvent(
     c(input$min_date,
       input$max_date),
-    ignoreInit = FALSE,
+    ignoreInit = TRUE,
     ignoreNULL = FALSE,
     {
+      shiny::req(input$min_date, input$max_date)
       shinyjqui::jqui_effect(
         "#update_lastvisit_wrapper",
         effect = "bounce",
         options = list(distance = 1)
       )
-      shiny::updateDateInput(session, "min_date", max = input$max_date)
-      shiny::updateDateInput(session, "max_date", min = input$min_date)
+      if (input$min_date > input$max_date) {
+        shiny::updateDateInput(session, "min_date", value = input$max_date)
+      }
+
     })
 
   shiny::observeEvent(
@@ -282,7 +467,6 @@ DailyMeasureServer <- function(input, output, session) {
       # change 'min_date' in response to $min_dateR
       if (input$min_date != dM$contact_minDate) {
         shiny::updateDateInput(session, "min_date", value = dM$contact_minDate)
-        shiny::updateDateInput(session, "max_date", min = dM$contact_minDate)
       }
     }
   )
@@ -295,7 +479,6 @@ DailyMeasureServer <- function(input, output, session) {
       # change 'max_date' in response to $max_dateR
       if (input$max_date != dM$contact_maxDate) {
         shiny::updateDateInput(session, "max_date", value = dM$contact_maxDate)
-        shiny::updateDateInput(session, "min_date", max = dM$contact_maxDate)
       }
     }
   )
@@ -306,6 +489,8 @@ DailyMeasureServer <- function(input, output, session) {
     ignoreNULL = FALSE,
     ignoreInit = TRUE,
     {
+      shiny::req(input$min_date, input$max_date)
+
       dM$contact_minDate <- input$min_date
       dM$contact_maxDate <- input$max_date
     }
@@ -372,7 +557,8 @@ DailyMeasureServer <- function(input, output, session) {
   output$clinicianList <- shiny::renderUI({
     choice_list <- clinician_choice_list()
     chosen_list <- input$clinicians # retain previous selections
-    shiny::checkboxGroupInput("clinicians",
+    shiny::checkboxGroupInput(
+      "clinicians",
       label = "Clinician",
       choices = choice_list, selected = chosen_list
     )
@@ -402,12 +588,14 @@ DailyMeasureServer <- function(input, output, session) {
       return(NULL)
     }
     else if (input$toggle_clinician_list %% 2 == 1) {
-      shiny::updateCheckboxGroupInput(session, "clinicians",
+      shiny::updateCheckboxGroupInput(
+        session, "clinicians",
         selected = clinician_choice_list()
       )
       # toggle all clinicians selected
     } else {
-      shiny::updateCheckboxGroupInput(session, "clinicians",
+      shiny::updateCheckboxGroupInput(
+        session, "clinicians",
         selected = character(0)
       )
       # no clinicians selected
@@ -442,31 +630,36 @@ DailyMeasureServer <- function(input, output, session) {
 
   shinytabItems <-
     c(
-      list(shinydashboard::tabItem(
-        tabName = "appointments",
-        fluidRow(column(width = 12, align = "center", h2("Appointments"))),
-        fluidRow(column(width = 12, shiny::div(
-          id = "appointments_datatable_wrapper", # for rintrojs
-          appointments_datatableUI("appointments_dt")
-        )))
-      )),
-      list(shinydashboard::tabItem(
-        tabName = "immunization",
-        fluidRow(column(width = 12, align = "center", h2("Immunization"))),
-        fluidRow(column(width = 12, shiny::div(
-          id = "immunization_datatable_wrapper", # for rintrojs
-          vax_datatableUI("vax_dt")
-        )))
-      )),
-      list(shinydashboard::tabItem(
-        tabName = "cancerscreen",
-        fluidRow(column(width = 12, align = "center", h2("Cancer screening"))),
-        fluidRow(column(width = 12, shiny::div(
-          id = "cancerscreen_datatable_wrapper",
-          cancerscreen_datatableUI("cancerscreen_dt")
-        )))
-      ))
+      list(
+        shinydashboard::tabItem(
+          tabName = "appointments",
+          fluidRow(column(width = 12, align = "center", h2("Appointments"))),
+          fluidRow(column(width = 12, shiny::div(
+            id = "appointments_datatable_wrapper", # for rintrojs
+            appointments_datatableUI("appointments_dt")
+          )))
+        )),
+      list(
+        shinydashboard::tabItem(
+          tabName = "immunization",
+          fluidRow(column(width = 12, align = "center", h2("Immunization"))),
+          fluidRow(column(width = 12, shiny::div(
+            id = "immunization_datatable_wrapper", # for rintrojs
+            vax_datatableUI("vax_dt")
+          )))
+        )),
+      list(
+        shinydashboard::tabItem(
+          tabName = "cancerscreen",
+          fluidRow(column(width = 12, align = "center", h2("Cancer screening"))),
+          fluidRow(column(width = 12, shiny::div(
+            id = "cancerscreen_datatable_wrapper",
+            cancerscreen_datatableUI("cancerscreen_dt")
+          )))
+        ))
     )
+
+  sidebarmenu <- list()
 
   # no PIP Quality Improvement Measure, billings, or CDM tabs, these are inserted dynamically
   # in the server section if the dMeasureQIM module/package is available
@@ -474,108 +667,75 @@ DailyMeasureServer <- function(input, output, session) {
   #####################################################################################
 
   # Immunization functions
-  vax_table_results <- callModule(vax_datatable, "vax_dt", dM)
+  callModule(vax_datatable, "vax_dt", dM)
 
   # Cancer screening
   callModule(cancerscreen_datatable, "cancerscreen_dt", dM)
 
-  if (Billingsmodule == TRUE) {
-    output$BillingsMenu <- shinydashboard::renderMenu({
-      dMeasureBillings::shinydashboardmenuItem()
-    }) # if Billingsmodule is FALSE, then output$BillingsMenu will be left undefined
-    shinytabItems <- c(shinytabItems, dMeasureBillings::dMeasureShinytabItems())
-    # call the module to generate the table
-    billings_table_results <- callModule(
-      dMeasureBillings::datatableServer,
-      "billings_dt", dMBillings
-    )
-  }
+  for (i in seq_len(nrow(dMeasureModules))) {
+    if (dMeasureModules[i, "Package"] != "dMeasure") {
+      sidebarmenu <- c(
+        sidebarmenu,
+        do.call(
+          what = "shinydashboardmenuItem",
+          envir = asNamespace(dMeasureModules[i, "Package"]),
+          args = list()
+        )
+      )
+      shinytabItems <- c(
+        shinytabItems,
+        do.call(
+          what = "dMeasureShinytabItems",
+          envir = asNamespace(dMeasureModules[i, "Package"]),
+          args = list()
+        )
+      )
+      index <- 0
+      for (j in dMeasureModules[[i, "moduleID"]]) {
+        # potentially more than one moduleID, though one is more common
+        # for an example of more than one moduleID, see dMeasureQIM
+        index <- index + 1
+        # the 'Provides' and 'moduleID' lists must align...
 
-  if (CDMmodule == TRUE & Billingsmodule == TRUE) {
-    output$CDMMenu <- shinydashboard::renderMenu({
-      dMeasureCDM::shinydashboardmenuItem()
-    }) # if CDMmodule or Billingsmodule is FALSE, then output$CDMMenu will be left undefined
-    shinytabItems <- c(shinytabItems, dMeasureCDM::dMeasureShinytabItems())
-    # chronic disease management table
-    cdm_table_results <- callModule(
-      dMeasureCDM::datatableServer,
-      "cdm_dt", dMCDM
-    )
-  }
-
-  if (Custommodule == TRUE) {
-    output$CustomMenu <- shinydashboard::renderMenu({
-      dMeasureCustom::shinydashboardmenuItem()
-    })
-    shinytabItems <- c(shinytabItems, dMeasureCustom::dMeasureShinytabItems())
-    # chronic disease management table
-    custom_table_results <- callModule(
-      dMeasureCustom::datatableServer,
-      "custom_dt", dMCustom
-    )
-  }
-  if (Medicationmodule == TRUE) {
-    output$MedicationMenu <- shinydashboard::renderMenu({
-      dMeasureMedication::shinydashboardmenuItem()
-    })
-    shinytabItems <- c(shinytabItems, dMeasureMedication::dMeasureShinytabItems())
-    # chronic disease management table
-    medication_table_results <- callModule(
-      dMeasureMedication::datatableServer,
-      "medication_dt", dMMedication
-    )
+        if (is.character(j)) {
+          # a character string, which will be an ID
+          # there is also only one provided R6 module
+          do.call(
+            what = "datatableServer",
+            envir = asNamespace(dMeasureModules[i, "Package"]),
+            list(
+              id = j,
+              dMeasureModulesR6[[dMeasureModules[[i, "Provides"]][[index]]]]
+            )
+          )
+        } else if (is.list(j)) {
+          # a list, which contains the ID in $id and
+          # extra arguments in $extraArgs
+          #  see example in dMeasureQIM
+          do.call(
+            what = "datatableServer",
+            envir = asNamespace(dMeasureModules[i, "Package"]),
+            append(
+              list(
+                id = j$ID,
+                dMeasureModulesR6[[dMeasureModules[[i, "Provides"]][[index]]]]
+              ),
+              eval(parse(text = paste0("list(", j$extraArgs, ")")))
+              # see https://stackoverflow.com/questions/7836972/
+              #  use-character-string-as-function-argument
+            )
+          )
+        }
+      }
+    }
   }
 
   # Conditions
   callModule(conditions, "conditions_dt", dM)
   # administration and result management tab
-  admin_table_results <- callModule(administration, "admin_dt", dM)
+  callModule(administration, "admin_dt", dM)
   # about
   callModule(about, "about_dt", dM)
-
-  if (QIMmodule == TRUE) {
-    # only if QIM module/package is available
-    output$PIPqimMenu <- shinydashboard::renderMenu({
-      shinydashboard::sidebarMenu(.list = list(
-        shinydashboard::menuItem("PIP Quality Improvement",
-          tabName = "qimRept", icon = shiny::icon("chart-line")
-        ),
-        shinydashboard::menuItem("QIM Appointment",
-          tabName = "qimAppt", icon = shiny::icon("chart-line")
-        )
-      ))
-    })
-    # if QIMmodule is FALSE, then output$PIPqimMenu will be left undefined
-
-    # Practice Incentive Program (PIP) Quality Improvement (QI) measures
-    # add PIP QIM tab items to the tabItem vector
-    shinytabItems <- c(
-      shinytabItems,
-      list(shinydashboard::tabItem(
-        tabName = "qimRept",
-        shiny::fluidRow(column(
-          width = 12, align = "center",
-          h2("Quality Improvement Measure Reporting")
-        )),
-        shiny::fluidRow(column(
-          width = 12,
-          qim_UI("qimRept")
-        ))
-      )),
-      list(shinydashboard::tabItem(
-        tabName = "qimAppt",
-        shiny::fluidRow(column(
-          width = 12, align = "center",
-          h2("Quality Improvement Measure Appointment View")
-        )),
-        shiny::fluidRow(column(width = 12, qim_UI("qimAppt")))
-      ))
-    )
-    qim_results_rept <- callModule(qim, "qimRept", dMQIMrept, contact = TRUE) # 'report' view
-    # Practice Incentive Program (PIP) Quality Improvement (QI) measures
-    # appointment view
-    qim_results_appt <- callModule(qim, "qimAppt", dMQIMappt, contact = FALSE)
-  }
 
   # appointment list
   callModule(appointments_datatable, "appointments_dt", dM)
@@ -625,7 +785,8 @@ DailyMeasureServer <- function(input, output, session) {
         shiny::wellPanel(
           {
             if (.bcdyz.option$demonstration) {
-              shiny::span(shiny::p(),
+              shiny::span(
+                shiny::p(),
                 shiny::strong("Demonstration mode : Configuration file choice disabled"),
                 style = "color:red", shiny::p()
               )
@@ -725,20 +886,26 @@ DailyMeasureServer <- function(input, output, session) {
     )
   )
 
-  if (Custommodule) {
-    if (
-      exists(
-        "dMeasureConfigurationTabPanelItem",
-        where = asNamespace("dMeasureCustom"),
-        mode = "function"
-      )
-    ) {
-      configuration_tabPanels <- append(
-        configuration_tabPanels,
-        list(
-          dMeasureCustom::dMeasureConfigurationTabPanelItem()
+  # add configuration panel from dMeasure module, if available
+  # e.g. dMeasureCustom
+  for (i in seq_len(nrow(dMeasureModules))) {
+    if (dMeasureModules[[i, "Package"]] != "dMeasure") {
+      if (
+        exists(
+          "dMeasureConfigurationTabPanelItem",
+          where = asNamespace(dMeasureModules[[i, "Package"]]),
+          mode = "function")
+      ) {
+        # if the module has dMeasureCofngiruationTabPanelItems, then use it
+        configuration_tabPanels <- append(
+          configuration_tabPanels,
+          do.call(
+            what = "dMeasureConfigurationTabPanelItem",
+            envir = asNamespace(dMeasureModules[[i, "Package"]]),
+            args = list()
+          )
         )
-      )
+      }
     }
   }
 
@@ -752,6 +919,11 @@ DailyMeasureServer <- function(input, output, session) {
       )
     )
 
+  ##### final configuration of sidebarmenu ###########################################
+
+  output$sidebarmenu <- shinydashboard::renderMenu({
+    shinydashboard::sidebarMenu(.list = sidebarmenu)
+  })
 
   ##### final definition of tabItems #################################################
 
@@ -855,14 +1027,24 @@ DailyMeasureServer <- function(input, output, session) {
       dM$open_configuration_db()
       # this will initialize the .sqlite configuration file and open it
       dM$read_configuration_db()
-      if (Custommodule &&
-          exists("read_configuration_db",
-                 where = asNamespace("dMeasureCustom"),
-                 mode = "function")
-      ) {
-        # if dMCustom has a read_configuration_db function, then use it
-        dMCustom$read_configuration_db()
+
+      # read dMeasure module specific configuration_db
+      for (i in seq_len(nrow(dMeasureModules))) {
+        if (dMeasureModules[[i, "Package"]] != "dMeasure") {
+          if (
+            exists(
+              "read_configuration_db",
+              where = asNamespace(dMeasureModules[[i, "Package"]]),
+              mode = "function")
+          ) {
+            # if the module has a read_configuration_db function, then use it
+            for (k in dMeasureModules[[i, "Provides"]] ) {
+              dMeasureModulesR6[[]]$read_configuration_db()
+            }
+          }
+        }
       }
+
       shinytoastr::toastr_warning(
         message = paste(
           "New configuration file created and chosen.",
@@ -889,7 +1071,8 @@ DailyMeasureServer <- function(input, output, session) {
   shiny::observeEvent(c(location_list_change(), dM$location_listR()), {
     # change in location_listR (by GUI editor in locations_data module) prompts
     # change in location list filter (for providers) and location_list_names (for user config)
-    shiny::updateSelectInput(session,
+    shiny::updateSelectInput(
+      session,
       inputId = "location",
       choices = dM$location_listR()
     )
@@ -899,21 +1082,32 @@ DailyMeasureServer <- function(input, output, session) {
 
   ###### custom module configuration ##############################
 
-  if (Custommodule) {
-    if (
-      exists(
-        "dMeasureConfigurationTabPanel",
-        where = asNamespace("dMeasureCustom"),
-        mode = "function"
-      )
-    ) {
-      callModule(
-        dMeasureCustom::dMeasureConfigurationTabPanel,
-        "dMeasureCustom_config_dt",
-        dMCustom
-      )
+  # call configuration panel from dMeasure module, if available
+  # e.g. dMeasureCustom
+  for (i in seq_len(nrow(dMeasureModules))) {
+    if (dMeasureModules[[i, "Package"]] != "dMeasure") {
+      if (
+        exists(
+          "dMeasureConfigurationTabPanel",
+          where = asNamespace(dMeasureModules[[i, "Package"]]),
+          mode = "function"
+        )
+      ) {
+        # if the module has dMeasureConfigurationTabPanel, then call it
+        for (j in dMeasureModules[[i, "configID"]]) {
+          # go through configID vector
+          for (k in dMeasureModules[[i, "Provides"]]) {
+            do.call(
+              what = "dMeasureConfigurationTabPanel",
+              envir = asNamespace(dMeasureModules[i, "Package"]),
+              list(id = j, dMeasureModulesR6[[k]])
+            )
+          }
+        }
+      }
     }
   }
+
 
   ###### user configuration of their own password #######################
   callModule(passwordConfig_server, "password_config", dM)
@@ -967,7 +1161,7 @@ DailyMeasureServer <- function(input, output, session) {
       shiny::need(dM$identified_user(), "No user information")
     )
     if ("RequirePasswords" %in% unlist(dM$UserRestrictions()$Restriction) &
-      dM$authenticated == FALSE & nrow(dM$identified_user()) > 0) {
+        dM$authenticated == FALSE & nrow(dM$identified_user()) > 0) {
       # passwords are required, not yet authenticated
       # and information about users has been read in
       if (nrow(dM$identified_user()) > 0) {
@@ -982,11 +1176,13 @@ DailyMeasureServer <- function(input, output, session) {
                 dM$identified_user()$Fullname, "."
               ),
               shiny::HTML("You need to set a password<br><br>"),
-              shiny::passwordInput("password1",
+              shiny::passwordInput(
+                "password1",
                 label = "Enter Password", value = ""
               ),
               shiny::br(),
-              shiny::passwordInput("password2",
+              shiny::passwordInput(
+                "password2",
                 label = "Confirm Password", value = ""
               )
             ),
@@ -1032,7 +1228,8 @@ DailyMeasureServer <- function(input, output, session) {
 
   shiny::observeEvent(input$confirmNewPassword, {
     if (input$password1 != input$password2) {
-      shinytoastr::toastr_error("Passwords must match",
+      shinytoastr::toastr_error(
+        "Passwords must match",
         closeButton = TRUE
       )
     } else if (nchar(input$password1) < 6) {
@@ -1056,14 +1253,16 @@ DailyMeasureServer <- function(input, output, session) {
       shiny::need(nchar(input$password) > 0, "No password entered")
     )
 
-    if (!tryCatch(dM$user_login(input$password),
+    if (!tryCatch(
+      dM$user_login(input$password),
       error = function(e) {
         return(FALSE)
       }
     )) {
       # dM$user_login returns $authenticated if successful log-in i.e. TRUE
       # otherwise returns an error
-      shinytoastr::toastr_error("Wrong password",
+      shinytoastr::toastr_error(
+        "Wrong password",
         position = "bottom-left",
         closeButton = TRUE
       )
@@ -1088,7 +1287,8 @@ DailyMeasureServer <- function(input, output, session) {
     # above opens the right side-bar
     # see https://stackoverflow.com/questions/
     #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
-    rintrojs::introjs(session,
+    rintrojs::introjs(
+      session,
       options = list(
         steps = steps_overview_df(),
         showStepNumbers = FALSE,
@@ -1103,7 +1303,8 @@ DailyMeasureServer <- function(input, output, session) {
     # above opens the right side-bar
     # see https://stackoverflow.com/questions/
     #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
-    rintrojs::introjs(session,
+    rintrojs::introjs(
+      session,
       options = list(
         steps = steps_appointment_df(),
         showStepNumbers = FALSE,
@@ -1118,7 +1319,8 @@ DailyMeasureServer <- function(input, output, session) {
     # above opens the right side-bar
     # see https://stackoverflow.com/questions/
     #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
-    rintrojs::introjs(session,
+    rintrojs::introjs(
+      session,
       options = list(
         steps = steps_immunization_df(),
         showStepNumbers = FALSE,
@@ -1133,7 +1335,8 @@ DailyMeasureServer <- function(input, output, session) {
     # above opens the right side-bar
     # see https://stackoverflow.com/questions/
     #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
-    rintrojs::introjs(session,
+    rintrojs::introjs(
+      session,
       options = list(
         steps = steps_cancerscreen_df(),
         showStepNumbers = FALSE,
@@ -1148,7 +1351,8 @@ DailyMeasureServer <- function(input, output, session) {
     # above opens the right side-bar
     # see https://stackoverflow.com/questions/
     #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
-    rintrojs::introjs(session,
+    rintrojs::introjs(
+      session,
       options = list(
         steps = dMeasureBillings::steps_introduction_df("#billings_datatable_wrapper"),
         showStepNumbers = FALSE,
@@ -1162,7 +1366,8 @@ DailyMeasureServer <- function(input, output, session) {
     # above opens the right side-bar
     # see https://stackoverflow.com/questions/
     #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
-    rintrojs::introjs(session,
+    rintrojs::introjs(
+      session,
       options = list(
         steps = dMeasureCDM::steps_introduction_df("#cdm_datatable_wrapper"),
         showStepNumbers = FALSE,
@@ -1176,7 +1381,8 @@ DailyMeasureServer <- function(input, output, session) {
     # above opens the right side-bar
     # see https://stackoverflow.com/questions/
     #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
-    rintrojs::introjs(session,
+    rintrojs::introjs(
+      session,
       options = list(
         steps =
           steps_conditions_df(
@@ -1201,7 +1407,8 @@ DailyMeasureServer <- function(input, output, session) {
     # above opens the right side-bar
     # see https://stackoverflow.com/questions/
     #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
-    rintrojs::introjs(session,
+    rintrojs::introjs(
+      session,
       options = list(
         steps =
           dMeasureQIM::steps_introduction_df(
@@ -1232,7 +1439,8 @@ DailyMeasureServer <- function(input, output, session) {
     # above opens the right side-bar
     # see https://stackoverflow.com/questions/
     #  58012484/activate-deactivate-tab-in-the-rightsidebar-of-a-shinydashboardplus-at-click-on
-    rintrojs::introjs(session,
+    rintrojs::introjs(
+      session,
       options = list(
         steps =
           dMeasureQIM::steps_introduction_df(
@@ -1311,37 +1519,12 @@ DailyMeasureServer <- function(input, output, session) {
             margin_bottom = TRUE
           )
         )
-      ),
-      shiny::fluidRow(
-        shinydashboardPlus::dashboardUserItem(
-          width = 6,
-          shinydashboardPlus::descriptionBlock(
-            header = "Billings module",
-            text = paste("v", ifelse(Billingsmodule,
-              as.character(packageVersion("dMeasureBillings")),
-              "None"
-            )),
-            right_border = TRUE,
-            margin_bottom = TRUE
-          )
-        ),
-        shinydashboardPlus::dashboardUserItem(
-          width = 6,
-          shinydashboardPlus::descriptionBlock(
-            header = "CDM module",
-            text = paste("v", ifelse(CDMmodule,
-              as.character(packageVersion("dMeasureCDM")),
-              "None"
-            )),
-            right_border = FALSE,
-            margin_bottom = TRUE
-          )
-        )
       )
     )
   })
 
-  shiny::observeEvent(dM$check_subscription_datechange_trigR(),
+  shiny::observeEvent(
+    dM$check_subscription_datechange_trigR(),
     ignoreInit = TRUE, {
       # warning generated if dates have been changed as
       # the result of subscription check
@@ -1349,8 +1532,8 @@ DailyMeasureServer <- function(input, output, session) {
         dM$clinicians,
         dM$UserFullConfig %>>%
           dplyr::filter(Fullname %in% dM$clinicians &
-            !is.na(LicenseDate) &
-            LicenseDate >= Sys.Date()) %>>%
+                          !is.na(LicenseDate) &
+                          LicenseDate >= Sys.Date()) %>>%
           dplyr::pull(Fullname)
       ), collapse = ", ")
       shinytoastr::toastr_warning(

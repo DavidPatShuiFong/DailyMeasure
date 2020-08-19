@@ -120,43 +120,39 @@ DailyMeasureUI <- function() {
         shinydashboard::sidebarMenu(
           id = "sidebartabs",
           shinydashboard::menuItem("Appointments",
-            tabName = "appointments",
-            icon = shiny::icon("calendar-check")
+                                   tabName = "appointments",
+                                   icon = shiny::icon("calendar-check")
           ),
           shinydashboard::menuItem("Immunization",
-            tabName = "immunization",
-            icon = shiny::icon("syringe")
+                                   tabName = "immunization",
+                                   icon = shiny::icon("syringe")
           ),
           shinydashboard::menuItem("Cancer Screening",
-            tabName = "cancerscreen",
-            icon = icon("x-ray")
+                                   tabName = "cancerscreen",
+                                   icon = icon("x-ray")
           ),
-          shinydashboard::menuItemOutput("BillingsMenu"),
-          shinydashboard::menuItemOutput("CDMMenu"),
-          shinydashboard::menuItemOutput("PIPqimMenu"),
-          shinydashboard::menuItemOutput("CustomMenu"),
-          shinydashboard::menuItemOutput("MedicationMenu"),
+          shinydashboard::sidebarMenuOutput("sidebarmenu"),
           # dynamically created Billings, CDM, PIP quality improvement,
           # Custom, Medication
           # menu items. could be blank!
           # e.g. will be blank unless dMeasureQIM module/package is available
           shinydashboard::menuItem("Conditions",
-            tabName = "conditions",
-            icon = shiny::icon("fingerprint")
+                                   tabName = "conditions",
+                                   icon = shiny::icon("fingerprint")
           ),
           shinydashboard::menuItem("Administration",
-            tabName = "administration",
-            icon = shiny::icon("microscope")
+                                   tabName = "administration",
+                                   icon = shiny::icon("microscope")
           ),
           shinydashboard::menuItem("Configuration",
-            tabName = "configuration",
-            icon = shiny::icon("wrench"),
-            selected = TRUE
-            # this is a dummy entry and will be re-selected in the server
+                                   tabName = "configuration",
+                                   icon = shiny::icon("wrench"),
+                                   selected = TRUE
+                                   # this is a dummy entry and will be re-selected in the server
           ),
           shinydashboard::menuItem("About",
-            tabName = "about",
-            icon = shiny::icon("info")
+                                   tabName = "about",
+                                   icon = shiny::icon("info")
           )
           # menuItem("Test", tabName = "test")
         )
@@ -257,71 +253,7 @@ DailyMeasureUI <- function() {
           shiny::icon("handshake"),
           value = "rightsidebar-contact",
           shiny::br(), shiny::h4("Contact details"), shiny::br(),
-          shiny::div(
-            id = "contact_type-wrapper",
-            shiny::wellPanel(
-              shinyWidgets::pickerInput(
-                inputId = "contact_type",
-                label = "Contact types",
-                choices = c("Appointments", "Visits", "Services"),
-                selected = c("Services"),
-                options = list(
-                  style = "btn-primary",
-                  `actions-box` = TRUE
-                ),
-                multiple = TRUE
-              ),
-              shinyWidgets::sliderTextInput(
-                inputId = "min_contact",
-                label = "Minimum number of contacts",
-                choices = c(1:10),
-                grid = TRUE,
-                selected = 1
-              )
-            )
-          ),
-          shiny::div(
-            id = "appointment_visit-wrapper",
-            shiny::wellPanel(
-              shinyWidgets::pickerInput(
-                inputId = "appointment_status",
-                label = "Appointment status shown",
-                choices = c(
-                  "Booked", "Waiting", "With doctor",
-                  "At billing", "Invoiced", "Completed"
-                ),
-                selected = c("With doctor", "At billing", "Invoiced", "Completed"),
-                # all 'completed' choices initially selected
-                options = list(
-                  style = "btn-primary",
-                  `actions-box` = TRUE
-                ),
-                multiple = TRUE
-              ),
-              shinyWidgets::pickerInput(
-                inputId = "visit_type",
-                label = "Visit types shown",
-                choices = c(
-                  "Surgery", "Home", "Non Visit", "Hospital",
-                  "RACF", "Telephone",
-                  "SMS", "Email", "Locum Service", "Out of Office",
-                  "Other", "Hostel",
-                  "Telehealth"
-                ),
-                selected = c(
-                  "Surgery", "Home", "Hospital",
-                  "RACF", "Locum Service", "Out of Office",
-                  "Hostel", "Telehealth"
-                ),
-                # consult choices initially selected
-                options = list(
-                  style = "btn-primary",
-                  `actions-box` = TRUE
-                ),
-                multiple = TRUE
-              )
-            )
-          ),
+          shiny::uiOutput("contact"),
           shiny::div(
             id = "last_visit-wrapper",
             shiny::wellPanel(
@@ -360,9 +292,10 @@ DailyMeasureUI <- function() {
                       padding-top:7px;
                       }")),
         shiny::tags$style("@import url(https://use.fontawesome.com/releases/v5.12.0/css/all.css);")
-        # currently shiny (up to 1.4.0, uses fontawsome v5.3.1)
+        # currently shiny (up to 1.4.0, uses fontawesome v5.3.1)
         # if no internet access, then some icons will be missing e.g. 'baby'
       ),
+      shinybusy::add_busy_spinner(spin = "flower", color = "#eba434", position = "top-left", margins = c("35%", "50%")),
       shiny::uiOutput("tabItems")
       # tabItems are dynamically generated in the server
       # according to what modules/packages are available

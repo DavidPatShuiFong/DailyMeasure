@@ -315,15 +315,15 @@
     },
     "dMeasureQIM": {
       "Package": "dMeasureQIM",
-      "Version": "0.4.0",
+      "Version": "0.4.1",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "dMeasureQIM",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "37b08fe3262455028c378e9422fd82466392445f",
-      "Hash": "ab41cab41a1ce39205925fc67c4f170e"
+      "RemoteSha": "d16cb6ea0f61233d140b0b6b18eca219e389bed8",
+      "Hash": "1554339552d1a7212c0f975d32173686"
     },
     "data.table": {
       "Package": "data.table",
@@ -495,8 +495,8 @@
       "Package": "glue",
       "Version": "1.4.0.9000",
       "Source": "GitHub",
-      "RemoteType": "github",
       "Remotes": "r-lib/vctrs",
+      "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "glue",
       "RemoteUsername": "tidyverse",

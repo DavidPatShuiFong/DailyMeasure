@@ -255,15 +255,15 @@
     },
     "dMeasure": {
       "Package": "dMeasure",
-      "Version": "0.9.12",
+      "Version": "0.9.13",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "dMeasure",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "01e355dc0aae7169e2bace0f34132996fa64a5b6",
-      "Hash": "2905410739895b5bd276718785ec27af"
+      "RemoteSha": "1014e025e7f3b7444c2074ae74e67cb14ed9afae",
+      "Hash": "9736d7a8d8579e746edecf839bd2198b"
     },
     "dMeasureBillings": {
       "Package": "dMeasureBillings",

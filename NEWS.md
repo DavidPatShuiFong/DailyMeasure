@@ -2,6 +2,14 @@
 
 front-end to DailyMeasure package
 
+# version 2.1.0
+25th October 2020
+
+## Change
+
+* `shinyFeedback` for server choice
+
+
 # Version 2.0.0
 19th August 2020
 

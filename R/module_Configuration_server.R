@@ -274,6 +274,86 @@ servers_datatable <- function(input, output, session, dM) {
       callback.update = servers.update.callback,
       callback.insert = servers.insert.callback,
       callback.delete = servers.delete.callback,
+      inputEvent = list(
+        Name = function(x) {
+          value <- input[[paste0("servers-", x)]]
+          # need to add DTedit (modular) namespace to returned inputId
+          # strangely, this doesn't need to be done for shinyFeedback (!)
+          if (!is.null(value) && value != "") {
+            result_color = "#5cb85c" # success
+            result_icon = shiny::icon("ok", lib = "glyphicon")
+          } else {
+            result_color = "#F89406" # warning
+            result_icon = shiny::icon("warning-sign", lib = "glyphicon")
+          }
+          shinyFeedback::hideFeedback(x) # hide previous feedback
+          shinyFeedback::showFeedback(
+            inputId = x,
+            text = "'Name' needs to be defined",
+            color = result_color,
+            icon = result_icon
+          )
+        },
+        Address = function(x) {
+          value <- input[[paste0("servers-", x)]]
+          # need to add DTedit (modular) namespace to returned inputId
+          # strangely, this doesn't need to be done for shinyFeedback (!)
+          if (!is.null(value) &&
+              substring(value, nchar(value) - nchar("\\bpsinstance") + 1) == "\\bpsinstance") {
+            result_color = "#5cb85c" # success
+            result_icon = shiny::icon("ok", lib = "glyphicon")
+          } else {
+            result_color = "#F89406" # warning
+            result_icon = shiny::icon("warning-sign", lib = "glyphicon")
+          }
+          shinyFeedback::hideFeedback(x) # hide previous feedback
+          shinyFeedback::showFeedback(
+            inputId = x,
+            text = "Address is of the form 'SERVER\\bpsinstance'",
+            color = result_color,
+            icon = result_icon
+          )
+        },
+        Database = function(x) {
+          value <- input[[paste0("servers-", x)]]
+          # need to add DTedit (modular) namespace to returned inputId
+          # strangely, this doesn't need to be done for shinyFeedback (!)
+          if (!is.null(value) &&
+              (value == "bpspatients" || value == "bpssamples")) {
+            result_color = "#5cb85c" # success
+            result_icon = shiny::icon("ok", lib = "glyphicon")
+          } else {
+            result_color = "#F89406" # warning
+            result_icon = shiny::icon("warning-sign", lib = "glyphicon")
+          }
+          shinyFeedback::hideFeedback(x) # hide previous feedback
+          shinyFeedback::showFeedback(
+            inputId = x,
+            text = "Usually 'bpspatients', or 'bpssamples' (sample database)",
+            color = result_color,
+            icon = result_icon
+          )
+        },
+        UserID = function(x) {
+          value <- input[[paste0("servers-", x)]]
+          # need to add DTedit (modular) namespace to returned inputId
+          # strangely, this doesn't need to be done for shinyFeedback (!)
+          if (!is.null(value) && value == "bpsrawdata") {
+            result_color = "#5cb85c" # success
+            result_icon = shiny::icon("ok", lib = "glyphicon")
+          } else {
+            result_color = "#F89406" # warning
+            result_icon = shiny::icon("warning-sign", lib = "glyphicon")
+          }
+          shinyFeedback::hideFeedback(x) # hide previous feedback
+          shinyFeedback::showFeedback(
+            inputId = x,
+            text = "Usually 'bpsrawdata'",
+            color = result_color,
+            icon = result_icon
+          )
+        }
+      ),
       # only show new/copy/delete/update if not demonstration mode
       show.delete = .bcdyz.option$demonstration == FALSE,
       show.update = .bcdyz.option$demonstration == FALSE,

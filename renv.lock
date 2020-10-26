@@ -37,15 +37,15 @@
     },
     "DTedit": {
       "Package": "DTedit",
-      "Version": "2.2.2",
+      "Version": "2.2.4",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "DTedit",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "ced18c0a390da419f54fcddcdad49b88853f426e",
-      "Hash": "a816dac0be88192c44b9d3a92145ca57"
+      "RemoteSha": "f2d48a19d57a07e56febcc16e25e163de46e6ff7",
+      "Hash": "2da9d53c651b67165eafc6c6e4c432ee"
     },
     "MASS": {
       "Package": "MASS",
@@ -387,7 +387,7 @@
       "RemoteUsername": "tidyverse",
       "RemoteRef": "master",
       "RemoteSha": "d2627f716091524748b4e72dff5dbd58823532c7",
-      "Hash": "5b3218a5da56f35e533b3265bbf75ea8"
+      "Hash": "87ec080435958bed0c4796827edd35d0"
     },
     "ellipsis": {
       "Package": "ellipsis",
@@ -411,7 +411,7 @@
       "RemoteUsername": "hadley",
       "RemoteRef": "master",
       "RemoteSha": "3f03b11491ce3d6fc5601e210927eff73bf8e350",
-      "Hash": "5ece31a6c0f94811e6bef59482d87164"
+      "Hash": "5a9b94668993886f1f6c24f6424732c7"
     },
     "evaluate": {
       "Package": "evaluate",
@@ -495,8 +495,8 @@
       "Package": "glue",
       "Version": "1.4.0.9000",
       "Source": "GitHub",
-      "Remotes": "r-lib/vctrs",
       "RemoteType": "github",
+      "Remotes": "r-lib/vctrs",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "glue",
       "RemoteUsername": "tidyverse",
@@ -742,7 +742,7 @@
       "RemoteUsername": "r-lib",
       "RemoteRef": "master",
       "RemoteSha": "2f5ad11bfe54906705073cc52a808e0a51998fb4",
-      "Hash": "33e002e67989c8e8e170482e354b368c"
+      "Hash": "fae576967a4f91505bd847f226063266"
     },
     "pipeR": {
       "Package": "pipeR",
@@ -992,6 +992,18 @@
       "RemoteSha": "7f50e9c0b288f9e49f9cf7a1c92c0f12ae012390",
       "Hash": "d9f4d0ef5b705df13e387ba61bb78712"
     },
+    "shinyFeedback": {
+      "Package": "shinyFeedback",
+      "Version": "0.3.0",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "shinyFeedback",
+      "RemoteUsername": "merlinoa",
+      "RemoteRef": "v0.3.0",
+      "RemoteSha": "b03418783d08a18fe577c712d540dc9bad863b4f",
+      "Hash": "270ef6dd33e85c453a897f306f4e8327"
+    },
     "shinyFiles": {
       "Package": "shinyFiles",
       "Version": "0.7.2",
@@ -1115,7 +1127,7 @@
       "RemoteUsername": "tidyverse",
       "RemoteRef": "v3.0.3",
       "RemoteSha": "2a5fba0eabe7bec8016c152a81d79744a343671f",
-      "Hash": "ad2ab542d93a1c9ed8657b6fb23f1daf"
+      "Hash": "9cbf90082c19905bb4cae64db8f69046"
     },
     "tidyr": {
       "Package": "tidyr",

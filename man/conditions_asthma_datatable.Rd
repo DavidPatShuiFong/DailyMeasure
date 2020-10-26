@@ -18,6 +18,16 @@ conditions_asthma_datatable(input, output, session, dM)
 \item{dM}{dMeasure R6 object
 access to appointments lists, visits, user interface elements
 and post-natal status database}
+
+\item{input}{as required by Shiny modules}
+
+\item{output}{as required by Shiny modules}
+
+\item{session}{as required by Shiny modules}
+
+\item{dM}{dMeasure R6 object
+access to appointments lists, visits, user interface elements
+and post-natal status database}
 }
 \value{
 none

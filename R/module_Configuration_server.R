@@ -275,8 +275,7 @@ servers_datatable <- function(input, output, session, dM) {
       callback.insert = servers.insert.callback,
       callback.delete = servers.delete.callback,
       inputEvent = list(
-        Name = function(x) {
-          value <- input[[paste0("servers-", x)]]
+        Name = function(x, value) {
           # need to add DTedit (modular) namespace to returned inputId
           # strangely, this doesn't need to be done for shinyFeedback (!)
           if (!is.null(value) && value != "") {
@@ -294,8 +293,7 @@ servers_datatable <- function(input, output, session, dM) {
             icon = result_icon
           )
         },
-        Address = function(x) {
-          value <- input[[paste0("servers-", x)]]
+        Address = function(x, value) {
           # need to add DTedit (modular) namespace to returned inputId
           # strangely, this doesn't need to be done for shinyFeedback (!)
           if (!is.null(value) &&
@@ -314,8 +312,7 @@ servers_datatable <- function(input, output, session, dM) {
             icon = result_icon
           )
         },
-        Database = function(x) {
-          value <- input[[paste0("servers-", x)]]
+        Database = function(x, value) {
           # need to add DTedit (modular) namespace to returned inputId
           # strangely, this doesn't need to be done for shinyFeedback (!)
           if (!is.null(value) &&
@@ -334,8 +331,7 @@ servers_datatable <- function(input, output, session, dM) {
             icon = result_icon
           )
         },
-        UserID = function(x) {
-          value <- input[[paste0("servers-", x)]]
+        UserID = function(x, value) {
           # need to add DTedit (modular) namespace to returned inputId
           # strangely, this doesn't need to be done for shinyFeedback (!)
           if (!is.null(value) && value == "bpsrawdata") {

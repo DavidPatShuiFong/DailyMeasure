@@ -44,8 +44,8 @@
       "RemoteRepo": "DTedit",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "f2d48a19d57a07e56febcc16e25e163de46e6ff7",
-      "Hash": "2da9d53c651b67165eafc6c6e4c432ee"
+      "RemoteSha": "7bcef7308db76b4e099fb1a1fccbf27c0f58b899",
+      "Hash": "4c59b6226c62eded47a00125e9593d9b"
     },
     "MASS": {
       "Package": "MASS",
@@ -166,10 +166,15 @@
     },
     "blob": {
       "Package": "blob",
-      "Version": "1.1.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "3ce988193cfb67e59fde06121bd9f8be"
+      "Version": "1.2.0",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "blob",
+      "RemoteUsername": "tidyverse",
+      "RemoteRef": "v1.2.0",
+      "RemoteSha": "aa3095564bbb7c1cfc88b22aa50e44e3b01b9474",
+      "Hash": "34e63d2e1039bb132862d4cef88dfafb"
     },
     "broom": {
       "Package": "broom",
@@ -262,8 +267,8 @@
       "RemoteRepo": "dMeasure",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "6601b7508b1c6db03c82e6ad8d3688bbd193da89",
-      "Hash": "4c833f7437ad0b94d1baab5e4aa1736b"
+      "RemoteSha": "1c8472ff900e2f081924065dfc4962c578b6a87a",
+      "Hash": "13b0c329d391dcc58ce1db41fee0dfca"
     },
     "dMeasureBillings": {
       "Package": "dMeasureBillings",
@@ -346,15 +351,15 @@
     },
     "dbplyr": {
       "Package": "dbplyr",
-      "Version": "1.4.2.9000",
+      "Version": "2.0.0",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "dbplyr",
       "RemoteUsername": "DavidPatShuiFong",
-      "RemoteRef": "develop",
-      "RemoteSha": "51a7bdf6537f19bf5fd2e93af82a6428d017b7df",
-      "Hash": "5132643cbcad58b1fe8235336f2d09da"
+      "RemoteRef": "feature/doubletrycastMSSQL",
+      "RemoteSha": "aa99193b44dd09d30f32a9fa6a1205f8bf56d6cd",
+      "Hash": "06f083b7577978aca7a24c241eb28d42"
     },
     "desc": {
       "Package": "desc",
@@ -387,7 +392,7 @@
       "RemoteUsername": "tidyverse",
       "RemoteRef": "master",
       "RemoteSha": "d2627f716091524748b4e72dff5dbd58823532c7",
-      "Hash": "87ec080435958bed0c4796827edd35d0"
+      "Hash": "5b3218a5da56f35e533b3265bbf75ea8"
     },
     "ellipsis": {
       "Package": "ellipsis",
@@ -411,7 +416,7 @@
       "RemoteUsername": "hadley",
       "RemoteRef": "master",
       "RemoteSha": "3f03b11491ce3d6fc5601e210927eff73bf8e350",
-      "Hash": "5a9b94668993886f1f6c24f6424732c7"
+      "Hash": "5ece31a6c0f94811e6bef59482d87164"
     },
     "evaluate": {
       "Package": "evaluate",
@@ -495,8 +500,8 @@
       "Package": "glue",
       "Version": "1.4.0.9000",
       "Source": "GitHub",
-      "RemoteType": "github",
       "Remotes": "r-lib/vctrs",
+      "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "glue",
       "RemoteUsername": "tidyverse",
@@ -713,10 +718,15 @@
     },
     "odbc": {
       "Package": "odbc",
-      "Version": "1.1.6",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "79a9861f2b9ec13c17554da2fcb0b323"
+      "Version": "1.3.0",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "odbc",
+      "RemoteUsername": "r-dbi",
+      "RemoteRef": "v1.3.0",
+      "RemoteSha": "8945fdcfff9551b126a833cd391ca18e83ca7476",
+      "Hash": "592317d62a9973852c25a9eaeb9fc8c7"
     },
     "openssl": {
       "Package": "openssl",
@@ -742,7 +752,7 @@
       "RemoteUsername": "r-lib",
       "RemoteRef": "master",
       "RemoteSha": "2f5ad11bfe54906705073cc52a808e0a51998fb4",
-      "Hash": "fae576967a4f91505bd847f226063266"
+      "Hash": "33e002e67989c8e8e170482e354b368c"
     },
     "pipeR": {
       "Package": "pipeR",
@@ -1127,7 +1137,7 @@
       "RemoteUsername": "tidyverse",
       "RemoteRef": "v3.0.3",
       "RemoteSha": "2a5fba0eabe7bec8016c152a81d79744a343671f",
-      "Hash": "9cbf90082c19905bb4cae64db8f69046"
+      "Hash": "ad2ab542d93a1c9ed8657b6fb23f1daf"
     },
     "tidyr": {
       "Package": "tidyr",

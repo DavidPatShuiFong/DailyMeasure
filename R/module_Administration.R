@@ -414,7 +414,7 @@ admin_result_datatable <- function(input, output, session, dM) {
         input$printcopy_view
       ),
       ignoreInit = TRUE, {
-        # respond to investigations_filtered_namedRor correspondence_filtered_namedR
+        # respond to investigations_filtered_namedR or correspondence_filtered_namedR
         # when clinician or dates is changed
         incoming <- dM$view_incoming(
           lazy = TRUE,

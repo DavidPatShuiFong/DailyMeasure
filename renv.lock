@@ -267,8 +267,8 @@
       "RemoteRepo": "dMeasure",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "fb2a204144e14ca682fc32f52d5ca64ef94a0272",
-      "Hash": "9fb0767b70f6eff21f65faaa5902e13e"
+      "RemoteSha": "c8c2e235d0aaf7e006a206a391587aa359e74785",
+      "Hash": "11493b60c8f97d4b28134697f0ee9805"
     },
     "dMeasureBillings": {
       "Package": "dMeasureBillings",

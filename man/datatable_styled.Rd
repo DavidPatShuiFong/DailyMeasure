@@ -4,24 +4,33 @@
 \alias{datatable_styled}
 \title{styled DT datatable}
 \usage{
-datatable_styled(data, fillContainer = TRUE, extensions = c("Buttons",
-  "Scroller", "Responsive"), dom = "frltiBp", colvis = list(extend =
-  "colvis", collectionLayout = "fixed four-column"),
-  copyHtml5 = list(extend = "copyHtml5", exportOptions = list(columns =
-  ":visible")), printButton = list(extend = "print", exportOptions =
-  list(columns = ":visible")), downloadButton = list(extend =
-  "collection", buttons = list(list(extend = "csvHtml5", exportOptions =
-  list(columns = ":visible"), filename = "GPstat"), list(extend = "excel",
-  exportOptions = list(columns = ":visible"), filename = "GPstat"),
-  list(extend = "pdf", exportOptions = list(columns = ":visible"), filename
-  = "GPstat")), text = "Download", collectionLayout = "fixed"),
+datatable_styled(
+  data,
+  fillContainer = TRUE,
+  extensions = c("Buttons", "Scroller", "Responsive"),
+  dom = "frltiBp",
+  colvis = list(extend = "colvis", collectionLayout = "fixed four-column"),
+  copyHtml5 = list(extend = "copyHtml5", exportOptions = list(columns = ":visible")),
+  printButton = list(extend = "print", exportOptions = list(columns = ":visible")),
+  downloadButton = list(extend = "collection", buttons = list(list(extend = "csvHtml5",
+    exportOptions = list(columns = ":visible"), filename = "GPstat"), list(extend =
+    "excel", exportOptions = list(columns = ":visible"), filename = "GPstat"),
+    list(extend = "pdf", exportOptions = list(columns = ":visible"), filename =
+    "GPstat")), text = "Download", collectionLayout = "fixed"),
   drawCallback = DT::JS(semantic_popupJS),
   `responsive-resize` = DT::JS(semantic_popupJS),
-  `responsive-display` = DT::JS(paste("function ( e, datatable, row, showHide, update )",
-  "{console.log( 'Details for row '+row.index()+' '",
-  "+(showHide ? 'shown' : 'hidden'))}")), paging = FALSE,
-  scrollY = "60vh", deferRender = TRUE, scrollX = FALSE,
-  fixedColumns = FALSE, columnDefs = list(list()), ...)
+ 
+    `responsive-display` = DT::JS(paste("function ( e, datatable, row, showHide, update )",
+    "{console.log( 'Details for row '+row.index()+' '",
+    "+(showHide ? 'shown' : 'hidden'))}")),
+  paging = FALSE,
+  scrollY = "60vh",
+  deferRender = TRUE,
+  scrollX = FALSE,
+  fixedColumns = FALSE,
+  columnDefs = list(list()),
+  ...
+)
 }
 \arguments{
 \item{data}{the datatable}

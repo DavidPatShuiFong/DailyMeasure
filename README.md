@@ -112,7 +112,8 @@ The ‘bpsrawdata’ database access password（as used by ‘BPbrowser’) is r
 * better restriction of date ranges ('negative' date ranges prevented)
 * improved separation of tasks for billings_list
 * changes to report specific number of days which are restricted
-  by lack of subscription as reported by check_subscription_datechange_trigR
+  by lack of registration/subscription as reported by 
+  check_subscription_datechange_trigR
 
 # Version 1.5.9
 29th April 2020
@@ -120,7 +121,7 @@ The ‘bpsrawdata’ database access password（as used by ‘BPbrowser’) is r
 New
 
 * Download list of configured users, including 'Identifiers'
-  - for subscription application purposes
+  - for registration/subscription application purposes
 * 'bounce' reminder on update_clinicians and update_date
   button if chosen clinicians or dates change (shinyjqui effect)
 * Contact filter includes date of last contact (minimum and maximum dates)

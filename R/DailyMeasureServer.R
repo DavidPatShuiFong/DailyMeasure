@@ -1538,12 +1538,12 @@ DailyMeasureServer <- function(input, output, session) {
       ), collapse = ", ")
       shinytoastr::toastr_warning(
         message = paste(
-          "A chosen user has no subscription for chosen date range.",
-          "If a chosen user has no subscription, the selected date range",
+          "A chosen user is not registered/subscribed for chosen date range.",
+          "If a chosen user is not registered, the selected date range",
           "needs to be at least ", abs(dM$check_subscription_datechange_trigR()),
           "days old.",
           shiny::br(), shiny::br(),
-          "Chosen users without subscription: ",
+          "Chosen users not registered: ",
           no_subscription
         ),
         position = "bottom-left",

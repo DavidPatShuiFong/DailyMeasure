@@ -101,7 +101,8 @@ front-end to DailyMeasure package
 * better restriction of date ranges ('negative' date ranges prevented)
 * improved separation of tasks for billings_list
 * changes to report specific number of days which are restricted
-  by lack of subscription as reported by check_subscription_datechange_trigR
+  by lack of registration/subscription as reported by 
+  `check_subscription_datechange_trigR`
 
 # Version 1.5.9
 3rd May 2020
@@ -109,7 +110,7 @@ front-end to DailyMeasure package
 ## New
 
 * Download list of configured users, including 'Identifiers'
-  - for subscription application purposes
+  - for registration/subscription application purposes
 * 'bounce' reminder on update_clinicians and update_date
   button if chosen clinicians or dates change (shinyjqui effect)
 * Contact filter includes date of last contact (minimum and maximum dates)
@@ -217,7 +218,7 @@ front-end to DailyMeasure package
 
 * subscription features
   +  reads subscription database (user-action, from user configuration panel)
-  +  CDM and BIllings UI checks subscription status
+  +  CDM and BIllings UI checks registration/subscription status
   +  if clinician selected with no subscription, then
     appointments must be minimum one week old
   +  user configuration displays license information

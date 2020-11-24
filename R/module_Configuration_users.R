@@ -307,7 +307,7 @@ userconfig_datatableUI <- function(id) {
                 }, {
                   x <- shiny::tagList(
                     shiny::actionButton(ns("reread_subscription"),
-                    "Re-read Subscriptions",
+                    "Re-read registration/subscriptions",
                     shiny::icon("book-reader"),
                     class = "btn btn-primary"
                   ))
@@ -321,7 +321,7 @@ userconfig_datatableUI <- function(id) {
                 shiny::HTML("&nbsp;"),
                 shiny::HTML("&nbsp;"),
                 shiny::HTML("&nbsp;"),
-                "Read subscription/license dates from GPstat!/DailyMeasure databases"
+                "Read registration/subscription dates from GPstat!/DailyMeasure databases"
               )
             ),
             shiny::column(
@@ -380,7 +380,7 @@ userconfig_datatable <- function(input, output, session, dM) {
       dM$read_subscription_db(forcecheck = TRUE)
       # next line not executed if warning raised
       shinytoastr::toastr_success(
-        "Subscription database read!",
+        "Registration/Subscription database read!",
         closeButton = TRUE,
         position = "bottom-left",
         title = "Best Practice database"

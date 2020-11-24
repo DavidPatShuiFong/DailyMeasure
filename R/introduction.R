@@ -678,7 +678,7 @@ steps_overview_df <- function() {
         shiny::br(),
         "Best Practice server configuration.",
         "Configuration file location.",
-        "User and subscription management. Log files."
+        "User and registration/subscription management. Log files."
       ),
       position = "auto"
     )) %>>%

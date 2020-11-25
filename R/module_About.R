@@ -252,11 +252,11 @@ about_privacy_UI <- function(id) {
         shiny::span(paste(
           "Information about the users of the software, and the name of the clinic",
           "is sent in encrypted form - using the Internet - to GPstat!/DailyMeasure",
-          "registration/subscription databases *if* explicitly requested by the user.",
+          "registration/subscription database *if* explicitly requested by the user.",
           "The information about the users includes",
-          "provider number and user name, as is stored in the Best Practice database.",
-          "The information is stored in those databases",
-          "in encrypted form. Those databases will send back information to the",
+          "provider number and user name, as is stored in the Best Practice system.",
+          "The information is stored in GPstat! registration database",
+          "in encrypted form. The database will send back information to the",
           "user, in encrypted form, which includes the clinic name, user details",
           "and registration/subscription details."
         )),

@@ -284,15 +284,15 @@
     },
     "dMeasureCDM": {
       "Package": "dMeasureCDM",
-      "Version": "0.5.0",
+      "Version": "0.5.1",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "dMeasureCDM",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "5f8ccd22ee1a8b525c899437a5ac41c0b3ebb443",
-      "Hash": "5a056b00c54d3d4db02fae81e4c24304"
+      "RemoteSha": "ed059bbab0fc6d13f695f8775fdee711cb5404a0",
+      "Hash": "b48d427fb5b9ba3b755f3b7f25a903bf"
     },
     "dMeasureCustom": {
       "Package": "dMeasureCustom",

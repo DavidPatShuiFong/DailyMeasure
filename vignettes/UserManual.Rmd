@@ -3,20 +3,20 @@ title: "GPstat! user manual"
 author: "David Fong"
 date: "2nd December 2020"
 output:
+  rmdformats::readthedown:
+    toc_depth: '4'
   bookdown::pdf_document2:
     latex_engine: xelatex
     number_sections: yes
     toc: yes
     toc_depth: 4
+  pdf_document:
+    toc: yes
+    toc_depth: '4'
   html_document:
     toc: yes
     toc_depth: '4'
     df_print: paged
-  pdf_document:
-    toc: yes
-    toc_depth: '4'
-  rmdformats::readthedown:
-    toc_depth: '4'
 geometry: margin=25mm
 fontsize: 12pt
 documentclass: article

@@ -32,6 +32,8 @@ GPstat! interrogates the appointment book, searching for ‘near-future’ oppor
 
 [Installation documentation (in words)](https://rpubs.com/DavidFong/GPstatInstall)
 
+[User manual (in words) - this is a copy of the 'in program' help documentation](https://rpubs.com/DavidFong/GPstatUserManual)
+
 Very technical [backend documentation (dMeasure)](https://rpubs.com/DavidFong/dMeasure)
 
 The ‘bpsrawdata’ database access password（as used by ‘BPbrowser’) is required to configure GPstat! (this is described in the Youtube installation video).

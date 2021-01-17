@@ -5,9 +5,14 @@
 \title{DailyMeasure
 (C) David Fong, 2019}
 \usage{
-GPstat(appmode = "chrome", launch.browser = TRUE,
-  host = getOption("shiny.host", "127.0.0.1"), port = NULL,
-  demonstration = FALSE, ...)
+GPstat(
+  appmode = "chrome",
+  launch.browser = TRUE,
+  host = getOption("shiny.host", "127.0.0.1"),
+  port = NULL,
+  demonstration = FALSE,
+  ...
+)
 }
 \arguments{
 \item{appmode}{set to "chrome" if wanting to launch chrome in app mode

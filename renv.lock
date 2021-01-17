@@ -320,15 +320,15 @@
     },
     "dMeasureQIM": {
       "Package": "dMeasureQIM",
-      "Version": "0.4.1",
+      "Version": "0.5",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "dMeasureQIM",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "a807f15bda76555c777e6fa7b1488817995749ab",
-      "Hash": "2f1aaf8f282f389f420d8969872f6fb1"
+      "RemoteSha": "069584062920f026e9a747138cb9923294ef4a73",
+      "Hash": "ed2c27870705b75af20af44146f7722f"
     },
     "data.table": {
       "Package": "data.table",

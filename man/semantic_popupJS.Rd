@@ -4,7 +4,9 @@
 \name{semantic_popupJS}
 \alias{semantic_popupJS}
 \title{Javascript support code for semantic/fomantic JS popups}
-\format{An object of class \code{character} of length 1.}
+\format{
+An object of class \code{character} of length 1.
+}
 \usage{
 semantic_popupJS
 }

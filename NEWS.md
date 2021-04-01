@@ -2,6 +2,14 @@
 
 front-end to DailyMeasure package
 
+# version 2.2.0
+1st April 2021
+
+## New
+
+* Search for actions on basis of text in Action text or Comment
+  + in `Administration` section
+
 # version 2.1.0
 25th October 2020
 

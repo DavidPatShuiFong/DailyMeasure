@@ -39,6 +39,12 @@ administration_UI <- function(id) {
         admin_document_datatableUI(ns("document_search"))
       ),
       shiny::tabPanel(
+        title = "Action Search",
+        width = 12,
+        shiny::br(),
+        admin_action_datatableUI(ns("action_search"))
+      ),
+      shiny::tabPanel(
         title = "myHealth (PCEHR)",
         width = 12,
         shiny::br(),
@@ -135,6 +141,25 @@ admin_document_datatableUI <- function(id) {
   )
 }
 
+admin_action_datatableUI <- function(id) {
+  ns <- shiny::NS(id)
+
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(
+        4,
+        shiny::textOutput(ns("action_search_text"))
+      ),
+      shiny::column(
+        3, # note that total 'column' width = 12
+        offset = 2,
+        shiny::uiOutput(ns("action_search_choice"))
+      )
+    ),
+    DT::DTOutput(ns("actionSearch_table"))
+  )
+}
+
 admin_pcehr_datatableUI <- function(id) {
   ns <- shiny::NS(id)
 
@@ -169,6 +194,8 @@ administration <- function(input, output, session, dM) {
   callModule(admin_result_datatable, "result_management", dM)
 
   callModule(admin_document_datatable, "document_search", dM)
+
+  callModule(admin_action_datatable, "action_search", dM)
 
   callModule(admin_pcehr_datatable, "pcehr_search", dM)
 }
@@ -488,7 +515,6 @@ admin_result_datatable <- function(input, output, session, dM) {
   )
 }
 
-
 #' document search module - server
 #'
 #' @param input as required by Shiny modules
@@ -546,8 +572,7 @@ admin_document_datatable <- function(input, output, session, dM) {
         search_text()
       ),
       ignoreInit = TRUE, ignoreNULL = FALSE, {
-        # respond to appointments_listR()
-        # when clinician or dates is changed
+        # respond when clinician or dates is changed
         shiny::req(search_text()) # cannot be empty string
 
         ChosenUserID <- dM$UserFullConfig %>>%
@@ -629,6 +654,141 @@ admin_document_datatable <- function(input, output, session, dM) {
 
   output$documentSearch_table <- DT::renderDT({
     documentSearch_table()
+  },
+  server = TRUE
+  )
+}
+
+#' action search module - server
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param dM dMeasure R6 object
+#'  access to actions
+#'
+#' @return none
+admin_action_datatable <- function(input, output, session, dM) {
+  ns <- session$ns
+
+  search_text <- shiny::reactiveVal("covid")
+  # the default search string
+  output$action_search_text <-
+    shiny::renderText({paste("Search text: ", search_text())})
+  output$action_search_choice <- renderUI({
+    shinyWidgets::dropMenu(
+      shiny::actionButton(
+        inputId = ns("dataSearch_choice_dropdown"),
+        icon = shiny::icon("gear"),
+        label = "Action Search settings"
+      ),
+      shiny::tags$div(
+        shiny::textInput(
+          inputId = ns("actionSearch_chosen"),
+          label = "Search text",
+          value = search_text()
+        ),
+        shiny::br(),
+        shiny::em("Close to confirm")
+      ),
+      placement = "bottom-end"
+    )
+  })
+  shiny::observeEvent(
+    input$dataSearch_choice_dropdown_dropmenu,
+    ignoreInit = TRUE, {
+      # this is triggered when shinyWidgets::dropMenu is opened/closed
+      # tag is derived from the first tag in dropMenu, adding '_dropmenu'
+      if (!input$dataSearch_choice_dropdown_dropmenu) {
+        # only if closing the 'dropmenu' modal
+        # unfortunately, is also triggered during Init (despite the ignoreInit)
+        search_text(input$actionSearch_chosen)
+      }
+    }
+  )
+
+  actionSearch <-
+    shiny::eventReactive(
+      c(
+        dM$cliniciansR(),
+        dM$date_aR(),
+        dM$date_bR(),
+        search_text()
+      ),
+      ignoreInit = TRUE, ignoreNULL = FALSE, {
+        # respond when clinician or dates is changed
+        shiny::req(search_text()) # cannot be empty string
+
+        ChosenUserID <- dM$UserFullConfig %>>%
+          dplyr::filter(Fullname %in% dM$clinicians) %>>%
+          dplyr::pull(UserID) %>>% c(-1)
+        # add a dummy value if empty
+
+        wildcard_search <- paste0("%", search_text(), "%")
+        date_a <- dM$date_a
+        date_b <- dM$date_b
+
+        actions <- dM$db$actions %>>%
+          dplyr::filter(
+            UserID %in% ChosenUserID,
+            dplyr::between(Added, date_a, date_b),
+            ActionText %like% wildcard_search |
+            Comment %like% wildcard_search
+          ) %>>%
+          dplyr::select(
+            InternalID, UserID,
+            Added, Performed,
+            ActionText, Comment
+          ) %>>%
+          dplyr::collect()
+
+        intID <- actions %>>% dplyr::pull(InternalID) %>>% c(-1)
+
+        actions <- actions %>>%
+          dplyr::left_join(
+            dM$UserFullConfig %>>%
+              dplyr::filter(UserID %in% ChosenUserID) %>>%
+              dplyr::select(UserID, Fullname),
+            by = c("UserID")
+          ) %>>%
+          dplyr::rename(Clinician = Fullname) %>>%
+          dplyr::select(-c(UserID)) %>>%
+          dplyr::left_join(
+            dM$db$patients %>>%
+              dplyr::filter(InternalID %in% intID) %>>%
+              dplyr::select(InternalID, ID = ExternalID,
+                            Firstname, Surname, DOB) %>>%
+              dplyr::collect(),
+            by = c("InternalID")
+          ) %>>%
+          dplyr::mutate(
+            Name = paste(Firstname, Surname),
+            DOB = as.Date(DOB)
+          ) %>>%
+          dplyr::select(-c(InternalID, Firstname, Surname))
+
+        return(actions)
+      }
+    )
+
+  ### create tag-styled datatable (or 'printable' datatable)
+  actionSearch_table <- shiny::reactive({
+
+    datatable_styled(
+      actionSearch() %>>%
+        dplyr::select(
+          Name, ID, DOB,
+          Clinician,
+          Added, Performed,
+          ActionText, Comment
+        ),
+      extensions = c("Buttons", "Scroller"),
+      scrollX = TRUE
+    )
+  })
+
+  output$actionSearch_table <- DT::renderDT({
+    actionSearch_table()
   },
   server = TRUE
   )

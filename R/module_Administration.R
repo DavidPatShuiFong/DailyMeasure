@@ -673,6 +673,8 @@ admin_action_datatable <- function(input, output, session, dM) {
 
   search_text <- shiny::reactiveVal("covid")
   # the default search string
+  search_dates <- shiny::reactiveVal(c("Added", "Due", "Performed"))
+  # the default date ranges to search
   output$action_search_text <-
     shiny::renderText({paste("Search text: ", search_text())})
   output$action_search_choice <- renderUI({
@@ -687,6 +689,13 @@ admin_action_datatable <- function(input, output, session, dM) {
           inputId = ns("actionSearch_chosen"),
           label = "Search text",
           value = search_text()
+        ),
+        shinyWidgets::pickerInput(
+          inputId = ns("actionSearch_date"),
+          label = "Date ranges to search",
+          choices = c("Added", "Due", "Performed"),
+          selected = search_dates(),
+          multiple = TRUE
         ),
         shiny::br(),
         shiny::em("Close to confirm")
@@ -703,6 +712,7 @@ admin_action_datatable <- function(input, output, session, dM) {
         # only if closing the 'dropmenu' modal
         # unfortunately, is also triggered during Init (despite the ignoreInit)
         search_text(input$actionSearch_chosen)
+        search_dates(input$actionSearch_date)
       }
     }
   )
@@ -713,7 +723,8 @@ admin_action_datatable <- function(input, output, session, dM) {
         dM$cliniciansR(),
         dM$date_aR(),
         dM$date_bR(),
-        search_text()
+        search_text(),
+        search_dates()
       ),
       ignoreInit = TRUE, ignoreNULL = FALSE, {
         # respond when clinician or dates is changed
@@ -727,17 +738,23 @@ admin_action_datatable <- function(input, output, session, dM) {
         wildcard_search <- paste0("%", search_text(), "%")
         date_a <- dM$date_a
         date_b <- dM$date_b
+        search_added <- as.numeric("Added" %in% search_dates())
+        # will be '1' if true. unfortunately, logicals don't work well in MSSQL
+        search_due <- as.numeric("Due" %in% search_dates())
+        search_performed <- as.numeric("Performed" %in% search_dates())
 
         actions <- dM$db$actions %>>%
           dplyr::filter(
             UserID %in% ChosenUserID,
-            dplyr::between(Added, date_a, date_b),
+            (search_added == 1 & dplyr::between(Added, date_a, date_b)) |
+              (search_due == 1 & dplyr::between(DueDate, date_a, date_b)) |
+              (search_performed == 1 & dplyr::between(Performed, date_a, date_b)),
             ActionText %like% wildcard_search |
             Comment %like% wildcard_search
           ) %>>%
           dplyr::select(
             InternalID, UserID,
-            Added, Performed,
+            Added, DueDate, Performed,
             ActionText, Comment
           ) %>>%
           dplyr::collect()
@@ -779,7 +796,7 @@ admin_action_datatable <- function(input, output, session, dM) {
         dplyr::select(
           Name, ID, DOB,
           Clinician,
-          Added, Performed,
+          Added, DueDate, Performed,
           ActionText, Comment
         ),
       extensions = c("Buttons", "Scroller"),

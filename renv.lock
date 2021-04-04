@@ -267,8 +267,8 @@
       "RemoteRepo": "dMeasure",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "0e8953fec2d15013ef5596820a7f785a4b440773",
-      "Hash": "2321efa2cbbee8a894b21c3c5371f2ba"
+      "RemoteSha": "768639a53fdc01fee7210d4bbf01d9e6b38126a0",
+      "Hash": "ff7f981bc4287b7bf27a6ac2014652d2"
     },
     "dMeasureBillings": {
       "Package": "dMeasureBillings",
@@ -392,7 +392,7 @@
       "RemoteUsername": "tidyverse",
       "RemoteRef": "master",
       "RemoteSha": "d2627f716091524748b4e72dff5dbd58823532c7",
-      "Hash": "87ec080435958bed0c4796827edd35d0"
+      "Hash": "5b3218a5da56f35e533b3265bbf75ea8"
     },
     "ellipsis": {
       "Package": "ellipsis",
@@ -416,7 +416,7 @@
       "RemoteUsername": "hadley",
       "RemoteRef": "master",
       "RemoteSha": "3f03b11491ce3d6fc5601e210927eff73bf8e350",
-      "Hash": "5a9b94668993886f1f6c24f6424732c7"
+      "Hash": "5ece31a6c0f94811e6bef59482d87164"
     },
     "evaluate": {
       "Package": "evaluate",
@@ -500,8 +500,8 @@
       "Package": "glue",
       "Version": "1.4.0.9000",
       "Source": "GitHub",
-      "RemoteType": "github",
       "Remotes": "r-lib/vctrs",
+      "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "glue",
       "RemoteUsername": "tidyverse",
@@ -752,7 +752,7 @@
       "RemoteUsername": "r-lib",
       "RemoteRef": "master",
       "RemoteSha": "2f5ad11bfe54906705073cc52a808e0a51998fb4",
-      "Hash": "fae576967a4f91505bd847f226063266"
+      "Hash": "33e002e67989c8e8e170482e354b368c"
     },
     "pipeR": {
       "Package": "pipeR",
@@ -1137,7 +1137,7 @@
       "RemoteUsername": "tidyverse",
       "RemoteRef": "v3.0.3",
       "RemoteSha": "2a5fba0eabe7bec8016c152a81d79744a343671f",
-      "Hash": "9cbf90082c19905bb4cae64db8f69046"
+      "Hash": "ad2ab542d93a1c9ed8657b6fb23f1daf"
     },
     "tidyr": {
       "Package": "tidyr",

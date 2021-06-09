@@ -37,15 +37,15 @@
     },
     "DTedit": {
       "Package": "DTedit",
-      "Version": "2.2.2",
+      "Version": "2.2.4",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "DTedit",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "ced18c0a390da419f54fcddcdad49b88853f426e",
-      "Hash": "a816dac0be88192c44b9d3a92145ca57"
+      "RemoteSha": "6e13a9ceabcfa8911efc7080a1e737a4c115b93a",
+      "Hash": "7a78d0ab104072060df31e6da05b1b2e"
     },
     "MASS": {
       "Package": "MASS",
@@ -166,10 +166,15 @@
     },
     "blob": {
       "Package": "blob",
-      "Version": "1.1.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "3ce988193cfb67e59fde06121bd9f8be"
+      "Version": "1.2.0",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "blob",
+      "RemoteUsername": "tidyverse",
+      "RemoteRef": "v1.2.0",
+      "RemoteSha": "aa3095564bbb7c1cfc88b22aa50e44e3b01b9474",
+      "Hash": "34e63d2e1039bb132862d4cef88dfafb"
     },
     "broom": {
       "Package": "broom",
@@ -255,15 +260,15 @@
     },
     "dMeasure": {
       "Package": "dMeasure",
-      "Version": "0.9.12",
+      "Version": "0.9.14",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "dMeasure",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "01e355dc0aae7169e2bace0f34132996fa64a5b6",
-      "Hash": "2905410739895b5bd276718785ec27af"
+      "RemoteSha": "768639a53fdc01fee7210d4bbf01d9e6b38126a0",
+      "Hash": "ff7f981bc4287b7bf27a6ac2014652d2"
     },
     "dMeasureBillings": {
       "Package": "dMeasureBillings",
@@ -279,15 +284,15 @@
     },
     "dMeasureCDM": {
       "Package": "dMeasureCDM",
-      "Version": "0.5.0",
+      "Version": "0.5.1",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "dMeasureCDM",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "5f8ccd22ee1a8b525c899437a5ac41c0b3ebb443",
-      "Hash": "5a056b00c54d3d4db02fae81e4c24304"
+      "RemoteSha": "ed059bbab0fc6d13f695f8775fdee711cb5404a0",
+      "Hash": "b48d427fb5b9ba3b755f3b7f25a903bf"
     },
     "dMeasureCustom": {
       "Package": "dMeasureCustom",
@@ -315,15 +320,15 @@
     },
     "dMeasureQIM": {
       "Package": "dMeasureQIM",
-      "Version": "0.4.0",
+      "Version": "0.5",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "dMeasureQIM",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "37b08fe3262455028c378e9422fd82466392445f",
-      "Hash": "ab41cab41a1ce39205925fc67c4f170e"
+      "RemoteSha": "069584062920f026e9a747138cb9923294ef4a73",
+      "Hash": "ed2c27870705b75af20af44146f7722f"
     },
     "data.table": {
       "Package": "data.table",
@@ -346,15 +351,15 @@
     },
     "dbplyr": {
       "Package": "dbplyr",
-      "Version": "1.4.2.9000",
+      "Version": "2.0.0",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "dbplyr",
       "RemoteUsername": "DavidPatShuiFong",
-      "RemoteRef": "develop",
-      "RemoteSha": "51a7bdf6537f19bf5fd2e93af82a6428d017b7df",
-      "Hash": "5132643cbcad58b1fe8235336f2d09da"
+      "RemoteRef": "feature/doubletrycastMSSQL",
+      "RemoteSha": "aa99193b44dd09d30f32a9fa6a1205f8bf56d6cd",
+      "Hash": "06f083b7577978aca7a24c241eb28d42"
     },
     "desc": {
       "Package": "desc",
@@ -495,8 +500,8 @@
       "Package": "glue",
       "Version": "1.4.0.9000",
       "Source": "GitHub",
-      "RemoteType": "github",
       "Remotes": "r-lib/vctrs",
+      "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "glue",
       "RemoteUsername": "tidyverse",
@@ -713,10 +718,15 @@
     },
     "odbc": {
       "Package": "odbc",
-      "Version": "1.1.6",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "79a9861f2b9ec13c17554da2fcb0b323"
+      "Version": "1.3.0",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "odbc",
+      "RemoteUsername": "r-dbi",
+      "RemoteRef": "v1.3.0",
+      "RemoteSha": "8945fdcfff9551b126a833cd391ca18e83ca7476",
+      "Hash": "592317d62a9973852c25a9eaeb9fc8c7"
     },
     "openssl": {
       "Package": "openssl",
@@ -991,6 +1001,18 @@
       "RemoteRef": "master",
       "RemoteSha": "7f50e9c0b288f9e49f9cf7a1c92c0f12ae012390",
       "Hash": "d9f4d0ef5b705df13e387ba61bb78712"
+    },
+    "shinyFeedback": {
+      "Package": "shinyFeedback",
+      "Version": "0.3.0",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "shinyFeedback",
+      "RemoteUsername": "merlinoa",
+      "RemoteRef": "v0.3.0",
+      "RemoteSha": "b03418783d08a18fe577c712d540dc9bad863b4f",
+      "Hash": "270ef6dd33e85c453a897f306f4e8327"
     },
     "shinyFiles": {
       "Package": "shinyFiles",

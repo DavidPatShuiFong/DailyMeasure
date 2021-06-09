@@ -63,7 +63,7 @@ steps_choose_clinician_date_df <- function() {
   return(steps_df)
 }
 
-#' rintrojs steps for choosing contact specificatioin
+#' rintrojs steps for choosing contact specification
 #'
 #' @title steps_choose_contact_details_df
 #' @description returns a dataframe of rintrojs steps
@@ -364,6 +364,13 @@ steps_datatable_helpers <- function(element_name, print_copy_view = TRUE) {
   return(steps_df)
 }
 
+#' rintrojs steps for appointment view
+#'
+#' @title appointment view help
+#' @description returns a dataframe of rintrojs steps
+#'
+#' @return returns a datatable of rintrojs steps
+#' @export
 steps_appointment_df <- function() {
   steps_df <-
     data.frame(
@@ -411,6 +418,13 @@ steps_appointment_df <- function() {
   return(steps_df)
 }
 
+#' rintrojs steps for immunization view
+#'
+#' @title immunizatioin view help
+#' @description returns a dataframe of rintrojs steps
+#'
+#' @return returns a datatable of rintrojs steps
+#' @export
 steps_immunization_df <- function() {
   steps_df <-
     data.frame(
@@ -516,6 +530,13 @@ steps_immunization_df <- function() {
   return(steps_df)
 }
 
+#' rintrojs steps for cancer screen view
+#'
+#' @title cancer screening view help
+#' @description returns a dataframe of rintrojs steps
+#'
+#' @return returns a datatable of rintrojs steps
+#' @export
 steps_cancerscreen_df <- function() {
   steps_df <-
     data.frame(
@@ -587,6 +608,13 @@ steps_cancerscreen_df <- function() {
   return(steps_df)
 }
 
+#' rintrojs steps for overview
+#'
+#' @title overview help
+#' @description returns a dataframe of rintrojs steps
+#'
+#' @return returns a datatable of rintrojs steps
+#' @export
 steps_overview_df <- function() {
   steps_df <-
     data.frame(
@@ -678,7 +706,7 @@ steps_overview_df <- function() {
         shiny::br(),
         "Best Practice server configuration.",
         "Configuration file location.",
-        "User and subscription management. Log files."
+        "User and registration/subscription management. Log files."
       ),
       position = "auto"
     )) %>>%
@@ -699,7 +727,16 @@ steps_overview_df <- function() {
   return(steps_df)
 }
 
-steps_conditions_df <- function(condition_tab) {
+#' rintrojs steps for conditions
+#'
+#' @title conditions help
+#' @description returns a dataframe of rintrojs steps
+#'
+#' @param condition_tab current condition tab which is open
+#'
+#' @return returns a datatable of rintrojs steps
+#' @export
+steps_conditions_df <- function(condition_tab = "Post-natal") {
   # condition tab is the current condition tab which is open
   # currently only 'Post-natal' is available
   steps_df <-

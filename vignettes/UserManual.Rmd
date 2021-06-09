@@ -1,0 +1,188 @@
+---
+title: "GPstat! user manual"
+author: "David Fong"
+date: "2nd December 2020"
+output:
+  rmdformats::readthedown:
+    toc_depth: '4'
+  bookdown::pdf_document2:
+    latex_engine: xelatex
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+  pdf_document:
+    toc: yes
+    toc_depth: '4'
+  html_document:
+    toc: yes
+    toc_depth: '4'
+    df_print: paged
+geometry: margin=25mm
+fontsize: 12pt
+documentclass: article
+classoption: a4paper
+urlcolor: blue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(pipeR)
+
+# user manual compiled through rintrojs walkthroughs
+```
+
+# Introduction
+
+User documentation for [GPstat!](https://github.com/DavidPatShuiFong/DailyMeasure).
+
+For video demonstrations, configuration and technical information, please refer to
+the [DailyMeasure github page](https://github.com/DavidPatShuiFong/DailyMeasure).
+
+The documentation seen here is also available when using the GPstat! software, look for the
+academic hat near the top-left corner!
+
+# GPstat! overview - the left sidebar
+
+```{r echo=FALSE}
+htmltools::HTML(paste(DailyMeasure::steps_overview_df() %>>%
+                        dplyr::pull("intro"),
+                      collapse = "<br><br>"))
+```
+
+# Basic functionality
+
+## Choosing patient appointment, or contact, lists (right sidebar)
+
+### Choosing clinicians and dates
+
+```{r echo=FALSE}
+htmltools::HTML(paste(DailyMeasure::steps_choose_clinician_date_df() %>>%
+                        dplyr::pull("intro"),
+                      collapse = "<br><br>"))
+```
+
+### Choose contact type
+
+For 'contact view' or 'PIP quality improvement'. *Not* for appointment  view.
+
+```{r echo=FALSE}
+htmltools::HTML(paste(DailyMeasure::steps_choose_contact_details_df() %>>%
+                        dplyr::pull("intro"),
+                      collapse = "<br><br>"))
+```
+
+## The central view - Patient list display
+
+```{r echo=FALSE}
+htmltools::HTML(paste(DailyMeasure::steps_datatable_helpers(NA) %>>%
+                        dplyr::pull("intro"),
+                      collapse = "<br><br>"))
+```
+
+# Views
+
+## Appointments view
+
+```{r echo=FALSE}
+htmltools::HTML(paste(DailyMeasure::steps_appointment_df() %>>%
+                        dplyr::pull("intro"),
+                      collapse = "<br><br>"))
+```
+
+## Immunization view
+
+```{r echo=FALSE}
+htmltools::HTML(paste(DailyMeasure::steps_immunization_df() %>>%
+                        dplyr::pull("intro"),
+                      collapse = "<br><br>"))
+```
+
+## Cancer screen view
+
+```{r echo=FALSE, results='asis'}
+htmltools::HTML(paste(DailyMeasure::steps_cancerscreen_df() %>>%
+                        dplyr::pull("intro"),
+                      collapse = "<br><br>"))
+```
+
+## Conditions view
+
+```{r echo=FALSE, results='asis'}
+htmltools::HTML(paste(DailyMeasure::steps_conditions_df() %>>%
+                        dplyr::pull("intro"),
+                      collapse = "<br><br>"))
+```
+
+## Chronic Disease Management view
+
+```{r echo=FALSE, results='asis'}
+htmltools::HTML(paste(dMeasureCDM::steps_introduction_df(as.character(NA)) %>>%
+                        dplyr::pull("intro"),
+                      collapse = "<br><br>"))
+```
+
+## Billing view
+
+```{r echo=FALSE, results='asis'}
+htmltools::HTML(paste(dMeasureBillings::steps_introduction_df(as.character(NA)) %>>%
+                        dplyr::pull("intro"),
+                      collapse = "<br><br>"))
+```
+
+## Quality Improvement Measures (QIM)
+
+### 'Active' tab
+
+```{r echo=FALSE, results='asis'}
+htmltools::HTML(paste(dMeasureQIM::steps_introduction_df(as.character(NA), "Active") %>>%
+                        dplyr::pull("intro"),
+                      collapse = "<br><br>"))
+```
+
+### 'Diabetes' tab
+
+```{r echo=FALSE, results='asis'}
+htmltools::HTML(paste(dMeasureQIM::steps_introduction_df(as.character(NA), "Diabetes") %>>%
+                        dplyr::pull("intro"),
+                      collapse = "<br><br>"))
+```
+
+### 'Cervical Screening' tab
+
+```{r echo=FALSE, results='asis'}
+htmltools::HTML(paste(dMeasureQIM::steps_introduction_df(as.character(NA), "Cervical Screening") %>>%
+                        dplyr::pull("intro"),
+                      collapse = "<br><br>"))
+```
+
+### '15+' tab
+
+```{r echo=FALSE, results='asis'}
+htmltools::HTML(paste(dMeasureQIM::steps_introduction_df(as.character(NA), "15+") %>>%
+                        dplyr::pull("intro"),
+                      collapse = "<br><br>"))
+```
+
+### '65+' tab
+
+```{r echo=FALSE, results='asis'}
+htmltools::HTML(paste(dMeasureQIM::steps_introduction_df(as.character(NA), "65+") %>>%
+                        dplyr::pull("intro"),
+                      collapse = "<br><br>"))
+```
+
+### 'COPD (Lung Disease)' tab
+
+```{r echo=FALSE, results='asis'}
+htmltools::HTML(paste(dMeasureQIM::steps_introduction_df(as.character(NA), "COPD (Lung Disease)") %>>%
+                        dplyr::pull("intro"),
+                      collapse = "<br><br>"))
+```
+
+### 'Cardiovascular risk' tab
+
+```{r echo=FALSE, results='asis'}
+htmltools::HTML(paste(dMeasureQIM::steps_introduction_df(as.character(NA), "Cardiovascular risk") %>>%
+                        dplyr::pull("intro"),
+                      collapse = "<br><br>"))
+```

@@ -269,6 +269,7 @@ DailyMeasureUI <- function() {
       shinyWidgets::useSweetAlert(),
       shinytoastr::useToastr(),
       shinyjs::useShinyjs(),
+      shinyFeedback::useShinyFeedback(),
       shinyEffects::setPulse(id = "graduation-cap-icon", duration = 1, iteration = 50),
       tags$head(
         # stylesheets from fomantic.ui (a fork of semantic.ui)

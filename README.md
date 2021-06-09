@@ -1,6 +1,6 @@
 ## GPstat! (part of DailyMeasure) - 'Best Practice' dashboard for Quality Improvement
 
-v1.6.2 (10th July 2020)
+v2.2.0 (9th June 2021)
 
 A quality improvement tool for [Best Practice](https://bpsoftware.net/).
 
@@ -12,6 +12,7 @@ GPstat! interrogates the appointment book, searching for ‘near-future’ oppor
 
 * Medication module (counts and lists medications, by default lists patients with >= 4 medications)
 * Custom patient lists
+* Compatibility with BP Saffron
 
 #### Also includes
 
@@ -21,6 +22,9 @@ GPstat! interrogates the appointment book, searching for ‘near-future’ oppor
 * Quality Improvement Measure 1 to 10 – diabetes, BP, cardiovascular risk, smoking etc..
 * Social history and Allergies completion list
 * Post-natal list
+* Document and PCEHR document display
+* 'Action' search
+* inclusion of 'inactive' users in selectable list
 
 ![GPstat! screenshot 2](https://photos.smugmug.com/Office/Eltham/i-ZSfjQ6V/0/8b876c6a/O/GPstat_COVID19BB.png)
 
@@ -31,6 +35,8 @@ GPstat! interrogates the appointment book, searching for ‘near-future’ oppor
 [Installation video (Youtube)](https://youtu.be/stfFmX114CY)
 
 [Installation documentation (in words)](https://rpubs.com/DavidFong/GPstatInstall)
+
+[User manual (in words) - this is a copy of the 'in program' help documentation](https://rpubs.com/DavidFong/GPstatUserManual)
 
 Very technical [backend documentation (dMeasure)](https://rpubs.com/DavidFong/dMeasure)
 
@@ -48,12 +54,14 @@ The ‘bpsrawdata’ database access password（as used by ‘BPbrowser’) is r
 
 ##### Current version
 
-[OneDrive link v 1.6.2.0.9.11](https://unimelbcloud-my.sharepoint.com/:u:/g/personal/dfong1_unimelb_edu_au/Ed-uvfPKD95BorTES_VAokEBWOTEkRCiHLzJbo-aDDZytQ?e=bLB8dG)
-
-[Google Drive link v 1.6.2.0.9.11](https://drive.google.com/file/d/1z9c9mPO4K1-CxqVC-xp8Xa0h4aJK2fEd/view?usp=sharing)
+[Google Drive link v 2.2.0.0.9.14](https://drive.google.com/file/d/1E2oZ_OEcdFeObCRE538yzfPY0q8IH7tC/view?usp=sharing)
 
 
 ##### Older versions
+
+[OneDrive link v 1.6.2.0.9.11](https://unimelbcloud-my.sharepoint.com/:u:/g/personal/dfong1_unimelb_edu_au/Ed-uvfPKD95BorTES_VAokEBWOTEkRCiHLzJbo-aDDZytQ?e=bLB8dG)
+
+[Google Drive link v 1.6.2.0.9.11](https://drive.google.com/file/d/1z9c9mPO4K1-CxqVC-xp8Xa0h4aJK2fEd/view?usp=sharing)
 
 [OneDrive link v 1.6.0.0.9.10](https://unimelbcloud-my.sharepoint.com/:u:/g/personal/dfong1_unimelb_edu_au/EdJbHvnot_tAgJ3rmIUpqWgBitqo8ZuyYrC43_SuB0KanQ?e=wJaXJE)
 
@@ -66,6 +74,68 @@ The ‘bpsrawdata’ database access password（as used by ‘BPbrowser’) is r
 #### Recent changelog
 
 ```
+
+# version 2.2.0
+1st April 2021
+
+## New
+
+* Search for actions on basis of text in Action text or Comment
+  + in `Administration` section
+
+# version 2.1.0
+25th October 2020
+
+## Change
+
+* `shinyFeedback` for server choice
+
+
+# Version 2.0.0
+19th August 2020
+
+## New
+
+* 'auto-load' of `dMeasure*` modules
+  + this potentially allows auto-loading of user-written custom modules
+
+## Change
+
+* move from `shinycssloaders` to `shinybusy`
+
+## Bugfix
+
+* most recent contact picker
+  + limit the minimum of the 'maximum' date of recent contact to
+    be the same as the 'minimum' date
+  + no longer trigger a refresh (set `IgnoreInit = TRUE`) on first sight
+
+# Version 1.6.4
+16th July 2020
+
+## New
+
+* myHealth (PCEHR) document display
+
+## Change
+
+* dropdown no longer open a a formal shiny modal. will change settings when closed.
+  + use `shinyWidgets::dropMenu` instead of `shinyWidgets::dropdown` where possible
+* move web UI of `dMeasureQIM` to `dMeasureQIM`
+
+# Version 1.6.3
+12th July 2020
+
+## New
+
+* Search for documents on basis of text in Category, Subject, Detail or Comment
+  + in `Administration` section
+  
+## Change
+
+* change in date picker restricting dates (`date_b` cannot be less than `date_a`) and 
+  change in date picker restricting dates (`min_date` cannot be less than `max_date`)
+  + allows typing in of arbitrary dates, according to restriction
 
 # Version 1.6.2
 8th July 2020
@@ -112,7 +182,8 @@ The ‘bpsrawdata’ database access password（as used by ‘BPbrowser’) is r
 * better restriction of date ranges ('negative' date ranges prevented)
 * improved separation of tasks for billings_list
 * changes to report specific number of days which are restricted
-  by lack of subscription as reported by check_subscription_datechange_trigR
+  by lack of registration/subscription as reported by 
+  check_subscription_datechange_trigR
 
 # Version 1.5.9
 29th April 2020
@@ -120,7 +191,7 @@ The ‘bpsrawdata’ database access password（as used by ‘BPbrowser’) is r
 New
 
 * Download list of configured users, including 'Identifiers'
-  - for subscription application purposes
+  - for registration/subscription application purposes
 * 'bounce' reminder on update_clinicians and update_date
   button if chosen clinicians or dates change (shinyjqui effect)
 * Contact filter includes date of last contact (minimum and maximum dates)

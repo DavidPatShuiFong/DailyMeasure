@@ -1039,7 +1039,7 @@ DailyMeasureServer <- function(input, output, session) {
           ) {
             # if the module has a read_configuration_db function, then use it
             for (k in dMeasureModules[[i, "Provides"]] ) {
-              dMeasureModulesR6[[]]$read_configuration_db()
+              dMeasureModulesR6[[k]]$read_configuration_db()
             }
           }
         }

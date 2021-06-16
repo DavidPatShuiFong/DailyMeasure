@@ -2,6 +2,14 @@
 
 front-end to DailyMeasure package
 
+# version 2.2.1
+16th June 2021
+
+## Bugfix
+
+* proper call to module-specific reads of configuration database (`read_configuration_db`) when new configuration file created
+* `userconfig.insert.callback` more graciously handles License Value `NA` (only applicable for empty userconfig)
+
 # version 2.2.0
 1st April 2021
 

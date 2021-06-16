@@ -441,7 +441,7 @@ userconfig_datatable <- function(input, output, session, dM) {
       dplyr::pull(Identifier) # does not yet have identifier in 'data'
 
     License <- trimws(data[row, ]$License) # strip whitespace
-    if (License == "") {
+    if (!is.na(License) && License == "") {
       License <- NA
     } # if empty, change to NA
     LicenseDate <- dMeasure::verify_license(

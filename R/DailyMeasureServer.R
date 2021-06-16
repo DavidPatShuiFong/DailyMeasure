@@ -976,7 +976,7 @@ DailyMeasureServer <- function(input, output, session) {
     paste('Configuration file location: "', dM$configuration_file_pathR(), '"')
   })
 
-  volumes <- c(shinyFiles::getVolumes()(), base = ".", home = Sys.getenv("USERPROFILE"))
+  volumes <- c(shinyFiles::getVolumes()(), base = ".", home = Sys.getenv("USERPROFILE"), documents = path.expand('~'))
 
   shinyFiles::shinyFileChoose(
     input,

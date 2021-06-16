@@ -5,10 +5,16 @@ front-end to DailyMeasure package
 # version 2.2.1
 16th June 2021
 
+## Change
+
+* Configuration file path chooser includes 'Documents' folder
+
 ## Bugfix
 
 * proper call to module-specific reads of configuration database (`read_configuration_db`) when new configuration file created
 * `userconfig.insert.callback` more graciously handles License Value `NA` (only applicable for empty userconfig)
+* Best Practice database chooser responds better to dMeasure initiated change in database choice
+  + usually due to incorrect database location description, user or password
 
 # version 2.2.0
 1st April 2021

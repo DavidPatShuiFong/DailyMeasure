@@ -123,7 +123,7 @@ servers_datatable <- function(input, output, session, dM) {
       inputId = ns("server_chosen"),
       label = "Chosen Best Practice server",
       choices = servername_list(),
-      selected = dM$BPdatabaseChoice
+      selected = dM$BPdatabaseChoiceR()
     )
     if (.bcdyz.option$demonstration) {
       x <- shinyjs::disabled(x) # if demonstration mode, disable server selection

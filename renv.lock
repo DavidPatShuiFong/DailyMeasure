@@ -1,10 +1,10 @@
 {
   "R": {
-    "Version": "3.5.3",
+    "Version": "4.1.0",
     "Repositories": [
       {
         "Name": "CRAN",
-        "URL": "https://mran.microsoft.com/snapshot/2019-04-15"
+        "URL": "https://mran.microsoft.com/snapshot/2021-06-23"
       }
     ]
   },
@@ -105,10 +105,9 @@
     },
     "XML": {
       "Package": "XML",
-      "Version": "3.98-1.19",
+      "Version": "3.99-0.6",
       "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "b615f3f1802258deb01f1ff5ff750541"
+      "Repository": "CRAN"
     },
     "airtabler": {
       "Package": "airtabler",
@@ -377,10 +376,9 @@
     },
     "digest": {
       "Package": "digest",
-      "Version": "0.6.18",
+      "Version": "0.6.27",
       "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "496dd262e1ec64e452151479a74c972f"
+      "Repository": "CRAN"
     },
     "dplyr": {
       "Package": "dplyr",
@@ -539,15 +537,9 @@
     },
     "htmltools": {
       "Package": "htmltools",
-      "Version": "0.4.0.9003",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "htmltools",
-      "RemoteUsername": "rstudio",
-      "RemoteRef": "master",
-      "RemoteSha": "984b39c134e111e1518c4e5812110aa531bf803b",
-      "Hash": "a93fa4d7af61fc0a9909ee5c90f11920"
+      "Version": "0.5.1.1",
+      "Source": "Repository",
+      "Repository": "CRAN"
     },
     "htmlwidgets": {
       "Package": "htmlwidgets",
@@ -582,10 +574,9 @@
     },
     "igraph": {
       "Package": "igraph",
-      "Version": "1.2.4",
+      "Version": "1.2.6",
       "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "3cf44bf9b698275c7c4c474f9da137bb"
+      "Repository": "CRAN"
     },
     "ini": {
       "Package": "ini",
@@ -770,10 +761,9 @@
     },
     "pkgconfig": {
       "Package": "pkgconfig",
-      "Version": "2.0.2",
+      "Version": "2.0.3",
       "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "f5940986fb19bcef52284068baeb3f29"
+      "Repository": "CRAN"
     },
     "pkgload": {
       "Package": "pkgload",
@@ -909,15 +899,9 @@
     },
     "rlang": {
       "Package": "rlang",
-      "Version": "0.4.7",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "rlang",
-      "RemoteUsername": "r-lib",
-      "RemoteRef": "v0.4.7",
-      "RemoteSha": "d5dfb6b1d0fe5e2b28654bcad1fe45d043289106",
-      "Hash": "d9187da2ddc9e5209a51089fc3f523ca"
+      "Version": "0.4.11",
+      "Source": "Repository",
+      "Repository": "CRAN"
     },
     "rlist": {
       "Package": "rlist",
@@ -980,15 +964,9 @@
     },
     "shiny": {
       "Package": "shiny",
-      "Version": "1.5.0",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "shiny",
-      "RemoteUsername": "rstudio",
-      "RemoteRef": "v1.5.0",
-      "RemoteSha": "da6df5da9e4ab40e2ed0afa846d5b2d172b647c1",
-      "Hash": "6e4e2925d40be8ece7d9843b32dcabe2"
+      "Version": "1.6.0",
+      "Source": "Repository",
+      "Repository": "CRAN"
     },
     "shinyEffects": {
       "Package": "shinyEffects",

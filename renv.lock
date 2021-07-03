@@ -260,15 +260,15 @@
     },
     "dMeasure": {
       "Package": "dMeasure",
-      "Version": "0.9.15",
+      "Version": "0.9.16",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "dMeasure",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "50bc98dabc41b77ce7e9c70061b0753380a8d95a",
-      "Hash": "43aaed0555f2488e2d53bf9f36e313fa"
+      "RemoteSha": "4125bd19e42aec0c177a1197c93dcecb1561480d",
+      "Hash": "0378171bb208b1f8968984b465914b8d"
     },
     "dMeasureBillings": {
       "Package": "dMeasureBillings",
@@ -284,15 +284,15 @@
     },
     "dMeasureCDM": {
       "Package": "dMeasureCDM",
-      "Version": "0.5.1",
+      "Version": "0.5.2",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "dMeasureCDM",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "ed059bbab0fc6d13f695f8775fdee711cb5404a0",
-      "Hash": "b48d427fb5b9ba3b755f3b7f25a903bf"
+      "RemoteSha": "d1466a40fd7f5bd970650c2e66c096ae0aec48af",
+      "Hash": "d604a17162f2569c4cea19d3f6dc5942"
     },
     "dMeasureCustom": {
       "Package": "dMeasureCustom",

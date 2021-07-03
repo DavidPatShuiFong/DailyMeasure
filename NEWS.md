@@ -2,6 +2,14 @@
 
 front-end to DailyMeasure package
 
+# version 2.2.2
+3rd July 2021
+
+## New
+
+* Display preferences module
+  + Initial work to allow display of dates in preferred format e.g. YYYY-mm-dd or dd-mm-YYYY
+
 # version 2.2.1
 16th June 2021
 

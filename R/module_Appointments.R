@@ -54,6 +54,9 @@ appointments_datatable <- function(input, output, session, dM) {
     shiny::req(dM$clinicians)
 
     datatable_styled(dM$appointments_filtered_timeR() %>>%
+                       dplyr::mutate(
+                         AppointmentDate = dM$formatdateR()(AppointmentDate)
+                       ) %>>%
                        dplyr::select(
                          Patient, AppointmentDate, AppointmentTime,
                          Provider, Status

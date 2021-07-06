@@ -883,6 +883,15 @@ DailyMeasureServer <- function(input, output, session) {
         width = 12,
         passwordConfig_UI("password_config")
       )
+    ),
+    shiny::tabPanel(
+      # Display preferences
+      title = "Display preferences",
+      value = "DisplayPreferences",
+      shiny::column(
+        width = 12,
+        displayPreferences_UI("display_config")
+      )
     )
   )
 
@@ -1079,6 +1088,7 @@ DailyMeasureServer <- function(input, output, session) {
   })
 
   userconfig_change <- callModule(userconfig_datatable, "userconfig_dt", dM)
+  displayPreferences_change <- callModule(displayPreferences_server, "display_config", dM)
 
   ###### custom module configuration ##############################
 

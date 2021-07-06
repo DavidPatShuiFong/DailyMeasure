@@ -1,6 +1,6 @@
 ## GPstat! (part of DailyMeasure) - 'Best Practice' dashboard for Quality Improvement
 
-v2.2.1 (16th June 2021)
+v2.2.2 (3rd July 2021)
 
 A quality improvement tool for [Best Practice](https://bpsoftware.net/).
 
@@ -54,9 +54,11 @@ The ‘bpsrawdata’ database access password（as used by ‘BPbrowser’) is r
 
 ##### Current version
 
-[Google Drive link v 2.2.1.0.9.15](https://drive.google.com/file/d/1x2Y5aCc-oVxnbNqFF1NkkxkAQohbEmsL/view?usp=sharing)
+[Google Drive link v 2.2.2.0.9.16](https://drive.google.com/file/d/10YR9vJtFb18pUBoTbUYIZhAMOu8oBJBJ/view?usp=sharing)
 
 ##### Older versions
+
+[Google Drive link v 2.2.1.0.9.15](https://drive.google.com/file/d/1x2Y5aCc-oVxnbNqFF1NkkxkAQohbEmsL/view?usp=sharing)
 
 [Google Drive link v 2.2.0.0.9.14](https://drive.google.com/file/d/1E2oZ_OEcdFeObCRE538yzfPY0q8IH7tC/view?usp=sharing)
 

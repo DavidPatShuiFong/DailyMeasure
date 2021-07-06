@@ -356,207 +356,13 @@ conditions_postnatal_datatable <- function(input, output, session, dM) {
       # converts OutcomeCode to strings
       # need to add one because OutComesCode starts at zero, but the levels start at one!
       dplyr::rename(RecordNo = ExternalID) %>>%
-      dplyr::select(Name, DOB, RecordNo, EDCbyDate, EDCbyScan, EndDate, Outcome, AppointmentDate, AppointmentTime, Status, Provider)
-
-    datatable_styled(d,
-                     extensions = c("Buttons", "Scroller"),
-                     scrollX = TRUE
-    ) # don't collapse columns
-  })
-
-  output$postnatal_table <- DT::renderDT({
-    postnatal_table()
-  },
-  server = TRUE
-  )
-}
-
-#' condition asthma - server
-#'
-#' search for asthma patients.
-#'
-#' Attached to appointments within the defined appointment search period.
-#'
-#' @param input as required by Shiny modules
-#' @param output as required by Shiny modules
-#' @param session as required by Shiny modules
-#' @param dM dMeasure R6 object
-#'  access to appointments lists, visits, user interface elements
-#'  and post-natal status database
-#'
-#' @return none
-conditions_asthma_datatable <- function(input, output, session, dM) {
-  ns <- session$ns
-
-  list_asthma <- function(
-    contact = FALSE, # contact (if TRUE) or appointment system (if FALSE)
-    date_from = NA,
-    date_to = NA,
-    clinicians = NA,
-    min_contact = NA,
-    min_date = NA,
-    contact_type = NA,
-    ignoreOld = FALSE,
-    lazy = FALSE) {
-    if (is.na(date_from)) {
-      date_from <- dM$date_a
-    }
-    if (is.na(date_to)) {
-      date_to <- dM$date_b
-    }
-    if (length(clinicians) == 1 && is.na(clinicians)) {
-      # sometimes clinicians is a list, in which case it cannot be a single NA!
-      # 'if' is not vectorized so will only read the first element of the list
-      # but if clinicians is a single NA, then read $clinicians
-      clinicians <- dM$clinicians
-    }
-    if (is.na(min_contact)) {
-      min_contact <- dM$contact_min
-    }
-    if (is.na(min_date)) {
-      min_date <- dM$contact_minDate
-    }
-
-    # no additional clinician filtering based on privileges or user restrictions
-
-    if (all(is.na(clinicians)) || length(clinicians) == 0) {
-      clinicians <- c("") # dplyr::filter does not work on zero-length list()
-    }
-
-    if (dM$emr_db$is_open()) {
-      # only if EMR database is open
-      if (dM$Log) {
-        log_id <- self$dM$config_db$write_log_db(
-          query = "asthma_condition",
-          data = list(date_from, date_to, clinicians)
-        )
-      }
-
-      if (contact) {
-        if (!lazy) {
-          dM$list_contact_asthma(
-            date_from, date_to, clinicians,
-            min_contact, min_date,
-            contact_type,
-            lazy
-          )
-        }
-        asthma_list <- dM$contact_asthma_list %>>%
-          dplyr::select(-c(Count, Latest)) # don't need these fields
-        asthmaID <- asthma_list %>>% dplyr::pull(InternalID) %>>%
-          c(-1) # make sure not empty vector, which is bad for SQL filter
-      } else {
-        if (!lazy) {
-          dM$filter_appointments()
-        }
-        asthmaID <- c(dM$asthma_list(), -1)
-        asthma_list <- dM$db$patients %>>%
-          dplyr::filter(InternalID %in% asthmaID) %>>%
-          dplyr::select(Firstname, Surname, InternalID) %>>%
-          dplyr::collect() %>>%
-          dplyr::mutate(Patient = paste(Firstname, Surname)) %>>%
-          dplyr::select(Patient, InternalID)
-        # derived from self$appointments_filtered
-      }
-
-      fluvaxList <- dM$influenzaVax_obs(copdID,
-                                        date_from = ifelse(ignoreOld,
-                                                           NA,
-                                                           as.Date(-Inf, origin = "1970-01-01")
-                                        ),
-                                        # if ignoreOld, then influenza_vax will (given NA)
-                                        # calculate date_from as fifteen months before date_to
-                                        date_to = date_to
+      dplyr::select(Name, DOB, RecordNo, EDCbyDate, EDCbyScan, EndDate, Outcome, AppointmentDate, AppointmentTime, Status, Provider) %>>%
+      dplyr::mutate(
+        AppointmentDate = dM$formatdateR()(AppointmentDate),
+        EDCbyDate = dM$formatdateR()(EDCbyDate),
+        EDCbyScan = dM$formatdateR()(EDCbyScan),
+        EndDate = dM$formatdateR()(EndDate)
       )
-      # returns InternalID, FluVaxName, FluvaxDate
-
-      qim_asthma_list <- asthma_list %>>%
-        dplyr::left_join(fluvaxList,
-                         by = "InternalID",
-                         copy = TRUE
-        ) %>>%
-        dplyr::left_join(dM$db$patients %>>%
-                           dplyr::filter(InternalID %in% asthmaID) %>>%
-                           dplyr::select(InternalID, DOB, Sex, RecordNo),
-                         by = "InternalID",
-                         copy = TRUE
-        ) %>>%
-        dplyr::select(
-          Patient, InternalID, RecordNo, Sex,
-          FluvaxDate, FluvaxName
-        )
-
-      if (dM$Log) {
-        dM$config_db$duration_log_db(log_id)
-      }
-
-    }
-    return(qim_asthma_list)
-  }
-
-  asthma <-
-    shiny::eventReactive(
-      c(
-        dM$cliniciansR(), dM$appointments_listR(),
-        dM$date_aR(), dM$date_bR(),
-        dM$visit_typeR()
-      ),
-      ignoreInit = FALSE, {
-        # respond to appointments_listR()
-        # when clinician or dates is changed
-        shiny::req(dM$appointments_listR())
-
-        contactID <- dM$list_visits(
-          date_from = search_back,
-          date_to = today
-        ) %>>%
-          dplyr::pull(InternalID) %>>% unique()
-        # accepts the 'default' clinicians choice
-        # and visit types
-        #
-        # finds list of IDs who have been seen by clinicians within
-        # the recent past (depending on current system date)
-        # who may have been pregnant at time of visit
-
-
-        if (nrow(patientPregnancyDetails) > 0) {
-          patientDetails <- dM$db$patients %>>%
-            dplyr::filter(InternalID %in% postnatalID) %>>%
-            dplyr::mutate(Name = paste(Firstname, Surname)) %>>%
-            dplyr::select(InternalID, ExternalID, Name)
-        } else {
-          patientDetails <- data.frame(
-            InternalID = numeric(0),
-            ExternalID = character(0),
-            Name = character(0)
-          )
-        }
-
-        patientAppointments <- dM$appointments_listR() %>>%
-          # accept defaults for $date_a, $date_b and $clinicians
-          dplyr::filter(InternalID %in% postnatalID) %>>%
-          dplyr::select(-Patient) # we don't need the name
-
-        postnatalList <- patientDetails %>>%
-          dplyr::left_join(patientPregnancyDetails, by = "InternalID", copy = TRUE) %>>%
-          dplyr::left_join(patientAppointments, by = "InternalID", copy = TRUE) %>>%
-          dplyr::select(-c(InternalID, Age)) %>>% # we don't need the internalID now
-          dplyr::collect()
-
-        return(postnatalList)
-      }
-    )
-
-  ### create tag-styled datatable (or 'printable' datatable)
-  postnatal_table <- shiny::reactive({
-    shiny::req(!is.null(postnatal()))
-
-    d <- postnatal() %>>%
-      dplyr::mutate(Outcome = as.character(pregnancy_outcome_levels[OutcomeCode + 1])) %>>%
-      # converts OutcomeCode to strings
-      # need to add one because OutComesCode starts at zero, but the levels start at one!
-      dplyr::rename(RecordNo = ExternalID) %>>%
-      dplyr::select(Name, DOB, RecordNo, EDCbyDate, EDCbyScan, EndDate, Outcome, AppointmentDate, AppointmentTime, Status, Provider)
 
     datatable_styled(d,
                      extensions = c("Buttons", "Scroller"),
@@ -687,9 +493,9 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
                 FluvaxStatus == "Removed" ~
                   " (Removed from influenza immunization reminders)",
                 FluvaxStatus == "Up-to-date" ~
-                  paste0(" (Up-to-date : ", FluvaxDate, ") "),
+                  paste0(" (Up-to-date : ", dM$formatdateR()(FluvaxDate), ") "),
                 FluvaxStatus == "Old" ~
-                  paste0(" (DUE : ", FluvaxDate, ") ")
+                  paste0(" (DUE : ", dM$formatdateR()(FluvaxDate), ") ")
               )
             ),
           plantag_print =
@@ -699,9 +505,9 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
                 AsthmaPlanStatus == "Never done" ~ " (Never done)",
                 # no previous asthma plan
                 AsthmaPlanStatus == "Up-to-date" ~
-                  paste0(" (Up-to-date : ", PlanDate, ") "),
+                  paste0(" (Up-to-date : ", dM$formatdateR()(PlanDate), ") "),
                 AsthmaPlanStatus == "Old" ~
-                  paste0(" (DUE : ", PlanDate, ") ")
+                  paste0(" (DUE : ", dM$formatdateR()(PlanDate), ") ")
               )
             )
         )
@@ -730,9 +536,9 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
                     FluvaxStatus == "Removed" ~
                       "Removed from influenza immunization reminders",
                     FluvaxStatus == "Up-to-date" ~
-                      paste0(" Up-to-date : ", FluvaxDate),
+                      paste0(" Up-to-date : ", dM$formatdateR()(FluvaxDate)),
                     FluvaxStatus == "Old" ~
-                      paste0(" DUE : ", FluvaxDate) # old
+                      paste0(" DUE : ", dM$formatdateR()(FluvaxDate)) # old
                   ),
                   "</h4>"
                 )
@@ -756,9 +562,9 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
                     AsthmaPlanStatus == "Never done" ~ "Never done",
                     # no previous asthma plan
                     AsthmaPlanStatus == "Up-to-date" ~
-                      paste0(" Up-to-date : ", PlanDate),
+                      paste0(" Up-to-date : ", dM$formatdateR()(PlanDate)),
                     AsthmaPlanStatus == "Old" ~
-                      paste0(" DUE : ", PlanDate) # old
+                      paste0(" DUE : ", dM$formatdateR()(PlanDate)) # old
                   ),
                   "</h4>"
                 )
@@ -768,7 +574,13 @@ conditions_asthma_datatable <- function(input, output, session, dM) {
 
     df <- df %>>%
       dplyr::select(-c(FluvaxDate, FluvaxName, PlanDate,
-                       FluvaxStatus, AsthmaPlanStatus))
+                       FluvaxStatus, AsthmaPlanStatus)) %>>%
+      dplyr::mutate(DOB = dM$formatdateR()(DOB)) %>>%
+      {if ("AppointmentDate" %in% names(.)) {
+        dplyr::mutate(., AppointmentDate = dM$formatdateR()(AppointmentDate))
+      } else {
+        . # in Contact view there may be no 'AppointmentDate'
+      }}
     # flu vax and asthma plan information now incorporated
     #  into vaxtag/vaxtag_print and plantag, plantag_print
 

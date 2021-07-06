@@ -120,6 +120,8 @@ cancerscreen_datatable <- function(input, output, session, dM) {
     )
     shiny::req(dM$clinicians)
     screenlist <- NULL
+    # react to change in date formats
+    dummy <- dM$formatdateR()
     # Bowel cancer
     if ("Bowel" %in% cancerscreen_chosen()) {
       screenlist <- rbind(
@@ -196,24 +198,34 @@ cancerscreen_datatable <- function(input, output, session, dM) {
 
     if (input$printcopy_view == TRUE) {
       # printable/copyable view
-      datatable_styled(cancerscreen_list() %>>%
-                         dplyr::select(c(
-                           "Patient", "AppointmentDate", "AppointmentTime",
-                           "Provider", "DOB", "Age", "screentag_print"
-                         )),
-                       colnames = c("Screening" = "screentag_print")
+      datatable_styled(
+        cancerscreen_list() %>>%
+          dplyr::mutate(
+            AppointmentDate = dM$formatdateR()(AppointmentDate),
+            DOB = dM$formatdateR()(DOB)
+          ) %>>%
+          dplyr::select(c(
+            "Patient", "AppointmentDate", "AppointmentTime",
+            "Provider", "DOB", "Age", "screentag_print"
+          )),
+        colnames = c("Screening" = "screentag_print")
       )
     } else {
       # fomantic/semantic tag view
-      datatable_styled(cancerscreen_list() %>>%
-                         dplyr::select(c(
-                           "Patient", "AppointmentDate", "AppointmentTime",
-                           "Provider", "DOB", "Age", "screentag"
-                         )),
-                       escape = c(7),
-                       copyHtml5 = NULL, printButton = NULL,
-                       downloadButton = NULL, # no copy/print buttons
-                       colnames = c("Screening" = "screentag")
+      datatable_styled(
+        cancerscreen_list() %>>%
+          dplyr::mutate(
+            AppointmentDate = dM$formatdateR()(AppointmentDate),
+            DOB = dM$formatdateR()(DOB)
+          ) %>>%
+          dplyr::select(c(
+            "Patient", "AppointmentDate", "AppointmentTime",
+            "Provider", "DOB", "Age", "screentag"
+          )),
+        escape = c(7),
+        copyHtml5 = NULL, printButton = NULL,
+        downloadButton = NULL, # no copy/print buttons
+        colnames = c("Screening" = "screentag")
       )
     }
   })

@@ -9,6 +9,7 @@ front-end to DailyMeasure package
 
 * Display preferences module
   + Initial work to allow display of dates in preferred format e.g. YYYY-mm-dd or dd-mm-YYYY
+  + Suggestion of RN Dat Le, thanks!
 
 # version 2.2.1
 16th June 2021

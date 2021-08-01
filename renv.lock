@@ -260,15 +260,15 @@
     },
     "dMeasure": {
       "Package": "dMeasure",
-      "Version": "0.9.17",
+      "Version": "0.9.18",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "dMeasure",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "ac833131b9acd3eb0417c8ebf78c987f6037d182",
-      "Hash": "1c03ce4fea47fe4f920a1d66c69720e5"
+      "RemoteSha": "406293d4b2322e81bef51c085b7fd9d79fb7dd36",
+      "Hash": "869ffb7621524fb9220a608cef47a6e2"
     },
     "dMeasureBillings": {
       "Package": "dMeasureBillings",
@@ -320,15 +320,15 @@
     },
     "dMeasureQIM": {
       "Package": "dMeasureQIM",
-      "Version": "0.5",
+      "Version": "0.6.0",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "dMeasureQIM",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "069584062920f026e9a747138cb9923294ef4a73",
-      "Hash": "ed2c27870705b75af20af44146f7722f"
+      "RemoteSha": "c8d4a585ca6f699e3279f652350d513d59bea211",
+      "Hash": "e96767f3bfe42201b14e5568a4151aca"
     },
     "data.table": {
       "Package": "data.table",
@@ -500,8 +500,8 @@
       "Package": "glue",
       "Version": "1.4.0.9000",
       "Source": "GitHub",
-      "Remotes": "r-lib/vctrs",
       "RemoteType": "github",
+      "Remotes": "r-lib/vctrs",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "glue",
       "RemoteUsername": "tidyverse",

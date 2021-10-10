@@ -2,6 +2,18 @@
 
 front-end to DailyMeasure package
 
+# version 2.3.0
+10th October 2021
+
+## New
+
+* `sidebarmenuPriority` - optional function in dMeasure modules
+  + priority of position in left side bar menu 
+
+## Change
+
+* Move Appointments tab to `dMeasureAppointments`
+
 # version 2.2.2
 3rd July 2021
 

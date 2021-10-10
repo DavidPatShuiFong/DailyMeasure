@@ -40,7 +40,8 @@ Imports:
     dbConnection,
     dMeasure,
     shinyFeedback,
-    lubridate
+    lubridate,
+    dMeasureAppointments
 Suggests:
     pool,
     dMeasureQIM,
@@ -72,7 +73,6 @@ Collate:
     'module_Configuration_users.R'
     'module_CancerScreen.R'
     'module_Immunization.R'
-    'module_Appointments.R'
     'DailyMeasureUI.R'
     'module_About.R'
     'module_Administration.R'

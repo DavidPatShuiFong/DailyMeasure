@@ -6,7 +6,7 @@
 #'
 #' Creates the shiny application user interface
 #'
-#' @include module_Appointments.R module_Immunization.R module_CancerScreen.R
+#' @include module_Immunization.R module_CancerScreen.R
 #' @include module_Configuration_users.R module_Configuration_location.R
 #' @include module_Configuration_password.R module_Configuration_server.R
 #' requires all moduleUI definitions to be defined
@@ -119,10 +119,11 @@ DailyMeasureUI <- function() {
         id = "sidebarMenu-wrapper", # this is needed for rintrojs
         shinydashboard::sidebarMenu(
           id = "sidebartabs",
-          shinydashboard::menuItem("Appointments",
-                                   tabName = "appointments",
-                                   icon = shiny::icon("calendar-check")
-          ),
+          shinydashboard::sidebarMenuOutput("sidebarmenu"),
+          # dynamically created Billings, CDM, PIP quality improvement,
+          # Custom, Medication
+          # menu items. could be blank!
+          # e.g. will be blank unless dMeasureQIM module/package is available
           shinydashboard::menuItem("Immunization",
                                    tabName = "immunization",
                                    icon = shiny::icon("syringe")
@@ -131,11 +132,6 @@ DailyMeasureUI <- function() {
                                    tabName = "cancerscreen",
                                    icon = icon("x-ray")
           ),
-          shinydashboard::sidebarMenuOutput("sidebarmenu"),
-          # dynamically created Billings, CDM, PIP quality improvement,
-          # Custom, Medication
-          # menu items. could be blank!
-          # e.g. will be blank unless dMeasureQIM module/package is available
           shinydashboard::menuItem("Conditions",
                                    tabName = "conditions",
                                    icon = shiny::icon("fingerprint")

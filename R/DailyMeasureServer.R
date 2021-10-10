@@ -120,15 +120,32 @@ DailyMeasureServer <- function(input, output, session) {
             args = list(information = "configID")
           )
         }
+      ),
+      sidebarmenuPriority = sapply(
+        Package,
+        function(x) {
+          if (exists("sidebarmenuPriority", where = asNamespace(x), mode = "function")) {
+            do.call(
+              what = "sidebarmenuPriority",
+              envir = asNamespace(x),
+              args = list()
+            )
+          } else {
+            50 # middle priority. larger numbers have higher priority
+          }
+        }
       )
     ) %>>%
+    dplyr::arrange(desc(sidebarmenuPriority)) %>>%
+    # order packages by display priority (50 being medium, 90 being high and 10 being low)
     dplyr::add_row( # add a row for the dMeasure object
       Package = "dMeasure",
       Provides = list("dMeasure"),
       # needs to be list because some packages have two 'provides'
       Requires = list(NULL)
     )
-  dMeasureModulesR6[["dMeasure"]] <- dM # this *is* the dM object
+  dMeasureModulesR6[["dMeasure"]] <- dM
+  # this *is* the dM object, the 'base' (not really a module)
 
   # for any dMeasure modules that have been found
   # with integration functions, start to 'auto-load'!
@@ -627,18 +644,8 @@ DailyMeasureServer <- function(input, output, session) {
 
   ##### main body panel ###############################################################
 
-
   shinytabItems <-
     c(
-      list(
-        shinydashboard::tabItem(
-          tabName = "appointments",
-          fluidRow(column(width = 12, align = "center", h2("Appointments"))),
-          fluidRow(column(width = 12, shiny::div(
-            id = "appointments_datatable_wrapper", # for rintrojs
-            appointments_datatableUI("appointments_dt")
-          )))
-        )),
       list(
         shinydashboard::tabItem(
           tabName = "immunization",
@@ -674,6 +681,7 @@ DailyMeasureServer <- function(input, output, session) {
 
   for (i in seq_len(nrow(dMeasureModules))) {
     if (dMeasureModules[i, "Package"] != "dMeasure") {
+      # 'dMeasure' is the 'base', and is not really a module!
       sidebarmenu <- c(
         sidebarmenu,
         do.call(
@@ -736,9 +744,6 @@ DailyMeasureServer <- function(input, output, session) {
   callModule(administration, "admin_dt", dM)
   # about
   callModule(about, "about_dt", dM)
-
-  # appointment list
-  callModule(appointments_datatable, "appointments_dt", dM)
 
   output$test_dt <-
     DT::renderDT({
@@ -895,7 +900,7 @@ DailyMeasureServer <- function(input, output, session) {
     )
   )
 
-  # add configuration panel from dMeasure module, if available
+  # add configuration panel from dMeasure modules, if available
   # e.g. dMeasureCustom
   for (i in seq_len(nrow(dMeasureModules))) {
     if (dMeasureModules[[i, "Package"]] != "dMeasure") {
@@ -978,6 +983,7 @@ DailyMeasureServer <- function(input, output, session) {
   # initially the appointments tabitem is not defined!
   shinydashboard::updateTabItems(session, "sidebartabs", "appointments")
   # so need to re-render
+  # note that this tab comes from a module, 'dMeasureAppointments', which is compulsory!
 
   ##### configuration file location tab ##############################################
 

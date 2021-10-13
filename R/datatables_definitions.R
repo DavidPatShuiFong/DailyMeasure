@@ -82,6 +82,8 @@ datatable_styled <- function(
     text = "Download",
     collectionLayout = "fixed"
   ),
+  selectAllButton = NULL, # by default, the 'Select' extension buttons are turned off
+  selectNoneButton = NULL,
   # initComplete = DT::JS(semantic_popupJS),
   drawCallback = DT::JS(semantic_popupJS),
   `responsive-resize` = DT::JS(semantic_popupJS),
@@ -98,10 +100,14 @@ datatable_styled <- function(
   scrollX = FALSE,
   fixedColumns = FALSE,
   columnDefs = list(list()), # allows hiding columns by default
+  select = list(style = 'multiple', items = 'row'), # support for 'Select' extension
+  rowId = 0, # support for 'Select' extension
   ...) {
   buttons <- list()
   j <- 1
-  for (i in list(colvis, copyHtml5, printButton, downloadButton)) {
+  for (i in list(
+    colvis, copyHtml5, printButton, downloadButton, selectAllButton, selectNoneButton
+  )) {
     if (!is.null(i)) {
       buttons[[j]] <- i
       j <- j + 1
@@ -114,7 +120,8 @@ datatable_styled <- function(
     scrollX = scrollX,
     fixedColumns = fixedColumns, columnDefs = columnDefs,
     `responsive-resize` = `responsive-resize`,
-    `responsive-display` = `responsive-display`
+    `responsive-display` = `responsive-display`,
+    select = select, rowId = rowId
   )
   DT::datatable(data, fillContainer = fillContainer,
                 extensions = extensions, options = options, ...)

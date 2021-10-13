@@ -3,12 +3,13 @@
 front-end to DailyMeasure package
 
 # version 2.3.0
-10th October 2021
+13th October 2021
 
 ## New
 
 * `sidebarmenuPriority` - optional function in dMeasure modules
   + priority of position in left side bar menu 
+* support for `Select` extension in `$datatable_styled`
 
 ## Change
 

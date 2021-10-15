@@ -17,6 +17,8 @@ datatable_styled(
     "excel", exportOptions = list(columns = ":visible"), filename = "GPstat"),
     list(extend = "pdf", exportOptions = list(columns = ":visible"), filename =
     "GPstat")), text = "Download", collectionLayout = "fixed"),
+  selectAllButton = NULL,
+  selectNoneButton = NULL,
   drawCallback = DT::JS(semantic_popupJS),
   `responsive-resize` = DT::JS(semantic_popupJS),
  
@@ -29,6 +31,8 @@ datatable_styled(
   scrollX = FALSE,
   fixedColumns = FALSE,
   columnDefs = list(list()),
+  select = list(style = "multiple", items = "row"),
+  rowId = 0,
   ...
 )
 }

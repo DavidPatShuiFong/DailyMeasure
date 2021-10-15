@@ -49,101 +49,11 @@ DailyMeasureServer <- function(input, output, session) {
   # create the dMeasure object
   dM <- dMeasure::dMeasure$new()
 
-  # find out what dMeasure modules are installed,
+  dMeasureModules <- dM$read_dMeasureModules()
+  # discover what dMeasure modules packages are installed,
   # and if any have an 'integration' function which allows
   # sem-automated 'auto-loading'
   dMeasureModulesR6 <- list() # list of R6 objects
-  dMeasureModules <- as.data.frame(installed.packages(), stringsAsFactors = FALSE) %>>%
-    dplyr::filter(grepl("dMeasure", Package)) %>>% # must have 'dMeasure' in part of the name
-    dplyr::filter(sapply(Package, function(x) {
-      # exists does not accept a vector for 'where', so use sapply (which returns a vector)
-      # check if the package contains the 'dMeasureIntegration' function
-      exists("dMeasureIntegration", where = asNamespace(x), mode = "function")
-    })) %>>%
-    dplyr::select(Package) %>>% # just need the package names
-    dplyr::mutate( # now fill in description (Provides/Requires)
-      Provides = sapply(
-        # usually a character vector with a single element
-        # however, it could be a list of character vectors
-        #  for an example, see dMeasureQIM
-        # if there are several elements, the Provides need to align
-        #  with moduleID
-        Package,
-        function(x) {
-          do.call(
-            what = "dMeasureIntegration",
-            envir = asNamespace(x),
-            args = list(information = "Provides")
-          )
-        }
-      ),
-      Requires = sapply(
-        # a single character element (usually 'dMeasure')
-        #  or a vector/list of characters
-        Package,
-        function(x) {
-          do.call(
-            what = "dMeasureIntegration",
-            envir = asNamespace(x),
-            args = list(information = "Requires")
-          )
-        }
-      ),
-      moduleID = sapply(
-        # the ID of modules to create
-        #
-        # this can either return a vector of character
-        #  (possibly a one-element vector)
-        #  in which case the characters are IDs
-        # *or* alternatively a list of lists
-        #  (maybe just one list)
-        #  a list contains $ID (a character vector)
-        #  and $extraArgs (a character vector)
-        #  $extraArgs are passed to the call to
-        #  datatableServer (a call to a module)
-        Package,
-        function(x) {
-          do.call(
-            what = "dMeasureIntegration",
-            envir = asNamespace(x),
-            args = list(information = "moduleID")
-          )
-        }
-      ),
-      configID = sapply(
-        # the ID of modules to create
-        Package,
-        function(x) {
-          do.call(
-            what = "dMeasureIntegration",
-            envir = asNamespace(x),
-            args = list(information = "configID")
-          )
-        }
-      ),
-      sidebarmenuPriority = sapply(
-        Package,
-        function(x) {
-          if (exists("sidebarmenuPriority", where = asNamespace(x), mode = "function")) {
-            do.call(
-              what = "sidebarmenuPriority",
-              envir = asNamespace(x),
-              args = list()
-            )
-          } else {
-            50 # middle priority. larger numbers have higher priority
-          }
-        }
-      )
-    ) %>>%
-    dplyr::arrange(desc(sidebarmenuPriority)) %>>%
-    # order packages by display priority (50 being medium, 90 being high and 10 being low)
-    dplyr::add_row( # add a row for the dMeasure object
-      Package = "dMeasure",
-      Provides = list("dMeasure"),
-      # needs to be list because some packages have two 'provides'
-      Requires = list(NULL)
-    )
   dMeasureModulesR6[["dMeasure"]] <- dM
   # this *is* the dM object, the 'base' (not really a module)
 
@@ -679,12 +589,15 @@ DailyMeasureServer <- function(input, output, session) {
   # Cancer screening
   callModule(cancerscreen_datatable, "cancerscreen_dt", dM)
 
+  # for each module add sidebarmenu item (UI), main panel (UI)
+  # and start module's server (server)
   for (i in seq_len(nrow(dMeasureModules))) {
     if (dMeasureModules[i, "Package"] != "dMeasure") {
       # 'dMeasure' is the 'base', and is not really a module!
       sidebarmenu <- c(
         sidebarmenu,
         do.call(
+          # add left sidebar item
           what = "shinydashboardmenuItem",
           envir = asNamespace(dMeasureModules[i, "Package"]),
           args = list()
@@ -693,6 +606,7 @@ DailyMeasureServer <- function(input, output, session) {
       shinytabItems <- c(
         shinytabItems,
         do.call(
+          # add 'main panel' item (attached to left sidebar item)
           what = "dMeasureShinytabItems",
           envir = asNamespace(dMeasureModules[i, "Package"]),
           args = list()
@@ -700,6 +614,8 @@ DailyMeasureServer <- function(input, output, session) {
       )
       index <- 0
       for (j in dMeasureModules[[i, "moduleID"]]) {
+        # call module's server function
+        #
         # potentially more than one moduleID, though one is more common
         # for an example of more than one moduleID, see dMeasureQIM
         index <- index + 1

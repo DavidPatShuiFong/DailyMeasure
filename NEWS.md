@@ -14,6 +14,7 @@ front-end to DailyMeasure package
 ## Change
 
 * Move Appointments tab to `dMeasureAppointments`
+* dMeasure module package discovery moved to `dM$read_dMeasureModules`
 
 # version 2.2.2
 3rd July 2021

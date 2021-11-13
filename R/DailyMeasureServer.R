@@ -52,7 +52,11 @@ DailyMeasureServer <- function(input, output, session) {
   dMeasureModules <- dM$read_dMeasureModules()
   # discover what dMeasure modules packages are installed,
   # and if any have an 'integration' function which allows
-  # sem-automated 'auto-loading'
+  # semi-automated 'auto-loading'
+  #
+  # note that dM$dMeasureModules (which is set by dM$read_dMeasureModules)
+  # is used by methods such as dM$open_configuration_db(), and so needs
+  # to be called early after the dM object is initialized
   dMeasureModulesR6 <- list() # list of R6 objects
   dMeasureModulesR6[["dMeasure"]] <- dM
   # this *is* the dM object, the 'base' (not really a module)

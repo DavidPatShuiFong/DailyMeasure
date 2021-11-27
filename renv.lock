@@ -45,7 +45,7 @@
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
       "RemoteSha": "7c6aa4b7260284a6f5935faaae2dae55720cc4cb",
-      "Hash": "fe287946791c2effd3dffc6ca6216370"
+      "Hash": "2ab8e85fdd67f28140f441cbeee964ed"
     },
     "MASS": {
       "Package": "MASS",
@@ -181,7 +181,7 @@
       "RemoteUsername": "tidyverse",
       "RemoteRef": "v1.2.0",
       "RemoteSha": "aa3095564bbb7c1cfc88b22aa50e44e3b01b9474",
-      "Hash": "34e63d2e1039bb132862d4cef88dfafb"
+      "Hash": "6ef0fe1b0a7c646739f6c9b0d8cfc152"
     },
     "brew": {
       "Package": "brew",
@@ -214,7 +214,7 @@
       "RemoteUsername": "r-lib",
       "RemoteRef": "v2.0.0",
       "RemoteSha": "9a133422f200f7aa0cdc78b28eb42770cdfe4b35",
-      "Hash": "ce29b964fe9033e720e73906c8ad7be1"
+      "Hash": "b1f2d48d395490ce7030499769e28bd0"
     },
     "clipr": {
       "Package": "clipr",
@@ -298,8 +298,8 @@
       "RemoteRepo": "dMeasureAppointments",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "e4b903d21c7340a9195a564c572577ef9b835366",
-      "Hash": "ac416c56eb381645286bdde79ca5decc"
+      "RemoteSha": "87395b330dd3af762bd73adc0071f64936b35604",
+      "Hash": "aa90475fabe95c9393c3f9e9388d85bb"
     },
     "dMeasureBillings": {
       "Package": "dMeasureBillings",
@@ -430,7 +430,7 @@
       "RemoteUsername": "tidyverse",
       "RemoteRef": "master",
       "RemoteSha": "d2627f716091524748b4e72dff5dbd58823532c7",
-      "Hash": "5b3218a5da56f35e533b3265bbf75ea8"
+      "Hash": "9537758f2cc01e6f051cbd258a05feba"
     },
     "ellipsis": {
       "Package": "ellipsis",
@@ -454,7 +454,7 @@
       "RemoteUsername": "hadley",
       "RemoteRef": "master",
       "RemoteSha": "3f03b11491ce3d6fc5601e210927eff73bf8e350",
-      "Hash": "5ece31a6c0f94811e6bef59482d87164"
+      "Hash": "5a9b94668993886f1f6c24f6424732c7"
     },
     "evaluate": {
       "Package": "evaluate",
@@ -535,7 +535,7 @@
       "RemoteUsername": "r-lib",
       "RemoteRef": "1.1.0",
       "RemoteSha": "e3eb65dd1526a2d3900ad1edeadf1b353976c360",
-      "Hash": "62760a7f89a87069f877f1ace0090be6"
+      "Hash": "ddc32111068f2a91c74a80b844e6fb16"
     },
     "git2r": {
       "Package": "git2r",
@@ -567,7 +567,7 @@
       "RemoteUsername": "Thinkr-open",
       "RemoteRef": "master",
       "RemoteSha": "4c5d06a93acb865a90bd826fd3b3bfaa308d2c0e",
-      "Hash": "3c1c4d7ea07dcd5846d50bab66d4a8c1"
+      "Hash": "5c7fb707019414a070771442b2e49d2c"
     },
     "gtable": {
       "Package": "gtable",
@@ -826,7 +826,7 @@
       "RemoteUsername": "r-lib",
       "RemoteRef": "master",
       "RemoteSha": "2f5ad11bfe54906705073cc52a808e0a51998fb4",
-      "Hash": "33e002e67989c8e8e170482e354b368c"
+      "Hash": "19a2f4e7f6bf3ffeb8d77117226b5efb"
     },
     "pipeR": {
       "Package": "pipeR",
@@ -960,7 +960,7 @@
       "RemoteUsername": "r-lib",
       "RemoteRef": "v2.1.0",
       "RemoteSha": "b3b52721cdcadcf12110ea3ab8f41ecf0bb24535",
-      "Hash": "4113c5860894df2654a9cb9d8ccee962"
+      "Hash": "0b70763fd5f7f13ed83fd40b3074b396"
     },
     "renv": {
       "Package": "renv",
@@ -1029,7 +1029,7 @@
       "RemoteUsername": "r-lib",
       "RemoteRef": "master",
       "RemoteSha": "2a068b181bc15ec55545ddd752f5341471f5e74a",
-      "Hash": "bdabecc094b2f61e7da80b5d69021cb9"
+      "Hash": "32ff7cda56fb3aeade631bf98f2d3a76"
     },
     "rprojroot": {
       "Package": "rprojroot",
@@ -1242,7 +1242,7 @@
       "RemoteUsername": "tidyverse",
       "RemoteRef": "v3.0.3",
       "RemoteSha": "2a5fba0eabe7bec8016c152a81d79744a343671f",
-      "Hash": "ad2ab542d93a1c9ed8657b6fb23f1daf"
+      "Hash": "7e05cb2a604a4246697cd3c381df8d71"
     },
     "tidyr": {
       "Package": "tidyr",

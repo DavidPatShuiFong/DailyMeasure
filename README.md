@@ -1,6 +1,6 @@
 ## GPstat! (part of DailyMeasure) - 'Best Practice' dashboard for Quality Improvement
 
-v2.2.2 (11th July 2021)
+v2.3.0 (11th October 2022)
 
 A quality improvement tool for [Best Practice](https://bpsoftware.net/).
 
@@ -81,6 +81,43 @@ The ‘bpsrawdata’ database access password（as used by ‘BPbrowser’) is r
 #### Recent changelog
 
 ```
+
+# version 2.3.0
+13th October 2021
+
+## New
+
+* `sidebarmenuPriority` - optional function in dMeasure modules
+  + priority of position in left side bar menu 
+* support for `Select` extension in `$datatable_styled`
+
+## Change
+
+* Move Appointments tab to `dMeasureAppointments`
+* dMeasure module package discovery moved to `dM$read_dMeasureModules`
+
+# version 2.2.2
+3rd July 2021
+
+## New
+
+* Display preferences module
+  + Initial work to allow display of dates in preferred format e.g. YYYY-mm-dd or dd-mm-YYYY
+  + Suggestion of RN Dat Le, thanks!
+
+# version 2.2.1
+16th June 2021
+
+## Change
+
+* Configuration file path chooser includes 'Documents' folder
+
+## Bugfix
+
+* proper call to module-specific reads of configuration database (`read_configuration_db`) when new configuration file created
+* `userconfig.insert.callback` more graciously handles License Value `NA` (only applicable for empty userconfig)
+* Best Practice database chooser responds better to dMeasure initiated change in database choice
+  + usually due to incorrect database location description, user or password
 
 # version 2.2.0
 1st April 2021

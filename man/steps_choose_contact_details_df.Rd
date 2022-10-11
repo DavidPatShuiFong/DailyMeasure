@@ -13,5 +13,5 @@ a dataframe of rintrojs steps
 returns a dataframe of rintrojs steps
 }
 \details{
-rintrojs steps for choosing contact specificatioin
+rintrojs steps for choosing contact specification
 }

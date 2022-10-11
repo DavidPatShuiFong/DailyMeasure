@@ -1,30 +1,30 @@
 Package: DailyMeasure
 Type: Package
 Title: Case-finds from patient appointment list
-Version: 1.5.7
+Version: 2.3.0
 Author: David Fong
 Maintainer: David Fong <vkelim@bigpond.com>
 Description: R Shiny application looking through Electronic Medical Record's (EMR)
  patient appointment lists. The EMR used is 'Best Practice'.
  Finds and displays information about intervention, care planning and health
  assessment opportunities.
-License: (C) David Fong. All rights reserved. License: file LICENSE
+License: file LICENSE Mozilla Public License 2.0
 Encoding: UTF-8
 LazyData: true
 ByteCompile: true
-RoxygenNote: 7.0.2.9000
+RoxygenNote: 7.1.1
 Imports:
     dplyr,
     dbplyr,
     tidyr,
-    shiny,
+    shiny (>= 1.5.0),
     shinyjs,
     shinydashboard,
     shinydashboardPlus (>= 0.7.0),
-    shinyWidgets,
+    shinyWidgets (>= 0.5.2),
     shinytoastr,
     shinyFiles (>= 0.7.2),
-    shinycssloaders,
+    shinybusy,
     configr,
     DT (>= 0.5.3),
     DTedit,
@@ -36,19 +36,24 @@ Imports:
     R6,
     rintrojs,
     emo,
+    shinyjqui,
     dbConnection,
-    dMeasure
+    dMeasure,
+    shinyFeedback,
+    lubridate,
+    dMeasureAppointments
 Suggests:
     pool,
     dMeasureQIM,
     dMeasureBillings,
     dMeasureCDM,
+    dMeasureMedication,
+    dMeasureCustom,
     knitr,
-    rmarkdown
+    rmarkdown,
+    highcharter,
+    devtools
 ImportComments:
- shinycssloaders - loading animations
-  custom version based on Gao Zheng's 'transparent' background version
-  installed with devtools::install_github('DavidPatShuiFong/shinycssloaders')
  DTedit - datatable edit wrapper.
   substantially based on jbryer/DTedit
   install with devtools::install_github('DavidPatShuiFong/DTedit')
@@ -66,16 +71,13 @@ Collate:
     'module_Configuration_password.R'
     'module_Configuration_location.R'
     'module_Configuration_users.R'
-    'module_CDM.R'
-    'module_Billings.R'
     'module_CancerScreen.R'
     'module_Immunization.R'
-    'module_Appointments.R'
     'DailyMeasureUI.R'
     'module_About.R'
     'module_Administration.R'
     'module_Conditions.R'
+    'module_Configuration_displayPreferences.R'
     'module_Configuration_logs.R'
-    'module_PIP_QualityImprovement.R'
     'zzz.R'
 VignetteBuilder: knitr

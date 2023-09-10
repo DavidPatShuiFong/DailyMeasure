@@ -2,6 +2,13 @@
 
 front-end to DailyMeasure package
 
+# version 2.3.1
+10th September 2023
+
+## Change
+
+* Fixes and improvements to date selection
+
 # version 2.3.0
 13th October 2021
 

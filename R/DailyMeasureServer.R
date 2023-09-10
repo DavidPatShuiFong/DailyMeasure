@@ -224,11 +224,21 @@ DailyMeasureServer <- function(input, output, session) {
         inputId = "date1",
         label = "From:", format = "D dd/M/yyyy",
         min = Sys.Date() - 9000,
+        max = Sys.Date() + 180,
+        # if min/max dates not set for both date1/date2 dateInputs
+        # then spurious dates will be sent to the observeEvent which
+        # makes sure that date2 >= date1 when a date is 'starting' to
+        # be input e.g. 1/2 (when starting to type 1/2/2020), resulting
+        # in the observeEvent being triggered
+        # see https://github.com/rstudio/shiny/issues/3664
+        # unfortunately, even with the min/max restrictions, some spurious
+        # dates will be sent to the observeEvent before a date is completely entered
         value = Sys.Date()
       ),
       shiny::dateInput(
         inputId = "date2",
         label = "To:", format = "D dd/M/yyyy",
+        min = Sys.Date() - 9000,
         max = Sys.Date() + 180,
         value = Sys.Date()
       )
@@ -236,8 +246,25 @@ DailyMeasureServer <- function(input, output, session) {
   })
 
   shiny::observeEvent(
-    c(input$date1,
-      input$date2),
+    c(input$date1),
+    ignoreInit = TRUE,
+    ignoreNULL = FALSE,
+    {
+      shiny::req(input$date1, input$date2)
+      # this event can be provoked during an incomplete date input,
+      # so need to check 'valid' date with `shiny::req`
+      shinyjqui::jqui_effect(
+        "#update_date_wrapper",
+        effect = "bounce",
+        options = list(distance = 1)
+      )
+      if (input$date1 > input$date2) {
+        shiny::updateDateInput(session, "date2", value = input$date1)
+      }
+    })
+
+  shiny::observeEvent(
+    c(input$date2),
     ignoreInit = TRUE,
     ignoreNULL = FALSE,
     {

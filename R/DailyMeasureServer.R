@@ -112,6 +112,8 @@ DailyMeasureServer <- function(input, output, session) {
 
   ##### Configuration file ######################################################
 
+  configuration_db_read <- shiny::reactiveVal(0)
+
   shiny::observeEvent(
     dM$configuration_file_pathR(),
     ignoreNULL = TRUE, {
@@ -138,29 +140,52 @@ DailyMeasureServer <- function(input, output, session) {
         }
       }
 
+      configuration_db_read(shiny::isolate(configuration_db_read() + 1))
+      # indicate configuration database and modules have been read
+      # next major step is to attempt to open a database (if one has been set)
+      # but before opening the database, need to check if the database password
+      # has had extra encryption. if extra encryption has been used, the user
+      # needs to provide the encryption key/password
+    }
+  )
+
+  # much of the section below is (unfortunately) also in module_Configuration_server.R
+  # when the user manually sets a new server choice
+  new_server_choice <- shiny::reactiveVal(value = "") # name of new server choice
+  new_server_choice_ready <- shiny::reactiveVal(value = 0)
+  # new_server_choice_ready will be triggered when the new server choice is ready,
+  # e.g. after the extra encryption key is verified
+
+  shiny::observeEvent(
+    configuration_db_read(),
+    ignoreInit = FALSE, {
+      # configuration database has been read, can we set the database server?
       # reads server definitions, location definitions, user attributes etc..
+      shiny::req(configuration_db_read() > 0)
+
       if (dM$config_db$is_open()) {
-        newdb <- dM$BPdatabaseChoice_new()
-        if (newdb != dM$BPdatabaseChoice) {
-          shinytoastr::toastr_info(
-            "Opening link to Best Practice",
-            closeButton = TRUE,
-            position = "bottom-left", title = "Best Practice database"
-          )
-          opened_base <- dM$open_emr_db()
-          if (opened_base == "None") {
-            shinytoastr::toastr_error(
-              "Error opening Best Practice database",
-              closeButton = TRUE, position = "bottom-left",
-              timeOut = 10000
-            ) # stays open ten seconds
+        newchoice <- dM$BPdatabaseChoice_new() # this reads the configuration database choice
+        new_server_choice(newchoice) # set reactive 'global' (to the server section) variable
+        if (newchoice == "None") {
+          new_server_choice_ready(shiny::isolate(new_server_choice_ready()) + 1)
+          # trigger server change if server choice is 'none'
+        } else {
+          # server choice is something other than 'none'
+          # first check if the new choice has extra encryption
+          # applied to the database password
+          newchoice_id <- dM$BPdatabase %>>%
+            dplyr::filter(Name == newchoice) %>>%
+            dplyr::pull(id)
+          if (dM$dbPasswordExtraVerify(description = list(id = newchoice_id, key = ""))) {
+            # if returns TRUE, then there is no need to ask for encryption key, since the
+            # 'extra encryption' key is not set
+            new_server_choice_ready(shiny::isolate(new_server_choice_ready()) + 1)
+            # immediately trigger server change
           } else {
-            shinytoastr::toastr_success(
-              "Linking to Best Practice database successful!",
-              closeButton = TRUE,
-              position = "bottom-left",
-              title = "Best Practice database"
-            )
+            # extra encryption for the database password has been set
+            shiny::showModal(extraEncryptionModal())
+            # show the modal, do not immediately trigger server change
+            # (server change will only occur upon modal closing, either success or failure)
           }
         }
       } else {
@@ -172,6 +197,105 @@ DailyMeasureServer <- function(input, output, session) {
       }
     }
   )
+
+  extraEncryptionModal <- function(failed = FALSE) {
+    # this modal is shown if a server is chosen which has been encoded with an extra encryption key
+    # in which case, the user must provide the key to use the modal
+    #
+    # ask for key/password used to provide extra encryption for database password
+    # if 'failed' = TRUE, then display a message that the previous value was invalid
+    shiny::modalDialog(
+      shiny::passwordInput(
+        inputId = "dbPasswordKey",
+        "Database Password Extra Encryption Key",
+        placeholder = "Enter extra encryption key here, then click 'OK'"
+      ),
+      shiny::span(
+        "The database password for this choice has been encrypted with an extra key/password"
+      ),
+      if (failed) {
+        shiny::div(shiny::tags$b("Wrong key/password", style = "color: red;"))
+      },
+      footer = shiny::tagList(
+        shiny::actionButton(inputId = "dbPasswordKey_cancel", "Cancel"),
+        shiny::actionButton(inputId = "dbPasswordKey_ok", "OK")
+      )
+    )
+  }
+  shiny::observeEvent(input$dbPasswordKey_ok, ignoreNULL = TRUE, {
+    # the Okay button has been clicked on the database extra key/password modal
+
+    # test the validity of the password
+    newchoice_id <- dM$BPdatabase %>>%
+      dplyr::filter(Name == shiny::isolate(new_server_choice())) %>>%
+      dplyr::pull(id)
+    key_valid <- dM$dbPasswordExtraVerify(description = list(id = newchoice_id, key = input$dbPasswordKey))
+    if (key_valid) {
+      # success!
+      # remove modal, then set the database password extra encryption key
+      shiny::removeModal()
+      dM$dbPasswordExtraEncryption <- input$dbPasswordKey
+      new_server_choice_ready(shiny::isolate(new_server_choice_ready()) + 1)
+      # trigger server change
+    } else {
+      # show the modal again, but indicate wrong key/password
+      shiny::showModal(extraEncryptionModal(failed = TRUE))
+    }
+  })
+  shiny::observeEvent(input$dbPasswordKey_cancel, ignoreNULL = TRUE, {
+    # the cancel button has been clicked on the database extra key/password modal
+    shiny::removeModal()
+    # set server choice to 'None'
+    new_server_choice("None") # set global variable
+    # trigger server change (to 'None')
+    new_server_choice_ready(shiny::isolate(new_server_choice_ready()) + 1)
+  })
+
+  shiny::observeEvent(new_server_choice_ready(), {
+    # when a different server is chosen and is 'ready' for opening
+    # in some cases, the server database password has had extra encryption applied
+    # so we had to wait for the user to enter the (correct) encryption key
+    # this section does *not* check for encryption key validiy, that is presumed
+    # to have already been done
+    shiny::req(new_server_choice_ready() > 0)
+
+    # new_server_choice will have the name of the new server
+
+    server_choice <- shiny::isolate(new_server_choice())
+    if (server_choice == "None") {
+      shinytoastr::toastr_info(
+        "No Best Practice server chosen",
+        closeButton = TRUE,
+        position = "bottom-left", title = "Best Practice database"
+      )
+    } else {
+      shinytoastr::toastr_info(
+        "Opening link to Best Practice",
+        closeButton = TRUE,
+        position = "bottom-left", title = "Best Practice database"
+      )
+    }
+
+    dM$BPdatabaseChoice <- server_choice
+    # selects the chosen database
+    # the active $BPdatabaseChoice will also write to the configuration file
+    # will reject the choice if not possible (e.g. bad database definition)
+    opened_base <- dM$open_emr_db()
+    if (opened_base == "None" && server_choice != "None") {
+      shinytoastr::toastr_error(
+        "Error opening Best Practice database",
+        closeButton = TRUE, position = "bottom-left",
+        timeOut = 10000
+      ) # stays open ten seconds
+    } else if (server_choice != "None") {
+      shinytoastr::toastr_success(
+        "Linking to Best Practice database successful!",
+        closeButton = TRUE,
+        position = "bottom-left",
+        title = "Best Practice database"
+      )
+    }
+  })
   invisible(dM$configuration_file_path)
   # this will also set $configuration_file_pathR
 

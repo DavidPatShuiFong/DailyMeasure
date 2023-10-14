@@ -2,6 +2,14 @@
 
 front-end to DailyMeasure package
 
+# version 2.4.0
+14th October 2023
+
+## New
+
+* Supports (and requires) `dMeasure` 0.11.0
+  + allows extra encryption key/password for database password
+
 # version 2.3.1
 10th September 2023
 

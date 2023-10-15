@@ -3,9 +3,12 @@
 front-end to DailyMeasure package
 
 # version 2.4.0
-14th October 2023
+15th October 2023
 
 ## New
+
+* search progress notes in Administration module
+  + requires package striprtf to 'strip' RTF from progress note
 
 * Supports (and requires) `dMeasure` 0.11.0
   + allows extra encryption key/password for database password

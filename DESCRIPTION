@@ -41,7 +41,8 @@ Imports:
     dMeasure,
     shinyFeedback,
     lubridate,
-    dMeasureAppointments
+    dMeasureAppointments,
+    striprtf
 Suggests:
     pool,
     dMeasureQIM,

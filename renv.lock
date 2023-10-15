@@ -286,8 +286,8 @@
       "RemoteRepo": "dMeasure",
       "RemoteUsername": "DavidPatShuiFong",
       "RemoteRef": "develop",
-      "RemoteSha": "4b0ac2cfa571d81fa0852587dd2434439d555a65",
-      "Hash": "82df17f1b78668ad222a87334acb5438"
+      "RemoteSha": "650bdabfcf33da55ac1b65c16feba28491f1b488",
+      "Hash": "72fc37b1fd36561b09597aeb6b0e623c"
     },
     "dMeasureAppointments": {
       "Package": "dMeasureAppointments",
@@ -1230,6 +1230,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "0759e6b6c0957edb1311028a49a35e76"
+    },
+    "striprtf": {
+      "Package": "striprtf",
+      "Version": "0.5.2",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Hash": "77102ffd3863e125da9898f9c2825f7b"
     },
     "sys": {
       "Package": "sys",

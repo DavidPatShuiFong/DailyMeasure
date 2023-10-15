@@ -39,6 +39,12 @@ administration_UI <- function(id) {
         admin_document_datatableUI(ns("document_search"))
       ),
       shiny::tabPanel(
+        title = "Visit (progress notes) search",
+        width = 12,
+        shiny::br(),
+        admin_visit_datatableUI(ns("visit_search"))
+      ),
+      shiny::tabPanel(
         title = "Action Search",
         width = 12,
         shiny::br(),
@@ -141,6 +147,25 @@ admin_document_datatableUI <- function(id) {
   )
 }
 
+admin_visit_datatableUI <- function(id) {
+  ns <- shiny::NS(id)
+
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(
+        4,
+        shiny::textOutput(ns("visit_search_text"))
+      ),
+      shiny::column(
+        3, # note that total 'column' width = 12
+        offset = 2,
+        shiny::uiOutput(ns("visit_search_choice"))
+      )
+    ),
+    DT::DTOutput(ns("visitSearch_table"))
+  )
+}
+
 admin_action_datatableUI <- function(id) {
   ns <- shiny::NS(id)
 
@@ -188,16 +213,18 @@ administration <- function(input, output, session, dM) {
   ns <- session$ns
 
   # data quality
-  callModule(admin_dataQuality_datatable, "data_quality", dM)
+  shiny::callModule(admin_dataQuality_datatable, "data_quality", dM)
 
   # result management
-  callModule(admin_result_datatable, "result_management", dM)
+  shiny::callModule(admin_result_datatable, "result_management", dM)
 
-  callModule(admin_document_datatable, "document_search", dM)
+  shiny::callModule(admin_document_datatable, "document_search", dM)
 
-  callModule(admin_action_datatable, "action_search", dM)
+  shiny::callModule(admin_visit_datatable, "visit_search", dM)
 
-  callModule(admin_pcehr_datatable, "pcehr_search", dM)
+  shiny::callModule(admin_action_datatable, "action_search", dM)
+
+  shiny::callModule(admin_pcehr_datatable, "pcehr_search", dM)
 }
 
 #' data quality module - server
@@ -654,6 +681,146 @@ admin_document_datatable <- function(input, output, session, dM) {
 
   output$documentSearch_table <- DT::renderDT({
     documentSearch_table()
+  },
+  server = TRUE
+  )
+}
+
+#' visit search module - server
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param dM dMeasure R6 object
+#'  access to visits (visit progress notes, visit reasons)
+#'
+#' @return none
+admin_visit_datatable <- function(input, output, session, dM) {
+  ns <- session$ns
+
+  search_text <- shiny::reactiveVal("interpreter")
+  # the default search string
+  output$visit_search_text <-
+    shiny::renderText({paste("Search text: ", search_text())})
+  output$visit_search_choice <- renderUI({
+    shinyWidgets::dropMenu(
+      shiny::actionButton(
+        inputId = ns("dataSearch_choice_dropdown"),
+        icon = shiny::icon("gear"),
+        label = "Visit Search settings"
+      ),
+      shiny::tags$div(
+        shiny::textInput(
+          inputId = ns("visitSearch_chosen"),
+          label = "Search text",
+          value = search_text()
+        ),
+        shiny::br(),
+        shiny::em("Close to confirm")
+      ),
+      placement = "bottom-end"
+    )
+  })
+  shiny::observeEvent(
+    input$dataSearch_choice_dropdown_dropmenu,
+    ignoreInit = TRUE, {
+      # this is triggered when shinyWidgets::dropMenu is opened/closed
+      # tag is derived from the first tag in dropMenu, adding '_dropmenu'
+      if (!input$dataSearch_choice_dropdown_dropmenu) {
+        # only if closing the 'dropmenu' modal
+        # unfortunately, is also triggered during Init (despite the ignoreInit)
+        search_text(input$visitSearch_chosen)
+      }
+    }
+  )
+
+  visitSearch <-
+    shiny::eventReactive(
+      c(
+        dM$cliniciansR(),
+        dM$date_aR(),
+        dM$date_bR(),
+        search_text()
+      ),
+      ignoreInit = TRUE, ignoreNULL = FALSE, {
+        # respond when clinician or dates is changed
+        shiny::req(search_text()) # cannot be empty string
+
+        ChosenUserID <- dM$UserFullConfig %>>%
+          dplyr::filter(Fullname %in% dM$clinicians) %>>%
+          dplyr::pull(UserID) %>>% c(-1)
+        # add a dummy value if empty
+
+        wildcard_search <- paste0("%", search_text(), "%")
+        date_a <- dM$date_a
+        date_b <- dM$date_b
+
+        visits <- dM$db$visits %>>%
+          dplyr::filter(
+            UserID %in% ChosenUserID,
+            dplyr::between(VisitDate, date_a, date_b),
+            VisitNotes %like% wildcard_search
+          ) %>>%
+          dplyr::select(InternalID, UserID, VisitDate, VisitNotes) %>>%
+          dplyr::collect()
+
+        intID <- visits %>>% dplyr::pull(InternalID) %>>% c(-1)
+
+        visits <- visits %>>%
+          dplyr::left_join(
+            dM$UserFullConfig %>>%
+              dplyr::filter(UserID %in% ChosenUserID) %>>%
+              dplyr::select(UserID, Fullname),
+            by = c("UserID")
+          ) %>>%
+          dplyr::rename(Clinician = Fullname) %>>%
+          dplyr::select(-c(UserID)) %>>%
+          dplyr::left_join(
+            dM$db$patients %>>%
+              dplyr::filter(InternalID %in% intID) %>>%
+              dplyr::select(
+                InternalID, ID = ExternalID,
+                Firstname, Surname, DOB) %>>%
+              dplyr::collect(),
+            by = c("InternalID")
+          ) %>>%
+          dplyr::mutate(
+            Name = paste(Firstname, Surname),
+            DOB = as.Date(DOB)
+          ) %>>%
+          dplyr::select(-c(InternalID, Firstname, Surname))
+
+        return(visits)
+      }
+    )
+
+  ### create tag-styled datatable (or 'printable' datatable)
+  visitSearch_table <- shiny::reactive({
+
+    d <- visitSearch() %>>%
+      dplyr::select(
+        Name, ID, DOB,
+        Clinician, VisitDate, VisitNotes
+      )
+
+    if (nrow(visitSearch()) > 0) {
+      # strip_rtf doesn't handle empty dataframes and is not vectorised
+      d$VisitNotes <- lapply(
+        d$VisitNotes,
+        function(x)
+          strip_rtf(x)
+      )
+    }
+
+    datatable_styled(
+      d,
+      extensions = c("Buttons", "Scroller"),
+      scrollX = TRUE
+    )
+  })
+
+  output$visitSearch_table <- DT::renderDT({
+    visitSearch_table()
   },
   server = TRUE
   )

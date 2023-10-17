@@ -751,18 +751,22 @@ admin_visit_datatable <- function(input, output, session, dM) {
           dplyr::pull(UserID) %>>% c(-1)
         # add a dummy value if empty
 
-        wildcard_search <- paste0("%", search_text(), "%")
+        wildcard_search <- search_text()
         date_a <- dM$date_a
         date_b <- dM$date_b
 
         visits <- dM$db$visits %>>%
           dplyr::filter(
             UserID %in% ChosenUserID,
-            dplyr::between(VisitDate, date_a, date_b),
-            VisitNotes %like% wildcard_search
+            dplyr::between(VisitDate, date_a, date_b)
+            # VisitNotes %like% wildcard_search -> change to grepl after a collect()
           ) %>>%
           dplyr::select(InternalID, UserID, VisitDate, VisitNotes) %>>%
-          dplyr::collect()
+          dplyr::collect() %>>%
+          dplyr::filter(
+            grepl(wildcard_search, VisitNotes, ignore.case = TRUE)
+          )
+
 
         intID <- visits %>>% dplyr::pull(InternalID) %>>% c(-1)
 
@@ -808,7 +812,7 @@ admin_visit_datatable <- function(input, output, session, dM) {
       d$VisitNotes <- lapply(
         d$VisitNotes,
         function(x)
-          strip_rtf(x)
+          striprtf::strip_rtf(x)
       )
     }
 

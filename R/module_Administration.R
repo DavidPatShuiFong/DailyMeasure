@@ -715,7 +715,17 @@ admin_visit_datatable <- function(input, output, session, dM) {
           label = "Search text",
           value = search_text()
         ),
+        "One or more search terms, separated by commas.",
+        "Terms can be enclosed in single/double quotes.",
         shiny::br(),
+        shiny::br(),
+        # placeholder - CSV/XLSX file chooser to fill in search terms
+        # shinyFiles::shinyFilesButton(
+        # "choose_configuration_file",
+        # label = "Choose configuration file",
+        # title = "Choose configuration file (must end in '.sqlite')",
+        # multiple = FALSE
+        # )
         shiny::em("Close to confirm")
       ),
       placement = "bottom-end"
@@ -751,22 +761,49 @@ admin_visit_datatable <- function(input, output, session, dM) {
           dplyr::pull(UserID) %>>% c(-1)
         # add a dummy value if empty
 
-        wildcard_search <- search_text()
+        wildcard_search <- unlist(
+          strsplit(
+            search_text(),
+            ",(?=(?:[^'\"]*['\"][^'\"]*['\"])*[^'\"]*$)\\s*",
+            # break the search string into 'words' according to commas
+            # not within single or double quotation marks
+            # remove extraneous white space between words
+            perl = TRUE
+            # The regular expression ",(?=(?:[^'\"]*['\"][^'\"]*['\"])*[^'\"]*$)\\s*"
+            # uses a positive look-ahead assertion (?= ... ) to find commas
+            # that are not within single or double quotation marks and
+            # are not followed by more quotation marks.
+            # It also allows for optional whitespace using \\s*.
+            #
+            # note that this splitting will not allow searching for phrases
+            # with quotation marks
+          )
+        )
+        wildcard_search <- gsub('["\']', '', wildcard_search)
+        # removes enclosing quotation marks
+        wildcard_search <- paste0("%", wildcard_search, "%")
+        # add the wildcards
         date_a <- dM$date_a
         date_b <- dM$date_b
 
-        visits <- dM$db$visits %>>%
-          dplyr::filter(
-            UserID %in% ChosenUserID,
-            dplyr::between(VisitDate, date_a, date_b)
-            # VisitNotes %like% wildcard_search -> change to grepl after a collect()
-          ) %>>%
-          dplyr::select(InternalID, UserID, VisitDate, VisitNotes) %>>%
-          dplyr::collect() %>>%
-          dplyr::filter(
-            grepl(wildcard_search, VisitNotes, ignore.case = TRUE)
-          )
-
+        visits <- lapply(
+          wildcard_search,
+          function(x) {
+            dM$db$visits %>>%
+              dplyr::filter(
+                UserID %in% ChosenUserID,
+                dplyr::between(VisitDate, date_a, date_b),
+                VisitNotes %like% x
+              ) %>>%
+              dplyr::select(InternalID, UserID, VisitDate, VisitID, VisitNotes) %>>%
+              dplyr::collect()
+          }
+        )
+        visits <- do.call("rbind", visits) %>>% # combine the list of dataframes
+          dplyr::group_by(VisitID) %>>%
+          dplyr::slice(1) %>>% # remove duplicate visits
+          dplyr::ungroup() %>>%
+          dplyr::select(-VisitID) # we don't need the VisitID anymore
 
         intID <- visits %>>% dplyr::pull(InternalID) %>>% c(-1)
 

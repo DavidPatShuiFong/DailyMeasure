@@ -1073,24 +1073,26 @@ DailyMeasureServer <- function(input, output, session) {
     hidden = TRUE # the default is that configuration files have '.' hidden prefix
   )
 
-  shiny::observeEvent(input$choose_configuration_file, ignoreNULL = TRUE, {
-    if (!is.integer(input$choose_configuration_file)) {
-      # if input$choose_configuration_file is an integer,
-      # it is just the 'click' event on the filechoose button
-      inFile <- shinyFiles::parseFilePaths(volumes, input$choose_configuration_file)
-      file_name <- paste(inFile$datapath)
-      dM$configuration_file_path <- file_name
-      # this dMeasure method will also update the YAML configuration file
-      shinytoastr::toastr_warning(
-        message = paste(
-          "New configuration file chosen.",
-          "Recommend GPstat! is re-started!"
-        ),
-        position = "bottom-left",
-        closeButton = TRUE,
-        timeOut = 0
-      ) # keep open until closed
-    }
+  shiny::observeEvent(
+    input$choose_configuration_file,
+    ignoreNULL = TRUE, {
+      if (!is.integer(input$choose_configuration_file)) {
+        # if input$choose_configuration_file is an integer,
+        # it is just the 'click' event on the filechoose button
+        inFile <- shinyFiles::parseFilePaths(volumes, input$choose_configuration_file)
+        file_name <- paste(inFile$datapath)
+        dM$configuration_file_path <- file_name
+        # this dMeasure method will also update the YAML configuration file
+        shinytoastr::toastr_warning(
+          message = paste(
+            "New configuration file chosen.",
+            "Recommend GPstat! is re-started!"
+          ),
+          position = "bottom-left",
+          closeButton = TRUE,
+          timeOut = 0
+        ) # keep open until closed
+      }
   })
 
   shinyFiles::shinyFileSave(

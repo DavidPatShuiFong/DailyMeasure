@@ -701,7 +701,7 @@ admin_visit_datatable <- function(input, output, session, dM) {
   search_text <- shiny::reactiveVal("interpreter")
   # the default search string
   output$visit_search_text <-
-    shiny::renderText({paste("Search text: ", search_text())})
+    shiny::renderText({paste("Search text: ", paste(search_text(), collapse = ", "))})
   output$visit_search_choice <- renderUI({
     shinyWidgets::dropMenu(
       shiny::actionButton(
@@ -710,27 +710,110 @@ admin_visit_datatable <- function(input, output, session, dM) {
         label = "Visit Search settings"
       ),
       shiny::tags$div(
+        shiny::fluidRow(
+          shiny::div(
+            style = "display: inline-block; vertical-align:top; border-left-style: none; border-left-width: thick",
+            shiny::HTML("<h4>&nbsp;&nbsp;&nbsp;Progress note search</h4>")
+#            shiny::tags$h4("Progress note search")
+          ),
+          shiny::div(
+            style = "display: inline-block; vertical-align:-50%",
+            # '-50%' still results in a '+50%' compared to the h3 title!
+            # '-100%' results in a dropdown widget roughly in line with the title
+            shinyWidgets::dropdown(
+              shiny::tags$h4("Search terms"),
+              shiny::br(),
+              "One or more search terms, separated by commas.",
+              shiny::br(),
+              "Terms can be enclosed in single/double quotes,",
+              shiny::br(),
+              "but single/double quotes cannot be searched for.",
+              shiny::br(),
+              shiny::br(),
+              "Alternatively, import spreadsheet (CSV/Excel) of search",
+              shiny::br(),
+              "terms. Spreadsheet files must contain a single column",
+              shiny::br(),
+              "of search terms. The first row, first column entry is",
+              shiny::br(),
+              "considered a search term i.e. no column header is",
+              shiny::br(),
+              "expected.",
+              status = "primary",
+              size = "xs",
+              width = "400px",
+              icon = icon("question-circle"),
+              animate = shinyWidgets::animateOptions(
+                enter = shinyWidgets::animations$fading_entrances$fadeIn,
+                exit = shinyWidgets::animations$fading_exits$fadeOut
+              ),
+              tooltip = shinyWidgets::tooltipOptions(
+                placement = "top",
+                title = "Server description details"
+              )
+            )
+          )
+        ),
         shiny::textInput(
           inputId = ns("visitSearch_chosen"),
           label = "Search text",
           value = search_text()
         ),
-        "One or more search terms, separated by commas.",
-        "Terms can be enclosed in single/double quotes.",
+        shiny::em("Close to confirm"),
         shiny::br(),
         shiny::br(),
+        shiny::strong("or"),
+        shiny::br(), shiny::br(),
         # placeholder - CSV/XLSX file chooser to fill in search terms
-        # shinyFiles::shinyFilesButton(
-        # "choose_configuration_file",
-        # label = "Choose configuration file",
-        # title = "Choose configuration file (must end in '.sqlite')",
-        # multiple = FALSE
-        # )
-        shiny::em("Close to confirm")
+        shinyFiles::shinyFilesButton(
+          id = ns("choose_visit_search_terms_file"),
+          label = "Choose CSV/Excel file with search terms",
+          title = "Choose CSV/Excel file (must end in '.csv' or '.xlsx')",
+          multiple = FALSE
+        )
       ),
       placement = "bottom-end"
     )
   })
+  volumes <- c(shinyFiles::getVolumes()(), base = ".", home = Sys.getenv("USERPROFILE"), documents = path.expand('~'))
+  shinyFiles::shinyFileChoose(
+    input,
+    id = "choose_visit_search_terms_file",
+    session = session,
+    roots = volumes,
+    filetypes = c("csv", "xls", "xlsx"), # only spreadsheet files
+    hidden = FALSE
+  )
+  shiny::observeEvent(
+    input$choose_visit_search_terms_file,
+    ignoreNULL = TRUE, {
+      shinyWidgets::hideDropMenu("data_search_dropdown_dropmenu")
+      # close the drop-menu if the file choose button is clicked
+      # doesn't actually work :(
+      if (!is.integer(input$choose_visit_search_terms_file)) {
+        # if input$choose_visit_search_term_file is an integer,
+        # it is just the 'click' event on the filechoose button
+        inFile <- shinyFiles::parseFilePaths(volumes, input$choose_visit_search_terms_file)
+        file_name <- paste(inFile$datapath)
+        file_suffix <- tolower(stringi::stri_sub(file_name, -3, -1))
+        if (file_suffix == "csv") {
+          # CSV file
+          text <- read.csv(
+            file_name,
+            header = FALSE, # no header
+            stringsAsFactors = FALSE
+          )
+          search_text(dplyr::pull(text))
+        } else if (file_suffix == "xls" || file_suffix == "xlsx") {
+          text <- readxl::read_excel(
+            file_name,
+            col_names = FALSE
+          )
+          search_text(dplyr::pull(text))
+        }
+      }
+    }
+  )
   shiny::observeEvent(
     input$dataSearch_choice_dropdown_dropmenu,
     ignoreInit = TRUE, {
@@ -884,7 +967,7 @@ admin_action_datatable <- function(input, output, session, dM) {
   search_dates <- shiny::reactiveVal(c("Added", "Due", "Performed"))
   # the default date ranges to search
   output$action_search_text <-
-    shiny::renderText({paste("Search text: ", search_text())})
+    shiny::renderText({paste("Search text: ", paste(search_text(), collapse = ", "))})
   output$action_search_choice <- renderUI({
     shinyWidgets::dropMenu(
       shiny::actionButton(

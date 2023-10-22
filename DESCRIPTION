@@ -42,7 +42,8 @@ Imports:
     shinyFeedback,
     lubridate,
     dMeasureAppointments,
-    striprtf
+    striprtf,
+    readxl
 Suggests:
     pool,
     dMeasureQIM,

@@ -1,6 +1,6 @@
 ## GPstat! (part of DailyMeasure) - 'Best Practice' dashboard for Quality Improvement
 
-v2.3.0 (11th October 2022)
+v2.4.0 (12th October 2023)
 
 A quality improvement tool for [Best Practice](https://bpsoftware.net/).
 
@@ -8,7 +8,7 @@ GPstat! interrogates the appointment book, searching for ‘near-future’ oppor
 
 ![GPstat! screenshot](https://photos.smugmug.com/Office/Eltham/i-q3shMp5/0/a5b42c39/O/GPstat%21Measles.jpg)
 
-#### New features since version 1.5.9
+#### New features since version 1.6.4
 
 * Medication module (counts and lists medications, by default lists patients with >= 4 medications)
 * Custom patient lists
@@ -23,8 +23,10 @@ GPstat! interrogates the appointment book, searching for ‘near-future’ oppor
 * Social history and Allergies completion list
 * Post-natal list
 * Document and PCEHR document display
+* Search for terms in progress note 'visits'
+* Search for patients in appointment book with large number of medications in medication list
 * 'Action' search
-* inclusion of 'inactive' users in selectable list
+
 
 ![GPstat! screenshot 2](https://photos.smugmug.com/Office/Eltham/i-ZSfjQ6V/0/8b876c6a/O/GPstat_COVID19BB.png)
 
@@ -54,9 +56,11 @@ The ‘bpsrawdata’ database access password（as used by ‘BPbrowser’) is r
 
 ##### Current version
 
-[Google Drive link v 2.3.0.0.10.0b](https://drive.google.com/file/d/1dos3Ooa0pTZwX5PqQPSxgndbOJM1dHjP/view?usp=sharing)
+[Google Drive link v 2.4.0.0.11.0](https://drive.google.com/file/d/1Du8Swh_Mm99hHeg57SgY3_ETdkHgjpyB/view?usp=sharing)
 
 ##### Older versions
+
+[Google Drive link v 2.3.0.0.10.0b](https://drive.google.com/file/d/1dos3Ooa0pTZwX5PqQPSxgndbOJM1dHjP/view?usp=sharing)
 
 [Google Drive link v 2.2.2.0.9.17](https://drive.google.com/file/d/1mvo10hPhP4sG8xCqz1_9KEFbBxR_Qj7O/view?usp=sharing)
 

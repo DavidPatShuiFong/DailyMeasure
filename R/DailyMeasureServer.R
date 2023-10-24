@@ -112,6 +112,8 @@ DailyMeasureServer <- function(input, output, session) {
 
   ##### Configuration file ######################################################
 
+  configuration_db_read <- shiny::reactiveVal(0)
+
   shiny::observeEvent(
     dM$configuration_file_pathR(),
     ignoreNULL = TRUE, {
@@ -138,29 +140,52 @@ DailyMeasureServer <- function(input, output, session) {
         }
       }
 
+      configuration_db_read(shiny::isolate(configuration_db_read() + 1))
+      # indicate configuration database and modules have been read
+      # next major step is to attempt to open a database (if one has been set)
+      # but before opening the database, need to check if the database password
+      # has had extra encryption. if extra encryption has been used, the user
+      # needs to provide the encryption key/password
+    }
+  )
+
+  # much of the section below is (unfortunately) also in module_Configuration_server.R
+  # when the user manually sets a new server choice
+  new_server_choice <- shiny::reactiveVal(value = "") # name of new server choice
+  new_server_choice_ready <- shiny::reactiveVal(value = 0)
+  # new_server_choice_ready will be triggered when the new server choice is ready,
+  # e.g. after the extra encryption key is verified
+
+  shiny::observeEvent(
+    configuration_db_read(),
+    ignoreInit = FALSE, {
+      # configuration database has been read, can we set the database server?
       # reads server definitions, location definitions, user attributes etc..
+      shiny::req(configuration_db_read() > 0)
+
       if (dM$config_db$is_open()) {
-        newdb <- dM$BPdatabaseChoice_new()
-        if (newdb != dM$BPdatabaseChoice) {
-          shinytoastr::toastr_info(
-            "Opening link to Best Practice",
-            closeButton = TRUE,
-            position = "bottom-left", title = "Best Practice database"
-          )
-          opened_base <- dM$open_emr_db()
-          if (opened_base == "None") {
-            shinytoastr::toastr_error(
-              "Error opening Best Practice database",
-              closeButton = TRUE, position = "bottom-left",
-              timeOut = 10000
-            ) # stays open ten seconds
+        newchoice <- dM$BPdatabaseChoice_new() # this reads the configuration database choice
+        new_server_choice(newchoice) # set reactive 'global' (to the server section) variable
+        if (newchoice == "None") {
+          new_server_choice_ready(shiny::isolate(new_server_choice_ready()) + 1)
+          # trigger server change if server choice is 'none'
+        } else {
+          # server choice is something other than 'none'
+          # first check if the new choice has extra encryption
+          # applied to the database password
+          newchoice_id <- dM$BPdatabase %>>%
+            dplyr::filter(Name == newchoice) %>>%
+            dplyr::pull(id)
+          if (dM$dbPasswordExtraVerify(description = list(id = newchoice_id, key = ""))) {
+            # if returns TRUE, then there is no need to ask for encryption key, since the
+            # 'extra encryption' key is not set
+            new_server_choice_ready(shiny::isolate(new_server_choice_ready()) + 1)
+            # immediately trigger server change
           } else {
-            shinytoastr::toastr_success(
-              "Linking to Best Practice database successful!",
-              closeButton = TRUE,
-              position = "bottom-left",
-              title = "Best Practice database"
-            )
+            # extra encryption for the database password has been set
+            shiny::showModal(extraEncryptionModal())
+            # show the modal, do not immediately trigger server change
+            # (server change will only occur upon modal closing, either success or failure)
           }
         }
       } else {
@@ -172,6 +197,105 @@ DailyMeasureServer <- function(input, output, session) {
       }
     }
   )
+
+  extraEncryptionModal <- function(failed = FALSE) {
+    # this modal is shown if a server is chosen which has been encoded with an extra encryption key
+    # in which case, the user must provide the key to use the modal
+    #
+    # ask for key/password used to provide extra encryption for database password
+    # if 'failed' = TRUE, then display a message that the previous value was invalid
+    shiny::modalDialog(
+      shiny::passwordInput(
+        inputId = "dbPasswordKey",
+        "Database Password Extra Encryption Key",
+        placeholder = "Enter extra encryption key here, then click 'OK'"
+      ),
+      shiny::span(
+        "The database password for this choice has been encrypted with an extra key/password"
+      ),
+      if (failed) {
+        shiny::div(shiny::tags$b("Wrong key/password", style = "color: red;"))
+      },
+      footer = shiny::tagList(
+        shiny::actionButton(inputId = "dbPasswordKey_cancel", "Cancel"),
+        shiny::actionButton(inputId = "dbPasswordKey_ok", "OK")
+      )
+    )
+  }
+  shiny::observeEvent(input$dbPasswordKey_ok, ignoreNULL = TRUE, {
+    # the Okay button has been clicked on the database extra key/password modal
+
+    # test the validity of the password
+    newchoice_id <- dM$BPdatabase %>>%
+      dplyr::filter(Name == shiny::isolate(new_server_choice())) %>>%
+      dplyr::pull(id)
+    key_valid <- dM$dbPasswordExtraVerify(description = list(id = newchoice_id, key = input$dbPasswordKey))
+    if (key_valid) {
+      # success!
+      # remove modal, then set the database password extra encryption key
+      shiny::removeModal()
+      dM$dbPasswordExtraEncryption <- input$dbPasswordKey
+      new_server_choice_ready(shiny::isolate(new_server_choice_ready()) + 1)
+      # trigger server change
+    } else {
+      # show the modal again, but indicate wrong key/password
+      shiny::showModal(extraEncryptionModal(failed = TRUE))
+    }
+  })
+  shiny::observeEvent(input$dbPasswordKey_cancel, ignoreNULL = TRUE, {
+    # the cancel button has been clicked on the database extra key/password modal
+    shiny::removeModal()
+    # set server choice to 'None'
+    new_server_choice("None") # set global variable
+    # trigger server change (to 'None')
+    new_server_choice_ready(shiny::isolate(new_server_choice_ready()) + 1)
+  })
+
+  shiny::observeEvent(new_server_choice_ready(), {
+    # when a different server is chosen and is 'ready' for opening
+    # in some cases, the server database password has had extra encryption applied
+    # so we had to wait for the user to enter the (correct) encryption key
+    # this section does *not* check for encryption key validiy, that is presumed
+    # to have already been done
+    shiny::req(new_server_choice_ready() > 0)
+
+    # new_server_choice will have the name of the new server
+
+    server_choice <- shiny::isolate(new_server_choice())
+    if (server_choice == "None") {
+      shinytoastr::toastr_info(
+        "No Best Practice server chosen",
+        closeButton = TRUE,
+        position = "bottom-left", title = "Best Practice database"
+      )
+    } else {
+      shinytoastr::toastr_info(
+        "Opening link to Best Practice",
+        closeButton = TRUE,
+        position = "bottom-left", title = "Best Practice database"
+      )
+    }
+
+    dM$BPdatabaseChoice <- server_choice
+    # selects the chosen database
+    # the active $BPdatabaseChoice will also write to the configuration file
+    # will reject the choice if not possible (e.g. bad database definition)
+    opened_base <- dM$open_emr_db()
+    if (opened_base == "None" && server_choice != "None") {
+      shinytoastr::toastr_error(
+        "Error opening Best Practice database",
+        closeButton = TRUE, position = "bottom-left",
+        timeOut = 10000
+      ) # stays open ten seconds
+    } else if (server_choice != "None") {
+      shinytoastr::toastr_success(
+        "Linking to Best Practice database successful!",
+        closeButton = TRUE,
+        position = "bottom-left",
+        title = "Best Practice database"
+      )
+    }
+  })
   invisible(dM$configuration_file_path)
   # this will also set $configuration_file_pathR
 
@@ -224,11 +348,21 @@ DailyMeasureServer <- function(input, output, session) {
         inputId = "date1",
         label = "From:", format = "D dd/M/yyyy",
         min = Sys.Date() - 9000,
+        max = Sys.Date() + 180,
+        # if min/max dates not set for both date1/date2 dateInputs
+        # then spurious dates will be sent to the observeEvent which
+        # makes sure that date2 >= date1 when a date is 'starting' to
+        # be input e.g. 1/2 (when starting to type 1/2/2020), resulting
+        # in the observeEvent being triggered
+        # see https://github.com/rstudio/shiny/issues/3664
+        # unfortunately, even with the min/max restrictions, some spurious
+        # dates will be sent to the observeEvent before a date is completely entered
         value = Sys.Date()
       ),
       shiny::dateInput(
         inputId = "date2",
         label = "To:", format = "D dd/M/yyyy",
+        min = Sys.Date() - 9000,
         max = Sys.Date() + 180,
         value = Sys.Date()
       )
@@ -236,8 +370,25 @@ DailyMeasureServer <- function(input, output, session) {
   })
 
   shiny::observeEvent(
-    c(input$date1,
-      input$date2),
+    c(input$date1),
+    ignoreInit = TRUE,
+    ignoreNULL = FALSE,
+    {
+      shiny::req(input$date1, input$date2)
+      # this event can be provoked during an incomplete date input,
+      # so need to check 'valid' date with `shiny::req`
+      shinyjqui::jqui_effect(
+        "#update_date_wrapper",
+        effect = "bounce",
+        options = list(distance = 1)
+      )
+      if (input$date1 > input$date2) {
+        shiny::updateDateInput(session, "date2", value = input$date1)
+      }
+    })
+
+  shiny::observeEvent(
+    c(input$date2),
     ignoreInit = TRUE,
     ignoreNULL = FALSE,
     {
@@ -922,24 +1073,26 @@ DailyMeasureServer <- function(input, output, session) {
     hidden = TRUE # the default is that configuration files have '.' hidden prefix
   )
 
-  shiny::observeEvent(input$choose_configuration_file, ignoreNULL = TRUE, {
-    if (!is.integer(input$choose_configuration_file)) {
-      # if input$choose_configuration_file is an integer,
-      # it is just the 'click' event on the filechoose button
-      inFile <- shinyFiles::parseFilePaths(volumes, input$choose_configuration_file)
-      file_name <- paste(inFile$datapath)
-      dM$configuration_file_path <- file_name
-      # this dMeasure method will also update the YAML configuration file
-      shinytoastr::toastr_warning(
-        message = paste(
-          "New configuration file chosen.",
-          "Recommend GPstat! is re-started!"
-        ),
-        position = "bottom-left",
-        closeButton = TRUE,
-        timeOut = 0
-      ) # keep open until closed
-    }
+  shiny::observeEvent(
+    input$choose_configuration_file,
+    ignoreNULL = TRUE, {
+      if (!is.integer(input$choose_configuration_file)) {
+        # if input$choose_configuration_file is an integer,
+        # it is just the 'click' event on the filechoose button
+        inFile <- shinyFiles::parseFilePaths(volumes, input$choose_configuration_file)
+        file_name <- paste(inFile$datapath)
+        dM$configuration_file_path <- file_name
+        # this dMeasure method will also update the YAML configuration file
+        shinytoastr::toastr_warning(
+          message = paste(
+            "New configuration file chosen.",
+            "Recommend GPstat! is re-started!"
+          ),
+          position = "bottom-left",
+          closeButton = TRUE,
+          timeOut = 0
+        ) # keep open until closed
+      }
   })
 
   shinyFiles::shinyFileSave(

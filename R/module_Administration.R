@@ -39,6 +39,12 @@ administration_UI <- function(id) {
         admin_document_datatableUI(ns("document_search"))
       ),
       shiny::tabPanel(
+        title = "Visit (progress notes) search",
+        width = 12,
+        shiny::br(),
+        admin_visit_datatableUI(ns("visit_search"))
+      ),
+      shiny::tabPanel(
         title = "Action Search",
         width = 12,
         shiny::br(),
@@ -141,6 +147,25 @@ admin_document_datatableUI <- function(id) {
   )
 }
 
+admin_visit_datatableUI <- function(id) {
+  ns <- shiny::NS(id)
+
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(
+        4,
+        shiny::textOutput(ns("visit_search_text"))
+      ),
+      shiny::column(
+        3, # note that total 'column' width = 12
+        offset = 2,
+        shiny::uiOutput(ns("visit_search_choice"))
+      )
+    ),
+    DT::DTOutput(ns("visitSearch_table"))
+  )
+}
+
 admin_action_datatableUI <- function(id) {
   ns <- shiny::NS(id)
 
@@ -188,16 +213,18 @@ administration <- function(input, output, session, dM) {
   ns <- session$ns
 
   # data quality
-  callModule(admin_dataQuality_datatable, "data_quality", dM)
+  shiny::callModule(admin_dataQuality_datatable, "data_quality", dM)
 
   # result management
-  callModule(admin_result_datatable, "result_management", dM)
+  shiny::callModule(admin_result_datatable, "result_management", dM)
 
-  callModule(admin_document_datatable, "document_search", dM)
+  shiny::callModule(admin_document_datatable, "document_search", dM)
 
-  callModule(admin_action_datatable, "action_search", dM)
+  shiny::callModule(admin_visit_datatable, "visit_search", dM)
 
-  callModule(admin_pcehr_datatable, "pcehr_search", dM)
+  shiny::callModule(admin_action_datatable, "action_search", dM)
+
+  shiny::callModule(admin_pcehr_datatable, "pcehr_search", dM)
 }
 
 #' data quality module - server
@@ -640,20 +667,283 @@ admin_document_datatable <- function(input, output, session, dM) {
   ### create tag-styled datatable (or 'printable' datatable)
   documentSearch_table <- shiny::reactive({
 
-    datatable_styled(documentSearch() %>>%
-                       dplyr::select(
-                         Name, ID, DOB,
-                         Clinician, Checked,
-                         CorrespondenceDate, CheckDate, ActionDate,
-                         Category, Subject, Detail, Comment
-                       ),
-                     extensions = c("Buttons", "Scroller"),
-                     scrollX = TRUE
+    datatable_styled(
+      documentSearch() %>>%
+        dplyr::select(
+          Name, ID, DOB,
+          Clinician, Checked,
+          CorrespondenceDate, CheckDate, ActionDate,
+          Category, Subject, Detail, Comment
+        ),
+      extensions = c("Buttons", "Scroller"),
+      scrollX = TRUE
     )
   })
 
   output$documentSearch_table <- DT::renderDT({
     documentSearch_table()
+  },
+  server = TRUE
+  )
+}
+
+#' visit search module - server
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param dM dMeasure R6 object
+#'  access to visits (visit progress notes, visit reasons)
+#'
+#' @return none
+admin_visit_datatable <- function(input, output, session, dM) {
+  ns <- session$ns
+
+  search_text <- shiny::reactiveVal("interpreter")
+  # the default search string
+  output$visit_search_text <-
+    shiny::renderText({paste("Search text: ", paste(search_text(), collapse = ", "))})
+  output$visit_search_choice <- renderUI({
+    shinyWidgets::dropMenu(
+      shiny::actionButton(
+        inputId = ns("dataSearch_choice_dropdown"),
+        icon = shiny::icon("gear"),
+        label = "Visit Search settings"
+      ),
+      shiny::tags$div(
+        shiny::fluidRow(
+          shiny::div(
+            style = "display: inline-block; vertical-align:top; border-left-style: none; border-left-width: thick",
+            shiny::HTML("<h4>&nbsp;&nbsp;&nbsp;Progress note search</h4>")
+          ),
+          shiny::div(
+            style = "display: inline-block; vertical-align:-50%",
+            # '-50%' lines up with h4 title
+            shinyWidgets::dropdown(
+              shiny::tags$h4("Search terms"),
+              shiny::br(),
+              "One or more search terms, separated by commas.",
+              shiny::br(),
+              "Terms can be enclosed in single/double quotes,",
+              shiny::br(),
+              "but single/double quotes cannot be searched for.",
+              shiny::br(),
+              shiny::br(),
+              "Alternatively, import spreadsheet (CSV/Excel) of search",
+              shiny::br(),
+              "terms. Spreadsheet files must contain a single column",
+              shiny::br(),
+              "of search terms. The first row, first column entry is",
+              shiny::br(),
+              "considered a search term i.e. no column header is",
+              shiny::br(),
+              "expected.",
+              status = "primary",
+              size = "xs",
+              width = "400px",
+              icon = icon("question-circle"),
+              animate = shinyWidgets::animateOptions(
+                enter = shinyWidgets::animations$fading_entrances$fadeIn,
+                exit = shinyWidgets::animations$fading_exits$fadeOut
+              ),
+              tooltip = shinyWidgets::tooltipOptions(
+                placement = "top",
+                title = "Server description details"
+              )
+            )
+          )
+        ),
+        shiny::textInput(
+          inputId = ns("visitSearch_chosen"),
+          label = "Search text",
+          value = paste(search_text(), collapse = ", ")
+        ),
+        shiny::em("Close to confirm"),
+        shiny::br(),
+        shiny::br(),
+        shiny::strong("or"),
+        shiny::br(), shiny::br(),
+        # placeholder - CSV/XLSX file chooser to fill in search terms
+        shinyFiles::shinyFilesButton(
+          id = ns("choose_visit_search_terms_file"),
+          label = "Choose CSV/Excel file with search terms",
+          title = "Choose CSV/Excel file (must end in '.csv' or '.xlsx')",
+          multiple = FALSE
+        )
+      ),
+      placement = "bottom-end"
+    )
+  })
+  volumes <- c(shinyFiles::getVolumes()(), base = ".", home = Sys.getenv("USERPROFILE"), documents = path.expand('~'))
+  shinyFiles::shinyFileChoose(
+    input,
+    id = "choose_visit_search_terms_file",
+    session = session,
+    roots = volumes,
+    filetypes = c("csv", "xls", "xlsx"), # only spreadsheet files
+    hidden = FALSE
+  )
+  shiny::observeEvent(
+    input$choose_visit_search_terms_file,
+    ignoreNULL = TRUE, {
+      shinyWidgets::hideDropMenu("data_search_dropdown_dropmenu")
+      # close the drop-menu if the file choose button is clicked
+      # doesn't actually work :(
+      if (!is.integer(input$choose_visit_search_terms_file)) {
+        # if input$choose_visit_search_term_file is an integer,
+        # it is just the 'click' event on the filechoose button
+        inFile <- shinyFiles::parseFilePaths(volumes, input$choose_visit_search_terms_file)
+        file_name <- paste(inFile$datapath)
+        file_suffix <- tolower(stringi::stri_sub(file_name, -3, -1))
+        if (file_suffix == "csv") {
+          # CSV file
+          text <- read.csv(
+            file_name,
+            header = FALSE, # no header
+            stringsAsFactors = FALSE
+          )
+          search_text(dplyr::pull(text))
+        } else if (file_suffix == "xls" || file_suffix == "xlsx") {
+          text <- readxl::read_excel(
+            file_name,
+            col_names = FALSE
+          )
+          search_text(dplyr::pull(text))
+        }
+      }
+    }
+  )
+  shiny::observeEvent(
+    input$dataSearch_choice_dropdown_dropmenu,
+    ignoreInit = TRUE, {
+      # this is triggered when shinyWidgets::dropMenu is opened/closed
+      # tag is derived from the first tag in dropMenu, adding '_dropmenu'
+      if (!input$dataSearch_choice_dropdown_dropmenu) {
+        # only if closing the 'dropmenu' modal
+        # unfortunately, is also triggered during Init (despite the ignoreInit)
+        search_text(input$visitSearch_chosen)
+      }
+    }
+  )
+
+  visitSearch <-
+    shiny::eventReactive(
+      c(
+        dM$cliniciansR(),
+        dM$date_aR(),
+        dM$date_bR(),
+        search_text()
+      ),
+      ignoreInit = TRUE, ignoreNULL = FALSE, {
+        # respond when clinician or dates is changed
+        shiny::req(search_text()) # cannot be empty string
+
+        ChosenUserID <- dM$UserFullConfig %>>%
+          dplyr::filter(Fullname %in% dM$clinicians) %>>%
+          dplyr::pull(UserID) %>>% c(-1)
+        # add a dummy value if empty
+
+        wildcard_search <- unlist(
+          strsplit(
+            search_text(),
+            ",(?=(?:[^'\"]*['\"][^'\"]*['\"])*[^'\"]*$)\\s*",
+            # break the search string into 'words' according to commas
+            # not within single or double quotation marks
+            # remove extraneous white space between words
+            perl = TRUE
+            # The regular expression ",(?=(?:[^'\"]*['\"][^'\"]*['\"])*[^'\"]*$)\\s*"
+            # uses a positive look-ahead assertion (?= ... ) to find commas
+            # that are not within single or double quotation marks and
+            # are not followed by more quotation marks.
+            # It also allows for optional whitespace using \\s*.
+            #
+            # note that this splitting will not allow searching for phrases
+            # with quotation marks
+          )
+        )
+        wildcard_search <- gsub('["\']', '', wildcard_search)
+        # removes enclosing quotation marks
+        wildcard_search <- paste0("%", wildcard_search, "%")
+        # add the wildcards
+        date_a <- dM$date_a
+        date_b <- dM$date_b
+
+        visits <- lapply(
+          wildcard_search,
+          function(x) {
+            dM$db$visits %>>%
+              dplyr::filter(
+                UserID %in% ChosenUserID,
+                dplyr::between(VisitDate, date_a, date_b),
+                VisitNotes %like% x
+              ) %>>%
+              dplyr::select(InternalID, UserID, VisitDate, VisitID, VisitNotes) %>>%
+              dplyr::collect()
+          }
+        )
+        visits <- do.call("rbind", visits) %>>% # combine the list of dataframes
+          dplyr::group_by(VisitID) %>>%
+          dplyr::slice(1) %>>% # remove duplicate visits
+          dplyr::ungroup() %>>%
+          dplyr::select(-VisitID) # we don't need the VisitID anymore
+
+        intID <- visits %>>% dplyr::pull(InternalID) %>>% c(-1)
+
+        visits <- visits %>>%
+          dplyr::left_join(
+            dM$UserFullConfig %>>%
+              dplyr::filter(UserID %in% ChosenUserID) %>>%
+              dplyr::select(UserID, Fullname),
+            by = c("UserID")
+          ) %>>%
+          dplyr::rename(Clinician = Fullname) %>>%
+          dplyr::select(-c(UserID)) %>>%
+          dplyr::left_join(
+            dM$db$patients %>>%
+              dplyr::filter(InternalID %in% intID) %>>%
+              dplyr::select(
+                InternalID, ID = ExternalID,
+                Firstname, Surname, DOB) %>>%
+              dplyr::collect(),
+            by = c("InternalID")
+          ) %>>%
+          dplyr::mutate(
+            Name = paste(Firstname, Surname),
+            DOB = as.Date(DOB)
+          ) %>>%
+          dplyr::select(-c(InternalID, Firstname, Surname))
+
+        return(visits)
+      }
+    )
+
+  ### create tag-styled datatable (or 'printable' datatable)
+  visitSearch_table <- shiny::reactive({
+
+    d <- visitSearch() %>>%
+      dplyr::select(
+        Name, ID, DOB,
+        Clinician, VisitDate, VisitNotes
+      )
+
+    if (nrow(visitSearch()) > 0) {
+      # strip_rtf doesn't handle empty dataframes and is not vectorised
+      d$VisitNotes <- lapply(
+        d$VisitNotes,
+        function(x)
+          striprtf::strip_rtf(x)
+      )
+    }
+
+    datatable_styled(
+      d,
+      extensions = c("Buttons", "Scroller"),
+      scrollX = TRUE
+    )
+  })
+
+  output$visitSearch_table <- DT::renderDT({
+    visitSearch_table()
   },
   server = TRUE
   )
@@ -676,7 +966,7 @@ admin_action_datatable <- function(input, output, session, dM) {
   search_dates <- shiny::reactiveVal(c("Added", "Due", "Performed"))
   # the default date ranges to search
   output$action_search_text <-
-    shiny::renderText({paste("Search text: ", search_text())})
+    shiny::renderText({paste("Search text: ", paste(search_text(), collapse = ", "))})
   output$action_search_choice <- renderUI({
     shinyWidgets::dropMenu(
       shiny::actionButton(

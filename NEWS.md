@@ -2,6 +2,25 @@
 
 front-end to DailyMeasure package
 
+# version 2.4.0
+25th October 2023
+
+## New
+
+* search progress notes in Administration module
+  + requires package `striprtf` to 'strip' RTF from progress note
+  + requires package `readxl` to read Excel spreadsheet of search terms (can also read CSV spreadsheet)
+
+* Supports (and requires) `dMeasure` 0.11.0
+  + allows extra encryption key/password for database password
+
+# version 2.3.1
+10th September 2023
+
+## Change
+
+* Fixes and improvements to date selection
+
 # version 2.3.0
 13th October 2021
 

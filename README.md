@@ -56,9 +56,11 @@ The ‘bpsrawdata’ database access password（as used by ‘BPbrowser’) is r
 
 ##### Current version
 
-[Google Drive link v 2.3.0.0.10.0b](https://drive.google.com/file/d/1dos3Ooa0pTZwX5PqQPSxgndbOJM1dHjP/view?usp=sharing)
+[Google Drive link v 2.4.0.0.11.0](https://drive.google.com/file/d/1Du8Swh_Mm99hHeg57SgY3_ETdkHgjpyB/view?usp=sharing)
 
 ##### Older versions
+
+[Google Drive link v 2.3.0.0.10.0b](https://drive.google.com/file/d/1dos3Ooa0pTZwX5PqQPSxgndbOJM1dHjP/view?usp=sharing)
 
 [Google Drive link v 2.2.2.0.9.17](https://drive.google.com/file/d/1mvo10hPhP4sG8xCqz1_9KEFbBxR_Qj7O/view?usp=sharing)
 

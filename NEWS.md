@@ -3,7 +3,7 @@
 front-end to DailyMeasure package
 
 # version 2.4.0
-24th October 2023
+25th October 2023
 
 ## New
 

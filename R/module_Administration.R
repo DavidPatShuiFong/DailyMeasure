@@ -667,15 +667,16 @@ admin_document_datatable <- function(input, output, session, dM) {
   ### create tag-styled datatable (or 'printable' datatable)
   documentSearch_table <- shiny::reactive({
 
-    datatable_styled(documentSearch() %>>%
-                       dplyr::select(
-                         Name, ID, DOB,
-                         Clinician, Checked,
-                         CorrespondenceDate, CheckDate, ActionDate,
-                         Category, Subject, Detail, Comment
-                       ),
-                     extensions = c("Buttons", "Scroller"),
-                     scrollX = TRUE
+    datatable_styled(
+      documentSearch() %>>%
+        dplyr::select(
+          Name, ID, DOB,
+          Clinician, Checked,
+          CorrespondenceDate, CheckDate, ActionDate,
+          Category, Subject, Detail, Comment
+        ),
+      extensions = c("Buttons", "Scroller"),
+      scrollX = TRUE
     )
   })
 
@@ -714,12 +715,10 @@ admin_visit_datatable <- function(input, output, session, dM) {
           shiny::div(
             style = "display: inline-block; vertical-align:top; border-left-style: none; border-left-width: thick",
             shiny::HTML("<h4>&nbsp;&nbsp;&nbsp;Progress note search</h4>")
-#            shiny::tags$h4("Progress note search")
           ),
           shiny::div(
             style = "display: inline-block; vertical-align:-50%",
-            # '-50%' still results in a '+50%' compared to the h3 title!
-            # '-100%' results in a dropdown widget roughly in line with the title
+            # '-50%' lines up with h4 title
             shinyWidgets::dropdown(
               shiny::tags$h4("Search terms"),
               shiny::br(),
@@ -757,7 +756,7 @@ admin_visit_datatable <- function(input, output, session, dM) {
         shiny::textInput(
           inputId = ns("visitSearch_chosen"),
           label = "Search text",
-          value = search_text()
+          value = paste(search_text(), collapse = ", ")
         ),
         shiny::em("Close to confirm"),
         shiny::br(),

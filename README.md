@@ -58,33 +58,16 @@ The ‘bpsrawdata’ database access password（as used by ‘BPbrowser’) is r
 
 [Google Drive link v 2.4.0.0.11.0](https://drive.google.com/file/d/1Du8Swh_Mm99hHeg57SgY3_ETdkHgjpyB/view?usp=sharing)
 
-##### Older versions
-
-[Google Drive link v 2.3.0.0.10.0b](https://drive.google.com/file/d/1dos3Ooa0pTZwX5PqQPSxgndbOJM1dHjP/view?usp=sharing)
-
-[Google Drive link v 2.2.2.0.9.17](https://drive.google.com/file/d/1mvo10hPhP4sG8xCqz1_9KEFbBxR_Qj7O/view?usp=sharing)
-
-[Google Drive link v 2.2.2.0.9.16](https://drive.google.com/file/d/10YR9vJtFb18pUBoTbUYIZhAMOu8oBJBJ/view?usp=sharing)
-
-[Google Drive link v 2.2.1.0.9.15](https://drive.google.com/file/d/1x2Y5aCc-oVxnbNqFF1NkkxkAQohbEmsL/view?usp=sharing)
-
-[Google Drive link v 2.2.0.0.9.14](https://drive.google.com/file/d/1E2oZ_OEcdFeObCRE538yzfPY0q8IH7tC/view?usp=sharing)
-
-[OneDrive link v 1.6.2.0.9.11](https://unimelbcloud-my.sharepoint.com/:u:/g/personal/dfong1_unimelb_edu_au/Ed-uvfPKD95BorTES_VAokEBWOTEkRCiHLzJbo-aDDZytQ?e=bLB8dG)
-
-[Google Drive link v 1.6.2.0.9.11](https://drive.google.com/file/d/1z9c9mPO4K1-CxqVC-xp8Xa0h4aJK2fEd/view?usp=sharing)
-
-[OneDrive link v 1.6.0.0.9.10](https://unimelbcloud-my.sharepoint.com/:u:/g/personal/dfong1_unimelb_edu_au/EdJbHvnot_tAgJ3rmIUpqWgBitqo8ZuyYrC43_SuB0KanQ?e=wJaXJE)
-
-[Google Drive link v 1.6.0.0.9.10](https://drive.google.com/file/d/1oWKFcX3gta9ZyEazz-aIzfznMK8SXB5d/view?usp=sharing)
-
-[OneDrive link v 1.5.9.0.9.9](https://unimelbcloud-my.sharepoint.com/:u:/g/personal/dfong1_unimelb_edu_au/Eb6gXcBy-J1BtcRt53XVULABhA0bz2VSH-lvLd6WmcB6Og?e=HEXEch)
-
-[Google Drive link v 1.5.9.0.9.9](https://drive.google.com/file/d/1dJv0DQmcziNni0jp3fs2CBsDoX9cHMLe/view?usp=sharing)
-
 #### Recent changelog
 
 ```
+
+# version 2.4.0
+25th October 2023
+
+## New
+
+* search progress notes in Administration module
 
 # version 2.3.0
 13th October 2021
